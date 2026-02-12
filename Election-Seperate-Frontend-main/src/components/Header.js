@@ -31,7 +31,7 @@ const Header = () => {
     const isMobile = useBreakpointValue({ base: true, md: false });
 
     return (
-        <div style={{ marginTop: "15%" }}>
+        <div style={{ marginTop: "10%" }}>
             {location.pathname === '/eci' ?
                 <div>
                     <Stack pl={4} pr={4} justifyContent="space-between" sx={{ display: "flex", flexDirection: "row", alignItems: 'center' }}>

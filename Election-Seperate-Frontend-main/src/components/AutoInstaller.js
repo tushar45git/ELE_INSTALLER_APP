@@ -3,7 +3,7 @@ import axios from "axios";
 import logo from "./images/logo/cam.png";
 import Delete from "./images/logo/deleteicon.png";
 import Trash from "./images/logo/Trash.png";
-import { FiList } from "react-icons/fi";
+import { FiList, FiPlus } from "react-icons/fi";
 import * as FileSaver from "file-saver";
 import { FaFileExcel, FaSearch } from "react-icons/fa";
 import * as XLSX from "xlsx";
@@ -970,8 +970,16 @@ const downloadReport = async () => {
           <>
             <header className="page-header">
               <div className="title-group">
-                <Heading as="h1" size="xl">Election Installer</Heading>
-                <Text color="gray.600">Secure camera management for election monitoring</Text>
+                <HStack spacing={3} mb={1}>
+                  <Heading as="h1" size="xl">Election Installer</Heading>
+                  <div className="header-status-badge">
+                    <Box w="6px" h="6px" borderRadius="full" bg="primary.500" mr={2} className="blink-warning" style={{ animationDuration: '1s' }} />
+                    Secure Live
+                  </div>
+                </HStack>
+                <Text color="gray.500" fontSize="md" fontWeight="500">
+                  Professional camera management & real-time monitoring system
+                </Text>
               </div>
               <Stack direction={{ base: "column", sm: "row" }} spacing={4} w={{ base: "full", sm: "auto" }}>
                 {!showAdditionalInputs && (
@@ -989,7 +997,7 @@ const downloadReport = async () => {
                     <Button
                       className="btn-premium"
                       onClick={handleAddNewDeviceClick}
-                      leftIcon={<FiList />}
+                      leftIcon={<FiPlus />}
                       w={{ base: "full", sm: "auto" }}
                     >
                       Add New Device
