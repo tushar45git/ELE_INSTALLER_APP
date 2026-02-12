@@ -82,7 +82,7 @@ import { IoIosRefresh } from "react-icons/io";
 import { FaExclamationTriangle } from "react-icons/fa";
 import { Link } from "react-router-dom";
 //import { FaSortAlphaDown, FaSortAlphaUp } from "react-icons/fa"; // Import sorting icons
-import sortIcon from "./images/logo/sort.png"; // Import the image
+// import sortIcon from "./images/logo/sort.png"; // Import the image
 import line from "./images/logo/line.png";
 import expand from "./images/logo/expand.png";
 
@@ -130,7 +130,7 @@ const AutoInstaller = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const camerasPerPage = 5; // Adjust as needed
   const [cameraa, setCameraa] = useState([]); // Keep cameraa as state
-  const [sortOrder, setSortOrder] = useState("asc"); // 'asc' or 'desc'
+  // const [sortOrder, setSortOrder] = useState("asc"); // 'asc' or 'desc'
   const totalCameras = cameraa.length;
   const totalPages = Math.ceil(totalCameras / camerasPerPage); // Calculate the number of pages
 
@@ -922,24 +922,24 @@ const downloadReport = async () => {
   const camerasOnPage = filteredCameras.slice(startIndex, endIndex);
 
   // Sorting function
-  const handleSort = () => {
-    const newSortOrder = sortOrder === "asc" ? "desc" : "asc";
-    setSortOrder(newSortOrder);
+  // const handleSort = () => {
+  //   const newSortOrder = sortOrder === "asc" ? "desc" : "asc";
+  //   setSortOrder(newSortOrder);
 
-    const sortedData = [...cameraa].sort((a, b) => {
-      const psNoA = a.psNo; // Access PS No. directly
-      const psNoB = b.psNo;
+  //   const sortedData = [...cameraa].sort((a, b) => {
+  //     const psNoA = a.psNo; // Access PS No. directly
+  //     const psNoB = b.psNo;
 
-      if (newSortOrder === "asc") {
-        return psNoA - psNoB; // Sort numerically ascending
-      } else {
-        return psNoB - psNoA; // Sort numerically descending
-      }
-    });
+  //     if (newSortOrder === "asc") {
+  //       return psNoA - psNoB; // Sort numerically ascending
+  //     } else {
+  //       return psNoB - psNoA; // Sort numerically descending
+  //     }
+  //   });
 
-    setCameraa(sortedData);
-    setCurrentPage(1);
-  };
+  //   setCameraa(sortedData);
+  //   setCurrentPage(1);
+  // };
   const HorizontalLine = () => (
     <Box width="100%" height="2px" background="#3F77A5" mb={2} />
   );
@@ -1015,20 +1015,50 @@ const downloadReport = async () => {
                       )}
                     </Text>
                   </VStack>
-                  <HStack spacing={3}>
-                    <Text className="custom-label" m="0">Sort by PS No:</Text>
+                  <HStack 
+                    spacing={{ base: 4, md: 5 }} 
+                    align="center"
+                  >
+{/* <Text className="custom-label" m="0" whiteSpace="nowrap">Sort by PS No:</Text>
+                    
+                    <Box
+                      as="button"
+                      onClick={handleSort}
+                      p={2}
+                      borderRadius="full"
+                      cursor="pointer"
+                      bg="transparent"
+                      transition="all 0.2s"
+                      _hover={{ 
+                        bg: "gray.100", 
+                        transform: "scale(1.1)" 
+                      }}
+                      _active={{ transform: "scale(0.95)" }}
+                      display="flex"
+                      alignItems="center"
+                      justifyContent="center"
+                    >
+                      <Image
+                        src={sortIcon}
+                        alt="Sort"
+                        boxSize="24px"
+                      />
+                    </Box> */}
+
                     <IconButton
                       size="sm"
-                      icon={<IoIosRefresh />}
+                      icon={<IoIosRefresh size="20px" />}
                       onClick={refresh}
                       aria-label="Refresh list"
                       className="btn-secondary"
-                    />
-                    <img
-                      src={sortIcon}
-                      alt="Sort"
-                      style={{ width: "20px", cursor: "pointer" }}
-                      onClick={handleSort}
+                      isRound
+                      bg="white"
+                      transition="all 0.4s ease"
+                      _hover={{ 
+                        transform: "rotate(180deg)",
+                        bg: "gray.100",
+                        boxShadow: "md"
+                       }}
                     />
                   </HStack>
                 </Flex>
@@ -1165,17 +1195,20 @@ const downloadReport = async () => {
                             <HStack justify={{ base: "flex-start", md: "flex-end" }} spacing={2}>
                               <IconButton
                                 size="sm"
-                                icon={<MdVisibility />}
+                                icon={<MdVisibility color="#3182ce" />}
                                 onClick={() => handleViewCamera(camera)}
                                 aria-label="View Feed"
+                                variant="ghost"
+                                _hover={{ bg: "blue.50" }}
                               />
                               <IconButton
                                 size="sm"
                                 colorScheme="red"
                                 variant="ghost"
-                                icon={<MdDelete />}
+                                icon={<MdDelete color="#e53e3e" />}
                                 onClick={() => openDeleteModal(camera.deviceId)}
                                 aria-label="Delete"
+                                _hover={{ bg: "red.50" }}
                               />
                             </HStack>
                           </Td>
@@ -1252,21 +1285,23 @@ const downloadReport = async () => {
                             <HStack spacing={2}>
                               <Button 
                                 size="sm" 
-                                leftIcon={<MdVisibility />} 
+                                leftIcon={<MdVisibility color="#3182ce" />} 
                                 onClick={(e) => { e.stopPropagation(); handleViewCamera(camera); }} 
                                 colorScheme="blue" 
-                                variant="solid" 
+                                variant="outline" 
                                 flex={1}
+                                _hover={{ bg: "blue.50" }}
                               >
                                 View
                               </Button>
                               <Button 
                                 size="sm" 
-                                leftIcon={<MdDelete />} 
+                                leftIcon={<MdDelete color="#e53e3e" />} 
                                 onClick={(e) => { e.stopPropagation(); openDeleteModal(camera.deviceId); }} 
                                 colorScheme="red" 
                                 variant="outline" 
                                 flex={1}
+                                _hover={{ bg: "red.50" }}
                               >
                                 Delete
                               </Button>
@@ -1591,12 +1626,23 @@ const downloadReport = async () => {
         </ModalContent>
       </Modal>
 
-      <Modal isOpen={showModal} onClose={handleCloseModal} size="xl" isCentered>
+      <Modal isOpen={showModal} onClose={handleCloseModal} size={{ base: "sm", md: "xl" }} isCentered>
         <ModalOverlay backdropFilter="blur(8px)" />
-        <ModalContent borderRadius="2xl" overflow="hidden" maxW="800px">
-          <ModalHeader bg="blue.900" color="white" display="flex" justify="space-between" align="center">
-            <Text>Live Feed: {selectedCamera?.deviceId}</Text>
-            <ModalCloseButton color="white" position="static" />
+        <ModalContent borderRadius="2xl" overflow="hidden" maxW={{ base: "95vw", md: "800px" }} mx={{ base: 2, md: 0 }}>
+          <ModalHeader 
+            bg="green.200" 
+            color="white" 
+            display="flex" 
+            justifyContent="space-between" 
+            alignItems="center"
+            px={{ base: 4, md: 6 }}
+            py={{ base: 3, md: 4 }}
+            fontSize={{ base: "md", md: "lg" }}
+          >
+            <Text isTruncated maxW={{ base: "100%", md: "full" }}>
+              Live Feed: {selectedCamera?.deviceId}
+            </Text>
+            <ModalCloseButton color="white" position="static" m={0} />
           </ModalHeader>
           <ModalBody p={0} bg="black">
             {selectedCamera && (
@@ -1611,21 +1657,32 @@ const downloadReport = async () => {
               </div>
             )}
           </ModalBody>
-          <ModalFooter bg="gray.50" justify="center" gap={6}>
-            <Button
+          <ModalFooter 
+            bg="gray.50" 
+            flexDirection={{ base: "column", sm: "row" }} 
+            justifyContent="center" 
+            alignItems="center"
+            gap={{ base: 3, sm: 6 }}
+            py={4}
+          >
+            {/* <Button
               className="btn-secondary"
+              size={{ base: "sm", md: "md" }}
               leftIcon={<LuFlipVertical2 />}
               onClick={() => handleGetData(selectedCamera.deviceId, "flip")}
+              w={{ base: "full", sm: "auto" }}
             >
               Flip Vertically
             </Button>
             <Button
               className="btn-secondary"
+              size={{ base: "sm", md: "md" }}
               leftIcon={<LuFlipHorizontal2 />}
               onClick={() => handleGetData(selectedCamera.deviceId, "mirror")}
+              w={{ base: "full", sm: "auto" }}
             >
               Mirror Stream
-            </Button>
+            </Button> */}
           </ModalFooter>
         </ModalContent>
       </Modal>
