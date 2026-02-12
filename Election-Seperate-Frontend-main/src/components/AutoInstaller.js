@@ -5,10 +5,10 @@ import Delete from "./images/logo/deleteicon.png";
 import Trash from "./images/logo/Trash.png";
 import { FiList } from "react-icons/fi";
 import * as FileSaver from "file-saver";
-import { FaFileExcel } from "react-icons/fa";
+import { FaFileExcel, FaSearch } from "react-icons/fa";
 import * as XLSX from "xlsx";
 import { Filesystem, Directory } from '@capacitor/filesystem';
-// import "./auto-installer.css";
+import "./auto-installer.css";
 import {
   Button,
   Container,
@@ -42,6 +42,14 @@ import {
   Grid,
   Center,
   Collapse,
+  Heading,
+  HStack,
+  VStack,
+  InputGroup,
+  InputRightElement,
+  List,
+  ListItem,
+  Divider,
 } from "@chakra-ui/react";
 import { ToastContainer, toast } from "react-toastify";
 import {
@@ -68,7 +76,7 @@ import "video.js/dist/video-js.css";
 import ReactPlayer from "react-player";
 import QRCodeScanner from "./QrCodeScanner";
 import TawkToWidget from "./tawkto";
-import { LuFlipHorizontal2, LuFlipVertical2 } from "react-icons/lu";
+import { LuFlipHorizontal2, LuFlipVertical2, LuChevronDown, LuChevronUp } from "react-icons/lu";
 import Autosuggest from "react-autosuggest";
 import { IoIosRefresh } from "react-icons/io";
 import { FaExclamationTriangle } from "react-icons/fa";
@@ -106,6 +114,8 @@ const AutoInstaller = () => {
   const [cameraAngleAcceptable, setCameraAngleAcceptable] = useState(true);
   const [hasClickedCameraDidInfo, setHasClickedCameraDidInfo] = useState(false); // Track button click
   const [searchDeviceId, setSearchDeviceId] = useState("");
+  const [searchSuggestions, setSearchSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const [isFetchingCameraDetails, setIsFetchingCameraDetails] = useState(false); // New state for fetching status
 
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -221,6 +231,53 @@ const AutoInstaller = () => {
     if (!aMatch && bMatch) return 1;
     return 0;
   });
+
+  // Handle search input change with suggestions
+  const handleSearchChange = (e) => {
+    const value = e.target.value;
+    setSearchDeviceId(value);
+    setCurrentPage(1); // Reset to first page when search changes
+    
+    if (value.trim().length > 0) {
+      // Filter cameras that match the search
+      const suggestions = cameraa
+        .filter(camera => 
+          camera.deviceId.toLowerCase().includes(value.toLowerCase())
+        )
+        .map(camera => camera.deviceId)
+        .slice(0, 5); // Limit to 5 suggestions
+      
+      setSearchSuggestions(suggestions);
+      setShowSuggestions(suggestions.length > 0);
+    } else {
+      setSearchSuggestions([]);
+      setShowSuggestions(false);
+    }
+  };
+
+  // Handle suggestion click
+  const handleSuggestionClick = (deviceId) => {
+    setSearchDeviceId(deviceId);
+    setShowSuggestions(false);
+    setCurrentPage(1); // Reset to first page
+    toast.success(`Showing results for: ${deviceId}`);
+  };
+
+  // Handle search button click
+  const handleSearchClick = () => {
+    if (searchDeviceId.trim()) {
+      setShowSuggestions(false);
+      setCurrentPage(1); // Reset to first page
+      const matchCount = filteredCameras.length;
+      if (matchCount > 0) {
+        toast.success(`Found ${matchCount} camera${matchCount !== 1 ? 's' : ''} matching "${searchDeviceId}"`);
+      } else {
+        toast.warning(`No cameras found matching "${searchDeviceId}"`);
+      }
+    } else {
+      toast.info("Please enter a device ID to search");
+    }
+  };
 
 const handleAddInputs = async () => {
   if (!deviceId) {
@@ -855,11 +912,14 @@ const downloadReport = async () => {
   const pages = Array.from({ length: totalPages }, (_, i) => i + 1);
 
   // Calculate the start and end index for the current page
+  // Use filteredCameras for pagination instead of all cameras
+  const totalFilteredCameras = filteredCameras.length;
+  const totalFilteredPages = Math.ceil(totalFilteredCameras / camerasPerPage);
   const startIndex = (currentPage - 1) * camerasPerPage;
-  const endIndex = Math.min(startIndex + camerasPerPage, totalCameras);
+  const endIndex = Math.min(startIndex + camerasPerPage, totalFilteredCameras);
 
-  // Get the cameras to display on the current page
-  const camerasOnPage = cameraa.slice(startIndex, endIndex);
+  // Get the cameras to display on the current page (from filtered results)
+  const camerasOnPage = filteredCameras.slice(startIndex, endIndex);
 
   // Sorting function
   const handleSort = () => {
@@ -885,1082 +945,691 @@ const downloadReport = async () => {
   );
 
   return (
-    <Container
-      backgroundColor="#F4F4F5"
-      maxW="100vw"
-      p={4}
-
-      style={{ margin: "0px", backgroundColor: "#F4F4F5" }}
-    >
+    <div className="main-wrapper">
       <style>{customCSS}</style>
       <ToastContainer />
       <div style={{ position: "fixed", bottom: "20px", right: "20px" }}>
         <TawkToWidget />
       </div>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          position: "fixed",
-          bottom: "20px",
-          left: "20px",
-        }}
-      ></div>
-      {location ? (
-        <>
-          {/* Conditional Rendering: Table Content Only if NOT Adding New Device */}
-          {!showAdditionalInputs ? (
-            <>
-              {/* Pagination */}
-              <Flex justify="center" mt={4} mb={5}>
-                <Box
-                  border="1px solid #7EA3C2"
-                  borderRadius="10px"
-                  display="inline-flex"
-                  justifyContent="center"
-                  alignItems="center"
-                >
-                  <Button
-                    onClick={() => handleClick(currentPage - 1)}
-                    isDisabled={currentPage === 1}
-                    size="sm"
-                    mr={2}
-                    color="black"
-                  >
-                    Previous
-                  </Button>
 
-                  {pages.map((page) => (
-                    <Button
-                      key={page}
-                      onClick={() => handleClick(page)}
-                      size="sm"
-                      mx={1}
-                      fontFamily="Wix Madefor Text"
-                      fontSize="12px"
-                      fontWeight="400"
-                      color="black"
-                    >
-                      {page}
-                    </Button>
-                  ))}
-
-                  <Button
-                    onClick={() => handleClick(currentPage + 1)}
-                    isDisabled={currentPage === totalPages}
-                    size="sm"
-                    ml={2}
-                    color="black"
-                  >
-                    Next
-                  </Button>
-                </Box>
-              </Flex>
-
-              <h3
-  style={{
-    display: "flex",
-    justifyContent: "space-between", // Left and right main sections
-    alignItems: "center",
-    width: "100%",
-    // marginBottom: "10px",
-  }}
->
-  {/* Left side - Devices Added */}
-  <Box style={{ textAlign: "left" }}>
-    <Text
-      style={{
-        fontWeight: "700",
-        fontFamily: "Inter !important",
-        fontSize: "20px",
-        lineHeight: "normal",
-      }}
-    >
-      Devices Added - ({cameraa.length})
-    </Text>
-  </Box>
-
-  {/* Right side - Button + Sort */}
-  <Box
-    style={{
-      display: "flex",
-      alignItems: "center",
-      gap: "0.5rem", // small gap between elements here
-    }}
-  >
-    {!showAdditionalInputs && cameraa.length > 0 && (
-      <Button
-        bg="#F4F4F5"
-        fontSize="15px"
-        height="35px"
-        fontFamily="Wix Madefor Text"
-        onClick={downloadReport}
-        leftIcon={<FaFileExcel />}
-      >
-        Excel
-      </Button>
-    )}
-
-    {/* Sort by + icon grouped together */}
-    <Box style={{ display: "flex", alignItems: "center", gap: "0.2rem" }}>
-      <Text
-        fontWeight="400"
-        fontFamily="Wix Madefor Text"
-        fontSize="13px"
-        textDecoration="underline"
-        textUnderlineOffset="2px"
-      >
-        Sort by
-      </Text>
-      <img
-        src={sortIcon}
-        alt="Sort"
-        style={{
-          width: "15px",
-          height: "15px",
-          cursor: "pointer",
-        }}
-        onClick={handleSort}
-      />
-    </Box>
-  </Box>
-</h3>
-
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "left",
-                  marginBottom: "12px",
-                }}
-              >
-                <Input
-                  value={searchDeviceId}
-                  onChange={(e) => setSearchDeviceId(e.target.value)}
-                  placeholder="Search Device ID"
-                  style={{
-                    width: "70%",
-                    height: "35px",
-                    padding: "10px 14px",
-                    borderRadius: "8px",
-                    background: "#fff",
-                    boxShadow: "inset 0 1px 2.4px rgba(0, 0, 0, 0.25)",
-                    color: "black",
-                    fontFamily: "'Wix Madefor Text'",
-                    fontSize: "12px",
-                    marginTop: "10px",
-                  }}
-                />
-                <Button
-onClick={refresh}
-  sx={{
-    marginTop: "10px",
-    background: "#F4F4F5",
-    height: "35px",
-    fontFamily: "'Wix Madefor Text', sans-serif",
-    fontSize: "15px",
-    fontStyle: "normal",
-    fontWeight: "400",
-    textDecoration: "underline",
-    textUnderlineOffset: "2px",
-    color: "black",
-    _hover: {
-      background: "#E4E4E5",
-      textDecoration: "underline",
-    },
-  }}
-                >
-                  <IoIosRefresh color="#3F77A5" />
-                  &nbsp;Refresh
-                </Button>
+      <Box className="animate-fade-in">
+        {!location ? (
+          <VStack minH="60vh" justify="center" spacing={4}>
+            <Box p={8} bg="white" borderRadius="2xl" boxShadow="xl" textAlign="center">
+              <Text fontSize="lg" fontWeight="600" color="red.500">
+                Location Access Required
+              </Text>
+              <Text color="gray.600" mt={2}>
+                To access the election installer portal, please enable GPS/Location services.
+              </Text>
+            </Box>
+          </VStack>
+        ) : (
+          <>
+            <header className="page-header">
+              <div className="title-group">
+                <Heading as="h1" size="xl">Election Installer</Heading>
+                <Text color="gray.600">Secure camera management for election monitoring</Text>
               </div>
-              {/* Camera List Table */}
-              {filteredCameras
-                .slice(startIndex, endIndex)
-                .map((camera, index) => (
-                  <Box
-                    key={camera.deviceId}
-                    sx={{
-                      borderTop: index === 0 ? "2px solid #3F77A5" : "none", // top border only for first
-                      borderBottom:
-                        index !==
-                        filteredCameras.slice(startIndex, endIndex).length - 1
-                          ? "2px solid #3F77A5"
-                          : "none", // bottom border for all except last
-                      pb: 2,
-                    }}
-                    mb={4}
-                    p={4}
-                  >
-                    <Flex justify="space-between" align="center" mb={3}>
-                      <Box>
-                        <Text
-                          style={{
-                            fontWeight: "bold",
-                            fontFamily: "Wix Madefor Text !important",
-                            fontSize: "15px",
-                            lineHeight: "24px",
-                            fontStyle: "normal",
-                            color: "#1A1A1A",
-                          }}
-                        >
-                          Device ID: {camera.deviceId}
-                        </Text>
-                      </Box>
-                      <Box
-                        width="0"
-                        height="18px"
-                        flexShrink={0}
-                        borderLeft="1px solid #1A1A1A"
-                      />
-                      <IconButton
-                        aria-label="Expand/Collapse Details"
-                        icon={
-                          <Image
-                            src={expand}
-                            onClick={() => handleToggleExpand(camera.deviceId)}
-                            alt="Expand"
-                            sx={{
-                              transform:
-                                expandedCameraId === camera.id
-                                  ? "rotate(180deg)"
-                                  : "rotate(0deg)",
-                              transition: "transform 0.3s ease",
+              <Stack direction={{ base: "column", sm: "row" }} spacing={4} w={{ base: "full", sm: "auto" }}>
+                {!showAdditionalInputs && (
+                  <>
+                    {cameraa.length > 0 && (
+                      <Button
+                        className="btn-secondary"
+                        onClick={downloadReport}
+                        leftIcon={<FaFileExcel />}
+                        w={{ base: "full", sm: "auto" }}
+                      >
+                        Export Excel
+                      </Button>
+                    )}
+                    <Button
+                      className="btn-premium"
+                      onClick={handleAddNewDeviceClick}
+                      leftIcon={<FiList />}
+                      w={{ base: "full", sm: "auto" }}
+                    >
+                      Add New Device
+                    </Button>
+                  </>
+                )}
+              </Stack>
+            </header>
+
+            {!showAdditionalInputs ? (
+              /* List View */
+              <div className="glass-card">
+                <Flex justify="space-between" align="center" mb={6} flexWrap="wrap" gap={4}>
+                  <VStack align="flex-start" spacing={1}>
+                    <Heading size="md" color="blue.900">
+                      Your Installations
+                    </Heading>
+                    <Text fontSize="sm" color="gray.600">
+                      {searchDeviceId ? (
+                        <>
+                          Showing <Text as="span" fontWeight="700" color="blue.600">{totalFilteredCameras}</Text> of {cameraa.length} cameras
+                        </>
+                      ) : (
+                        <>{cameraa.length} total cameras</>
+                      )}
+                    </Text>
+                  </VStack>
+                  <HStack spacing={3}>
+                    <Text className="custom-label" m="0">Sort by PS No:</Text>
+                    <IconButton
+                      size="sm"
+                      icon={<IoIosRefresh />}
+                      onClick={refresh}
+                      aria-label="Refresh list"
+                      className="btn-secondary"
+                    />
+                    <img
+                      src={sortIcon}
+                      alt="Sort"
+                      style={{ width: "20px", cursor: "pointer" }}
+                      onClick={handleSort}
+                    />
+                  </HStack>
+                </Flex>
+
+                {/* Enhanced Search with Autocomplete */}
+                <Box position="relative" mb={6}>
+                  <InputGroup size="lg">
+                    <Input
+                      className="custom-input"
+                      value={searchDeviceId}
+                      onChange={handleSearchChange}
+                      onFocus={() => searchDeviceId && setShowSuggestions(searchSuggestions.length > 0)}
+                      onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                      placeholder="Search by Device ID..."
+                      pr="4.5rem"
+                      fontSize="md"
+                      _placeholder={{ color: "gray.400" }}
+                    />
+                    <InputRightElement width="4.5rem" height="100%">
+                      {searchDeviceId ? (
+                        <HStack spacing={0}>
+                          <IconButton
+                            h="2rem"
+                            size="sm"
+                            icon={<Text fontSize="lg">×</Text>}
+                            onClick={() => {
+                              setSearchDeviceId("");
+                              setShowSuggestions(false);
+                              setCurrentPage(1);
+                              toast.info("Search cleared");
                             }}
+                            aria-label="Clear search"
+                            variant="ghost"
+                            _hover={{ bg: "red.50", color: "red.600" }}
                           />
-                        }
-                      />
+                          <IconButton
+                            h="2rem"
+                            size="sm"
+                            icon={<FaSearch />}
+                            onClick={handleSearchClick}
+                            aria-label="Search"
+                            colorScheme="blue"
+                            variant="ghost"
+                            _hover={{ bg: "blue.50" }}
+                          />
+                        </HStack>
+                      ) : (
+                        <IconButton
+                          h="2.5rem"
+                          size="md"
+                          icon={<FaSearch />}
+                          onClick={handleSearchClick}
+                          aria-label="Search"
+                          colorScheme="blue"
+                          variant="ghost"
+                          _hover={{ bg: "blue.50" }}
+                        />
+                      )}
+                    </InputRightElement>
+                  </InputGroup>
+                  
+                  {/* Autocomplete Suggestions Dropdown */}
+                  {showSuggestions && searchSuggestions.length > 0 && (
+                    <Box
+                      position="absolute"
+                      top="100%"
+                      left={0}
+                      right={0}
+                      zIndex={10}
+                      mt={2}
+                      bg="white"
+                      borderRadius="lg"
+                      boxShadow="xl"
+                      border="1px solid"
+                      borderColor="gray.200"
+                      maxH="300px"
+                      overflowY="auto"
+                    >
+                      <List spacing={0}>
+                        {searchSuggestions.map((suggestion, index) => (
+                          <ListItem
+                            key={index}
+                            px={4}
+                            py={3}
+                            cursor="pointer"
+                            transition="all 0.2s"
+                            borderBottom={index < searchSuggestions.length - 1 ? "1px solid" : "none"}
+                            borderColor="gray.100"
+                            _hover={{
+                              bg: "blue.50",
+                              color: "blue.700",
+                            }}
+                            onClick={() => handleSuggestionClick(suggestion)}
+                            display="flex"
+                            alignItems="center"
+                            gap={2}
+                          >
+                            <FaSearch size={14} color="gray" />
+                            <Text fontWeight="500" fontSize="sm">
+                              {suggestion}
+                            </Text>
+                          </ListItem>
+                        ))}
+                      </List>
+                    </Box>
+                  )}
+                </Box>
+
+                <Box display={{ base: "none", md: "block" }} className="table-container">
+                  <Table variant="simple" className="premium-table">
+                    <Thead>
+                      <Tr>
+                        <Th>PS No.</Th>
+                        <Th>Device ID</Th>
+                        <Th>Assembly Name</Th>
+                        <Th>Location</Th>
+                        <Th>Status</Th>
+                        <Th textAlign="right">Actions</Th>
+                      </Tr>
+                    </Thead>
+                    <Tbody>
+                      {camerasOnPage.map((camera) => (
+                        <Tr key={camera.deviceId}>
+                          <Td data-label="PS No."><b>{camera.psNo}</b></Td>
+                          <Td data-label="Device ID">{camera.deviceId}</Td>
+                          <Td data-label="Assembly Name">{camera.assemblyName}</Td>
+                          <Td data-label="Location">{camera.location}</Td>
+                          <Td data-label="Status">
+                            <span className={`badge ${camera.status === 'RUNNING' ? 'badge-success' : 'badge-error'}`}>
+                              {camera.status}
+                            </span>
+                          </Td>
+                          <Td data-label="Actions" textAlign={{ base: "left", md: "right" }}>
+                            <HStack justify={{ base: "flex-start", md: "flex-end" }} spacing={2}>
+                              <IconButton
+                                size="sm"
+                                icon={<MdVisibility />}
+                                onClick={() => handleViewCamera(camera)}
+                                aria-label="View Feed"
+                              />
+                              <IconButton
+                                size="sm"
+                                colorScheme="red"
+                                variant="ghost"
+                                icon={<MdDelete />}
+                                onClick={() => openDeleteModal(camera.deviceId)}
+                                aria-label="Delete"
+                              />
+                            </HStack>
+                          </Td>
+                        </Tr>
+                      ))}
+                      {filteredCameras.length === 0 && (
+                        <Tr>
+                          <Td colSpan={6} textAlign="center" py={10}>
+                            <VStack spacing={2}>
+                              <Text fontWeight="600">No cameras found</Text>
+                              <Button size="sm" onClick={handleAddNewDeviceClick}>Add your first device</Button>
+                            </VStack>
+                          </Td>
+                        </Tr>
+                      )}
+                    </Tbody>
+                  </Table>
+                </Box>
+
+                {/* Mobile Card View */}
+                <Box display={{ base: "block", md: "none" }}>
+                  {camerasOnPage.map((camera) => (
+                    <Box 
+                      key={camera.deviceId} 
+                      mb={4} 
+                      p={4} 
+                      bg="white" 
+                      rounded="xl" 
+                      shadow="sm" 
+                      border="1px solid" 
+                      borderColor="gray.200"
+                    >
+                      <Flex justify="space-between" align="center" onClick={() => handleToggleExpand(camera.deviceId)}>
+                        <Text fontWeight="bold" fontSize="md" color="blue.800">
+                          {camera.deviceId}
+                        </Text>
+                         <IconButton
+                            icon={expandedCameraId === camera.deviceId ? <LuChevronUp /> : <LuChevronDown />}
+                            variant="ghost"
+                            size="sm"
+                            aria-label="Toggle details"
+                            isRound
+                          />
+                      </Flex>
+
+                      <Collapse in={expandedCameraId === camera.deviceId} animateOpacity>
+                        <VStack align="stretch" spacing={3} mt={3}>
+                          <Divider borderColor="gray.100" />
+                          
+                          <HStack justify="space-between">
+                            <Text fontSize="sm" color="gray.500">PS No</Text>
+                            <Text fontSize="sm" fontWeight="semibold">{camera.psNo}</Text>
+                          </HStack>
+
+                          <HStack justify="space-between">
+                            <Text fontSize="sm" color="gray.500">Assembly</Text>
+                            <Text fontSize="sm" fontWeight="medium">{camera.assemblyName}</Text>
+                          </HStack>
+
+                          <HStack justify="space-between">
+                            <Text fontSize="sm" color="gray.500">Location</Text>
+                            <Text fontSize="sm" textAlign="right" maxW="60%">{camera.location}</Text>
+                          </HStack>
+
+                          <HStack justify="space-between">
+                            <Text fontSize="sm" color="gray.500">Status</Text>
+                            <span className={`badge ${camera.status === 'RUNNING' ? 'badge-success' : 'badge-error'}`}>
+                              {camera.status}
+                            </span>
+                          </HStack>
+
+                          <Box pt={2}>
+                            <Text fontSize="xs" fontWeight="bold" color="gray.400" mb={2} textTransform="uppercase">Actions</Text>
+                            <HStack spacing={2}>
+                              <Button 
+                                size="sm" 
+                                leftIcon={<MdVisibility />} 
+                                onClick={(e) => { e.stopPropagation(); handleViewCamera(camera); }} 
+                                colorScheme="blue" 
+                                variant="solid" 
+                                flex={1}
+                              >
+                                View
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                leftIcon={<MdDelete />} 
+                                onClick={(e) => { e.stopPropagation(); openDeleteModal(camera.deviceId); }} 
+                                colorScheme="red" 
+                                variant="outline" 
+                                flex={1}
+                              >
+                                Delete
+                              </Button>
+                            </HStack>
+                          </Box>
+                        </VStack>
+                      </Collapse>
+                    </Box>
+                  ))}
+                  
+                  {filteredCameras.length === 0 && (
+                     <Box textAlign="center" py={10}>
+                        <VStack spacing={2}>
+                          <Text fontWeight="600">No cameras found</Text>
+                          <Button size="sm" onClick={handleAddNewDeviceClick}>Add your first device</Button>
+                        </VStack>
+                      </Box>
+                  )}
+                </Box>
+
+                <Flex justify="center" mt={8}>
+                  <Stack direction={{ base: "column", sm: "row" }} spacing={4} align="center">
+                    <Button
+                      className="btn-secondary"
+                      size="sm"
+                      onClick={() => handleClick(currentPage - 1)}
+                      isDisabled={currentPage === 1}
+                      w={{ base: "full", sm: "auto" }}
+                    >
+                      Previous
+                    </Button>
+                    <VStack spacing={0}>
+                      <Text fontSize="sm" fontWeight="700" color="gray.600">
+                        Page {currentPage} of {totalFilteredPages || 1}
+                      </Text>
+                      {searchDeviceId && (
+                        <Text fontSize="xs" color="gray.500">
+                          {totalFilteredCameras} result{totalFilteredCameras !== 1 ? 's' : ''} found
+                        </Text>
+                      )}
+                    </VStack>
+                    <Button
+                      className="btn-secondary"
+                      size="sm"
+                      onClick={() => handleClick(currentPage + 1)}
+                      isDisabled={currentPage === totalFilteredPages || totalFilteredPages === 0}
+                      w={{ base: "full", sm: "auto" }}
+                    >
+                      Next
+                    </Button>
+                  </Stack>
+                </Flex>
+              </div>
+            ) : (
+              /* Add New / Detail View */
+              <Box>
+                <div className="glass-card">
+                  <VStack spacing={6} align="stretch">
+                    <Flex justify="space-between" align="center">
+                      <Heading size="md" color="blue.900">Device Configuration</Heading>
+                      <Button className="btn-secondary" size="sm" onClick={handleBackClick}>
+                        Return to List
+                      </Button>
                     </Flex>
 
-                    {expandedCameraId === camera.deviceId && (
-                      <Grid templateColumns="repeat(2, 1fr)" gap={4} mt={2}>
-                        <Box>
-                          <Text
-                            style={{
-                              fontWeight: "bold",
-                              fontFamily: "Wix Madefor Text !important",
-                              fontSize: "14px",
-                              lineHeight: "24px",
-                              fontStyle: "normal",
-                              color: "#1A1A1A",
-                            }}
-                          >
-                            District
-                          </Text>
-                          <Text
-                            style={{
-                              fontWeight: "400",
-                              fontFamily: "Wix Madefor Text !important",
-                              fontSize: "14px",
-                              lineHeight: "24px",
-                              fontStyle: "normal",
-                              color: "#1A1A1A",
-                            }}
-                          >
-                            {camera.district}
-                          </Text>
-                        </Box>
+                    {!hasClickedCameraDidInfo && (
+                      <VStack spacing={6} py={4}>
+                        {isMobileDevice && (
+                          <Box w="full" p={4} bg="blue.50" borderRadius="xl" border="1px dashed" borderColor="blue.200">
+                            <VStack spacing={3}>
+                              <QRCodeScanner onScanSuccess={handleScanSuccess} />
+                              <Text fontSize="xs" color="blue.600" fontWeight="700">SCAN QR CODE</Text>
+                            </VStack>
+                          </Box>
+                        )}
 
-                        <Box>
-                          <Text
-                            style={{
-                              fontWeight: "bold",
-                              fontFamily: "Wix Madefor Text !important",
-                              fontSize: "14px",
-                              lineHeight: "24px",
-                              fontStyle: "normal",
-                              color: "#1A1A1A",
+                        <Box w="full">
+                          <Text className="custom-label">Input Device ID Manually</Text>
+                          <Autosuggest
+                            ref={autosuggestRef}
+                            suggestions={suggestions}
+                            onSuggestionsFetchRequested={({ value, reason }) => {
+                              if (reason === 'input-changed') {
+                                handleInputChange(null, { newValue: value, method: 'type' });
+                              }
                             }}
-                          >
-                            Assembly Name
-                          </Text>
-                          <Text
-                            style={{
-                              fontWeight: "400",
-                              fontFamily: "Wix Madefor Text !important",
-                              fontSize: "14px",
-                              lineHeight: "24px",
-                              fontStyle: "normal",
-                              color: "#1A1A1A",
+                            onSuggestionsClearRequested={() => setSuggestions([])}
+                            getSuggestionValue={getSuggestionValue}
+                            renderSuggestion={renderSuggestion}
+                            inputProps={{
+                              ...inputProps,
+                              className: 'custom-input'
                             }}
-                          >
-                            {camera.assemblyName}
-                          </Text>
-                        </Box>
-
-                        <Box>
-                          <Text
-                            style={{
-                              fontWeight: "bold",
-                              fontFamily: "Wix Madefor Text !important",
-                              fontSize: "14px",
-                              lineHeight: "24px",
-                              fontStyle: "normal",
-                              color: "#1A1A1A",
-                            }}
-                          >
-                            PS No.
-                          </Text>
-                          <Text
-                            style={{
-                              fontWeight: "400",
-                              fontFamily: "Wix Madefor Text !important",
-                              fontSize: "14px",
-                              lineHeight: "24px",
-                              fontStyle: "normal",
-                              color: "#1A1A1A",
-                            }}
-                          >
-                            {camera.psNo}
-                          </Text>
-                        </Box>
-
-                        <Box>
-                          <Text
-                            style={{
-                              fontWeight: "bold",
-                              fontFamily: "Wix Madefor Text !important",
-                              fontSize: "14px",
-                              lineHeight: "24px",
-                              fontStyle: "normal",
-                              color: "#1A1A1A",
-                            }}
-                          >
-                            Location
-                          </Text>
-                          <Text
-                            style={{
-                              fontWeight: "400",
-                              fontFamily: "Wix Madefor Text !important",
-                              fontSize: "14px",
-                              lineHeight: "24px",
-                              fontStyle: "normal",
-                              color: "#1A1A1A",
-                            }}
-                          >
-                            {camera.location}
-                          </Text>
-                        </Box>
-
-                        <Box>
-                          <Text
-                            style={{
-                              fontWeight: "bold",
-                              fontFamily: "Wix Madefor Text !important",
-                              fontSize: "14px",
-                              lineHeight: "24px",
-                              fontStyle: "normal",
-                              color: "#1A1A1A",
-                            }}
-                          >
-                            Last Live
-                          </Text>
-                          <Text
-                            style={{
-                              fontWeight: "400",
-                              fontFamily: "Wix Madefor Text !important",
-                              fontSize: "14px",
-                              lineHeight: "24px",
-                              fontStyle: "normal",
-                              color: "#1A1A1A",
-                            }}
-                          >
-                            {camera.lastSeen}
-                          </Text>
-                        </Box>
-                        <Box>
-                          <Text
-                            style={{
-                              fontWeight: "bold",
-                              fontFamily: "Wix Madefor Text !important",
-                              fontSize: "14px",
-                              lineHeight: "24px",
-                              fontStyle: "normal",
-                              color: "#1A1A1A",
-                            }}
-                          ></Text>
-                          <Text
-                            style={{
-                              fontWeight: "400",
-                              fontFamily: "Wix Madefor Text !important",
-                              fontSize: "14px",
-                              lineHeight: "24px",
-                              fontStyle: "normal",
-                              color: "#1A1A1A",
-                            }}
-                          >
-                            {camera.lastSeen}
-                          </Text>
-                        </Box>
-
-                        <Box>
-                          <Text
-                            style={{
-                              fontWeight: "bold",
-                              fontFamily: "Wix Madefor Text !important",
-                              fontSize: "14px",
-                              lineHeight: "24px",
-                              fontStyle: "normal",
-                              color: "#1A1A1A",
-                            }}
-                          >
-                            Video Feed
-                          </Text>
-                          <IconButton
-                            onClick={() => handleViewCamera(camera)}
-                            colorScheme="blue"
-                            size="sm"
-                            aria-label="View"
-                            icon={<MdVisibility />}
+                            onSuggestionSelected={handleSuggestionSelected}
                           />
                         </Box>
-                        <Box justifyContent="right" textAlign="right">
-                          {editableCameraID === camera.id ? (
-                            <Button
-                              onClick={() => handleUpdateClick(camera.deviceId)}
-                              colorScheme="green"
-                              size="sm"
-                            >
-                              Update
-                            </Button>
-                          ) : (
-                            <Button
-              onClick={() => openDeleteModal(camera.deviceId)} // Open modal with camera ID
-              colorScheme="red"
-              size="sm"
-            >
-              <img
-                src={Delete}
-                alt="Camera Icon"
-                width="20px"
-                height="20px"
-                style={{ objectFit: "contain" }}
-              />
-            </Button>
-                          )}
-                        </Box>
-                      </Grid>
-                    )}
-                  </Box>
-                ))}
 
-                 <Modal isOpen={isDeleteModalOpen} onClose={closeDeleteModal} isCentered>
-        <ModalOverlay />
-        <ModalContent
-          borderRadius="10px"
-          boxShadow="0 4px 12px rgba(0, 0, 0, 0.1)"
-          border="2px solid #ADD8E6"
-          maxWidth="400px"
-        >
-          <ModalHeader
-            textAlign="center"
-            fontSize="22px"
-            fontWeight="bold"
-            pb={2}
-          >
-            Are you sure you want to Delete?
-          </ModalHeader>
-          <ModalBody textAlign="center" pt={2}>
-            <Center>
-              <Image src={Trash} alt="Trash Icon" boxSize="50px" mb={4} />
+                        <Button
+                          className="btn-premium"
+                          w="full"
+                          height="56px"
+                          onClick={handleAddInputs}
+                          isLoading={isFetchingCameraDetails}
+                          loadingText="Validating Device..."
+                        >
+                          Initialize Device Connection
+                        </Button>
+                      </VStack>
+                    )}
+                  </VStack>
+                </div>
+
+                {hasClickedCameraDidInfo && (
+                  <VStack spacing={6} align="stretch" className="animate-fade-in">
+                    {/* Live Preview Section */}
+                    {flvUrl && (
+                      <div>
+                        <Heading size="sm" mb={4}>Live Installation Feed</Heading>
+                        <div className="video-wrapper">
+                          <ReactPlayer
+                            url={flvUrl}
+                            playing={true}
+                            controls={true}
+                            width="100%"
+                            height="100%"
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    <VStack spacing={{ base: 4, md: 8 }} align="stretch">
+                      {/* Technical Analysis */}
+                      <div className="glass-card" style={{ padding: 'clamp(1rem, 3vw, 2rem)' }}>
+                        <Heading size={{ base: "xs", md: "sm" }} mb={{ base: 4, md: 6 }} textAlign={{ base: "center", md: "left" }}>AI Technical Status Analysis</Heading>
+                        {isFetchingCameraDetails ? (
+                          <VStack py={{ base: 6, md: 10 }} spacing={4}>
+                            <div className="loading-spinner"></div>
+                            <Text fontWeight="600" color="blue.600" fontSize={{ base: "sm", md: "md" }}>Analyzing Stream Quality...</Text>
+                          </VStack>
+                        ) : cameraStatus ? (
+                          <VStack spacing={{ base: 3, md: 5 }} align="stretch">
+                            {/* Camera Angle */}
+                            <Box p={{ base: 3, md: 4 }} bg={cameraAngleAcceptable ? "green.50" : "red.50"} borderRadius="xl" border="2px solid" borderColor={cameraAngleAcceptable ? "green.200" : "red.200"}>
+                              <HStack justify="space-between" align="center">
+                                <VStack align="start" spacing={0}>
+                                  <Text fontSize="xs" color="gray.600" fontWeight="700" textTransform="uppercase">Camera Angle</Text>
+                                  <Text fontWeight="800" fontSize={{ base: "xl", md: "2xl" }} color={cameraAngleAcceptable ? "green.700" : "red.700"}>
+                                    {Math.abs(cameraStatus.camera_angle)}°
+                                  </Text>
+                                </VStack>
+                                <Box>
+                                  {cameraAngleAcceptable ? (
+                                    <Box w={{ base: "32px", md: "40px" }} h={{ base: "32px", md: "40px" }} borderRadius="full" bg="green.500" display="flex" alignItems="center" justifyContent="center">
+                                      <Text color="white" fontSize={{ base: "xl", md: "2xl" }}>✓</Text>
+                                    </Box>
+                                  ) : (
+                                    <Box w={{ base: "32px", md: "40px" }} h={{ base: "32px", md: "40px" }} borderRadius="full" bg="orange.500" display="flex" alignItems="center" justifyContent="center" className="blink-warning">
+                                      <FaExclamationTriangle color="white" size={16} />
+                                    </Box>
+                                  )}
+                                </Box>
+                              </HStack>
+                            </Box>
+                            
+                            {/* Other Parameters Grid */}
+                            <Grid templateColumns={{ base: "repeat(2, 1fr)", sm: "repeat(2, 1fr)" }} gap={{ base: 2, md: 4 }}>
+                              {/* Blur */}
+                              <Box p={{ base: 2, md: 4 }} bg="white" border="2px solid" borderColor="gray.100" borderRadius="lg" shadow="sm">
+                                <HStack justify="space-between" mb={1}>
+                                  <Text fontSize={{ base: "9px", md: "xs" }} color="gray.600" fontWeight="700" textTransform="uppercase">Blur</Text>
+                                  {!blurChecked ? (
+                                    <Box w={{ base: "18px", md: "24px" }} h={{ base: "18px", md: "24px" }} borderRadius="full" bg="green.500" display="flex" alignItems="center" justifyContent="center">
+                                      <Text color="white" fontSize={{ base: "xs", md: "sm" }}>✓</Text>
+                                    </Box>
+                                  ) : (
+                                    <Box w={{ base: "18px", md: "24px" }} h={{ base: "18px", md: "24px" }} borderRadius="full" bg="orange.500" display="flex" alignItems="center" justifyContent="center" className="blink-warning">
+                                      <FaExclamationTriangle color="white" size={10} />
+                                    </Box>
+                                  )}
+                                </HStack>
+                              </Box>
+
+                              {/* Blackview */}
+                              <Box p={{ base: 2, md: 4 }} bg="white" border="2px solid" borderColor="gray.100" borderRadius="lg" shadow="sm">
+                                <HStack justify="space-between" mb={1}>
+                                  <Text fontSize={{ base: "9px", md: "xs" }} color="gray.600" fontWeight="700" textTransform="uppercase">Blackview</Text>
+                                  {!blackviewChecked ? (
+                                    <Box w={{ base: "18px", md: "24px" }} h={{ base: "18px", md: "24px" }} borderRadius="full" bg="green.500" display="flex" alignItems="center" justifyContent="center">
+                                      <Text color="white" fontSize={{ base: "xs", md: "sm" }}>✓</Text>
+                                    </Box>
+                                  ) : (
+                                    <Box w={{ base: "18px", md: "24px" }} h={{ base: "18px", md: "24px" }} borderRadius="full" bg="orange.500" display="flex" alignItems="center" justifyContent="center" className="blink-warning">
+                                      <FaExclamationTriangle color="white" size={10} />
+                                    </Box>
+                                  )}
+                                </HStack>
+                              </Box>
+
+                              {/* Brightness */}
+                              <Box p={{ base: 2, md: 4 }} bg="white" border="2px solid" borderColor="gray.100" borderRadius="lg" shadow="sm">
+                                <HStack justify="space-between" mb={1}>
+                                  <Text fontSize={{ base: "9px", md: "xs" }} color="gray.600" fontWeight="700" textTransform="uppercase">Brightness</Text>
+                                  {brightnessChecked ? (
+                                    <Box w={{ base: "18px", md: "24px" }} h={{ base: "18px", md: "24px" }} borderRadius="full" bg="green.500" display="flex" alignItems="center" justifyContent="center">
+                                      <Text color="white" fontSize={{ base: "xs", md: "sm" }}>✓</Text>
+                                    </Box>
+                                  ) : (
+                                    <Box w={{ base: "18px", md: "24px" }} h={{ base: "18px", md: "24px" }} borderRadius="full" bg="orange.500" display="flex" alignItems="center" justifyContent="center" className="blink-warning">
+                                      <FaExclamationTriangle color="white" size={10} />
+                                    </Box>
+                                  )}
+                                </HStack>
+                              </Box>
+
+                              {/* BlackAndWhite */}
+                              <Box p={{ base: 2, md: 4 }} bg="white" border="2px solid" borderColor="gray.100" borderRadius="lg" shadow="sm">
+                                <HStack justify="space-between" mb={1}>
+                                  <Text fontSize={{ base: "9px", md: "xs" }} color="gray.600" fontWeight="700" textTransform="uppercase">B&W</Text>
+                                  {!blackAndWhiteChecked ? (
+                                    <Box w={{ base: "18px", md: "24px" }} h={{ base: "18px", md: "24px" }} borderRadius="full" bg="green.500" display="flex" alignItems="center" justifyContent="center">
+                                      <Text color="white" fontSize={{ base: "xs", md: "sm" }}>✓</Text>
+                                    </Box>
+                                  ) : (
+                                    <Box w={{ base: "18px", md: "24px" }} h={{ base: "18px", md: "24px" }} borderRadius="full" bg="orange.500" display="flex" alignItems="center" justifyContent="center" className="blink-warning">
+                                      <FaExclamationTriangle color="white" size={10} />
+                                    </Box>
+                                  )}
+                                </HStack>
+                              </Box>
+                            </Grid>
+                          </VStack>
+                        ) : (
+                          <VStack py={{ base: 6, md: 10 }} bg="orange.50" borderRadius="xl" border="1px dashed" borderColor="orange.200">
+                            <Text color="orange.800" fontWeight="800" fontSize={{ base: "sm", md: "md" }}>Connection Interrupted</Text>
+                            <Text fontSize="xs" color="orange.600" textAlign="center" px={4}>We couldn't retrieve AI analytics. Please check device status.</Text>
+                          </VStack>
+                        )}
+                      </div>
+
+                      {/* Location Data Form */}
+                      <div className="glass-card" style={{ padding: 'clamp(1rem, 3vw, 2rem)' }}>
+                        <Heading size={{ base: "xs", md: "sm" }} mb={{ base: 4, md: 6 }} textAlign={{ base: "center", md: "left" }}>Installation Site Details</Heading>
+                        <VStack spacing={{ base: 3, md: 5 }} align="stretch">
+                          <div className="form-group" style={{ marginBottom: '0' }}>
+                            <Text className="custom-label" fontSize={{ base: "10px", md: "xs" }}>State</Text>
+                            <Input className="custom-input" value={state} isReadOnly bg="gray.50" fontWeight="700" color="gray.600" size={{ base: "sm", md: "md" }} />
+                          </div>
+                          
+                          <Grid templateColumns={{ base: "1fr", md: "1fr 1fr" }} gap={{ base: 3, md: 5 }}>
+                            <div className="form-group" style={{ marginBottom: '0' }}>
+                              <Text className="custom-label" fontSize={{ base: "10px", md: "xs" }}>District Name</Text>
+                              <Input className="custom-input" value={district} onChange={(e) => setDistrict(e.target.value)} isReadOnly={!isEditing} size={{ base: "sm", md: "md" }} />
+                            </div>
+                            <div className="form-group" style={{ marginBottom: '0' }}>
+                              <Text className="custom-label" fontSize={{ base: "10px", md: "xs" }}>Assembly Name</Text>
+                              <Input className="custom-input" value={assemblyName} onChange={(e) => setAssemblyName(e.target.value)} isReadOnly={!isEditing} size={{ base: "sm", md: "md" }} />
+                            </div>
+                          </Grid>
+                          
+                          <Grid templateColumns={{ base: "1fr", md: "100px 1fr" }} gap={{ base: 3, md: 5 }}>
+                            <div className="form-group" style={{ marginBottom: '0' }}>
+                              <Text className="custom-label" fontSize={{ base: "10px", md: "xs" }}>PS No.</Text>
+                              <Input className="custom-input" value={psNumber} onChange={(e) => setPsNumber(e.target.value)} isReadOnly={!isEditing} textAlign="center" fontWeight="800" size={{ base: "sm", md: "md" }} />
+                            </div>
+                            <div className="form-group" style={{ marginBottom: '0' }}>
+                              <Text className="custom-label" fontSize={{ base: "10px", md: "xs" }}>Location Info</Text>
+                              <Input className="custom-input" value={excelLocation} onChange={(e) => setExcelLocation(e.target.value)} isReadOnly={!isEditing} placeholder="e.g., Room 102, 1st Floor" size={{ base: "sm", md: "md" }} />
+                            </div>
+                          </Grid>
+
+                          <Stack direction={{ base: "column", sm: "row" }} spacing={{ base: 3, md: 4 }} pt={{ base: 4, md: 6 }}>
+                            <Button
+                              className="btn-secondary"
+                              w="full"
+                              height={{ base: "44px", md: "52px" }}
+                              onClick={() => setIsEditing(!isEditing)}
+                              fontSize={{ base: "xs", md: "sm" }}
+                            >
+                              {isEditing ? "🔐 Lock Changes" : "✏️ Edit Site Data"}
+                            </Button>
+                            <Button
+                              className="btn-premium"
+                              w="full"
+                              height={{ base: "44px", md: "52px" }}
+                              onClick={handleSubmit}
+                              fontSize={{ base: "xs", md: "sm" }}
+                            >
+                              🚀 Finalize & Save
+                            </Button>
+                          </Stack>
+                        </VStack>
+                      </div>
+                    </VStack>
+                  </VStack>
+                )}
+              </Box>
+            )}
+          </>
+        )}
+      </Box>
+
+      {/* Shared Modals */}
+      <Modal isOpen={isDeleteModalOpen} onClose={closeDeleteModal} isCentered>
+        <ModalOverlay backdropFilter="blur(5px)" />
+        <ModalContent borderRadius="xl" overflow="hidden">
+          <ModalHeader textAlign="center" pt={8} color="red.700">Confirm Deletion</ModalHeader>
+          <ModalBody textAlign="center" py={6}>
+            <Center mb={6}>
+              <Box p={4} bg="red.50" borderRadius="full">
+                <Image src={Trash} alt="Delete" boxSize="64px" />
+              </Box>
             </Center>
-            <Text fontSize="14px" color="gray.600" mb={4}>
-              Deleting list will remove the information from our database.
+            <Text fontWeight="600" fontSize="lg">Are you absolutely sure?</Text>
+            <Text color="gray.500" mt={2}>
+              This will permanently remove the device <b>{cameraToDelete}</b> from the database.
             </Text>
           </ModalBody>
-          <ModalFooter justifyContent="space-around" p={6}>
-            <Button
-              onClick={handleDeleteClickConfirmed}
-              bg="#558BBA"
-              color="white"
-              borderRadius="8px"
-              px={6}
-              _hover={{ bg: "#427299" }}
-            >
-              Delete
-            </Button>
-            <Button
-              onClick={closeDeleteModal}
-              bg="white"
-              color="red"
-              borderRadius="8px"
-              px={6}
-              border="1px solid red"
-              _hover={{ bg: "gray.100" }}
-            >
-              Cancel
-            </Button>
+          <ModalFooter justifyContent="center" gap={4} pb={8}>
+            <Button className="btn-secondary" onClick={closeDeleteModal} px={8}>Stay Back</Button>
+            <Button colorScheme="red" onClick={handleDeleteClickConfirmed} px={8} boxShadow="lg">Confirm Delete</Button>
           </ModalFooter>
         </ModalContent>
       </Modal>
 
-              <h2
-                style={{
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  gap: "0.5rem",
-                  textAlign: "center",
-                }}
-              >
-                <img width="37px" height="37px" src={logo} alt="Camera Icon" />
-                {cameraa.length === 0
-                  ? "No device added"
-                  : "Your Installed Camera List"}
-              </h2>
-              <Modal isOpen={showModal} onClose={handleCloseModal}>
-                <ModalOverlay />
-                <ModalContent>
-                  <ModalCloseButton />
-                  <ModalBody>
-                    {selectedCamera && (
-                      <>
-                        <ModalHeader>{selectedCamera.deviceId}</ModalHeader>
-                        <ReactPlayer
-                          url={selectedCamera.flvUrl}
-                          playing={true}
-                          controls={true}
-                          position="fixed"
-                          width="355px"
-                          height="197px"
-                        />
-                        <Flex justifyContent="space-between" mt={4} mb={4}>
-                          <Button
-                            colorScheme="blue"
-                            mt={4}
-                            onClick={() =>
-                              handleGetData(selectedCamera.deviceId, "flip")
-                            }
-                          >
-                            Flip &nbsp;
-                            <LuFlipVertical2 />
-                          </Button>
-                          <Button
-                            colorScheme="blue"
-                            mt={4}
-                            onClick={() =>
-                              handleGetData(selectedCamera.deviceId, "mirror")
-                            }
-                          >
-                            Mirror &nbsp;
-                            <LuFlipHorizontal2 />
-                          </Button>
-                        </Flex>
-                      </>
-                    )}
-                  </ModalBody>
-                </ModalContent>
-              </Modal>
-            </>
-          ) : (
-            // Conditional Section: QR, Suggestion, and Camera DID Info
-            <>
-              {isMobileDevice && (
-                <>
-                  {" "}
-                  <div style={{ textDecoration: "underline" }}>
-                    <QRCodeScanner onScanSuccess={handleScanSuccess} />
-                  </div>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    OR
-                  </div>
-
-                <Box display="flex" justifyContent="flex-end" alignItems="center" ml="4px">
-      <Tooltip
-        label="List View"
-        placement="right"
-        hasArrow
-        bg="#1A1A1A"
-        color="white"
-        fontFamily="Wix Madefor Text, sans-serif !important"
-        fontSize="14px"
-        borderRadius="6px"
-        p="6px 10px"
-        openDelay={100}
-      >
-        <IconButton
-          icon={<FiList size={18} />}
-          aria-label="List View"
-          onClick={handleBackClick}
-          bg="#F4F4F5"
-          border="1px solid #DADADA"
-          boxShadow="0px 1px 4px rgba(0,0,0,0.1)"
-          borderRadius="8px"
-          height="36px"
-          width="4px"
-          color="#1A1A1A"
-          transition="all 0.25s ease"
-         
-        />
-      </Tooltip>
-    </Box>
-                </>
-              )}
-
-              <div
-                style={{
-                  display: "flex",
-                  flexWrap: "nowrap",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap:"10px"
-                }}
-              >
-                {/* <Text style={{ width: "120px" }}>DeviceID</Text> */}
-                {suggestions && suggestions.length >= 0 ? (
-                   <Autosuggest
-      ref={autosuggestRef}
-      suggestions={suggestions}
-      onSuggestionsFetchRequested={({ value, reason }) => {
-        if (reason === 'input-changed') {
-          handleInputChange(null, { newValue: value, method: 'type' });
-        }
-      }}
-      onSuggestionsClearRequested={() => setSuggestions([])}
-      getSuggestionValue={getSuggestionValue}
-      renderSuggestion={renderSuggestion}
-      inputProps={inputProps}
-      onSuggestionSelected={handleSuggestionSelected}
-    />
-                ) : (
-                  <div style={{ display: "flex", flexDirection: "column" }}>
-                    <Text>No Camera Found !</Text>
-                    <Button onClick={refresh}>Go Back</Button>
-                  </div>
-                )}
-              </div>
-
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "center",
-                }}
-              >
-                <Button
-                  display="flex"
-                  justifyContent="center"
-                  alignItems="center"
-                  borderRadius="8px"
-                  background="#3F77A5"
-                  width="200px"
-                  height="35px"
-                  marginBottom="5px"
-                  color="white"
-                  onClick={handleAddInputs}
-                >
-                  Camera DID Info
-                </Button>
-
-              </div>
-            </>
-          )}
-
-          {!showAdditionalInputs ? (
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                 marginBottom:"50px"
-              }}
-            >
-              <Button
-                display="flex"
-                justifyContent="center"
-                alignItems="center"
-                borderRadius="8px"
-                background="#3F77A5"
-                width="200px"
-                height="40px"
-                color="white"
-                marginTop="15px"
-               
-                onClick={handleAddNewDeviceClick}
-              >
-                Add New device
-              </Button>
-            </div>
-          ) : (
-            <>
-              {/* Conditional Section: Add New Device Section */}
-
-              {/* Video Player - Only show if we have a URL */}
-              {flvUrl && (
+      <Modal isOpen={showModal} onClose={handleCloseModal} size="xl" isCentered>
+        <ModalOverlay backdropFilter="blur(8px)" />
+        <ModalContent borderRadius="2xl" overflow="hidden" maxW="800px">
+          <ModalHeader bg="blue.900" color="white" display="flex" justify="space-between" align="center">
+            <Text>Live Feed: {selectedCamera?.deviceId}</Text>
+            <ModalCloseButton color="white" position="static" />
+          </ModalHeader>
+          <ModalBody p={0} bg="black">
+            {selectedCamera && (
+              <div style={{ aspectRatio: '16/9', width: '100%' }}>
                 <ReactPlayer
-                  url={flvUrl}
+                  url={selectedCamera.flvUrl}
                   playing={true}
                   controls={true}
                   width="100%"
-                  height="50%"
-                  style={{ marginBottom: "1rem" }}
+                  height="100%"
                 />
-              )}
-
-              {/* DIV 1: Camera Technical Parameters - Only show after Camera DID Info is clicked */}
-              {hasClickedCameraDidInfo && (
-                <Box mb={4}>
-                  {isFetchingCameraDetails ? (
-                    // Show loading state
-                    <Flex
-                      align="center"
-                      justifyContent="center"
-                      marginBottom="1.5rem"
-                      padding="0.5rem"
-                      border="1px solid #E2E8F0"
-                      borderRadius="md"
-                      bg="blue.50"
-                      color="blue.600"
-                    >
-                      <Text fontWeight="bold" marginRight="0.5rem">
-                        Fetching Camera Details...
-                      </Text>
-                      <Text>Please Wait...</Text>
-                    </Flex>
-                  ) : cameraStatus ? (
-                    // Show camera technical parameters when available
-                    <>
-                      <Flex
-                        direction="row"
-                        align="center"
-                        flexWrap="wrap"
-                        marginBottom="1.5rem"
-                        padding="0.5rem"
-                        border="1px solid #E2E8F0"
-                        borderRadius="md"
-                        bg="gray.50"
-                        width="342px"
-                        height="45px"
-                        flex-shrink="0"
-                      >
-                        <Text
-                          marginRight="0.5rem"
-                          fontFamily="Wix Madefor Text"
-                        >
-                          Camera Angle:
-                        </Text>
-                        <Text marginRight="1rem" fontFamily="Wix Madefor Text">
-                          {Math.abs(cameraStatus.camera_angle)}
-                        </Text>
-                      </Flex>
-
-                      {/* Camera Status Checkboxes */}
-                      <Flex
-                        wrap="wrap"
-                        gap="0.1rem"
-                        mt="1.5rem"
-                        mb="1.5rem"
-                        px="0.5rem"
-                      >
-                        {[
-                          {
-                            label: blurChecked ? "Blur" : "No Blur",
-                            checked: !blurChecked,
-                          },
-                          {
-                            label: blackviewChecked
-                              ? "Black View"
-                              : "No Black View",
-                            checked: !blackviewChecked,
-                          },
-                          { label: "Brightness", checked: brightnessChecked },
-                          {
-                            label: blackAndWhiteChecked
-                              ? "Black & White"
-                              : "No Black & White",
-                            checked: !blackAndWhiteChecked,
-                          },
-                          {
-                            label: cameraAngleAcceptable
-                              ? "Camera Angle OK"
-                              : "Camera Angle Issue",
-                            checked: cameraAngleAcceptable,
-                          },
-                        ].map(({ label, checked }, index) => (
-                          <Flex
-                            key={index}
-                            direction="column"
-                            align="center"
-                            gap="0.3rem"
-                            width="66px"
-                          >
-                            {checked ? (
-                              <Checkbox
-                                isChecked={checked}
-                                isReadOnly
-                                sx={{
-                                  ".chakra-checkbox__control": {
-                                    width: "18px",
-                                    height: "18px",
-                                    borderRadius: "50%",
-                                    border: "2px solid #7BC111",
-                                    backgroundColor: "white",
-                                    _checked: {
-                                      backgroundColor: "#7BC111",
-                                      color: "white",
-                                      borderColor: "#7BC111",
-                                    },
-                                  },
-                                  ".chakra-checkbox__icon": {
-                                    fontSize: "10px",
-                                  },
-                                }}
-                              />
-                            ) : (
-                              <BlinkingWarningIcon boxSize="18px" />
-                            )}
-                            <Text
-                              fontSize="10px"
-                              fontWeight="500"
-                              textAlign="center"
-                              lineHeight="1.2"
-                              whiteSpace="normal"
-                            >
-                              {label}
-                            </Text>
-                          </Flex>
-                        ))}
-                      </Flex>
-                    </>
-                  ) : (
-                    // Show not available state
-                    <Flex
-                      align="center"
-                      justifyContent="center"
-                      marginBottom="1.5rem"
-                      padding="0.5rem"
-                      border="1px solid #E2E8F0"
-                      borderRadius="md"
-                      bg="red.100"
-                      color="gray.600"
-                    >
-                     <Text color="red" fontWeight="bold">AI की स्थिति प्राप्त की जा रही है, कृपया आगे बढ़ने से पहले प्रतीक्षा करें . . . .</Text>
-                    </Flex>
-                  )}
-                </Box>
-              )}
-
-              {/* DIV 2: Camera Location Details - Only show after Camera DID Info is clicked */}
-             {hasClickedCameraDidInfo && (
-  <Box>
-   <h1
-  style={{
-    fontSize: "14px",
-    fontFamily: '"Wix Madefor Text", sans-serif',
-    fontWeight: 500,
-    fontStyle: "normal",
-    lineHeight: "20px",
-    display: "flex",
-    alignItems: "center",
-  }}
->
-  &nbsp;&nbsp;Camera Feed Status
-  <img
-    src={line}
-    alt="Line"
-    style={{
-      width: "200px",
-      height: "1px",
-      marginLeft: "10px",
-      verticalAlign: "middle",
-    }}
-  />
-</h1>
-
-    {/* Location Details Form */}
-<Box padding="10px">
-  {/* State */}
-  <Box marginBottom="0.75rem">
-    <Text
-      width="100%"
-      fontWeight="600"
-      fontFamily="'Wix Madefor Text', sans-serif"
-      fontSize="14px"
-      color="#1A1A1A"
-      marginBottom="4px"
-    >
-      &nbsp; State
-    </Text>
-    <Input
-      background="#FFF"
-      fontWeight="500"
-      fontFamily="'Wix Madefor Text', sans-serif"
-      fontSize="12px"
-      value={state}
-      onChange={(e) => setState(e.target.value.toUpperCase())}
-      placeholder="State"
-      isReadOnly={true}
-    />
-  </Box>
-
-  {/* District */}
-  <Box marginBottom="0.75rem">
-    <Text
-     width="100%"
-      fontWeight="600"
-      fontFamily="'Wix Madefor Text', sans-serif"
-      fontSize="14px"
-      color="#1A1A1A"
-      marginBottom="4px"
-    >
-      &nbsp; District
-    </Text>
-    <Input
-      background="#FFF"
-      fontWeight="500"
-      fontFamily="'Wix Madefor Text', sans-serif"
-      fontSize="12px"
-      value={district}
-      onChange={(e) => setDistrict(e.target.value)}
-      placeholder="District"
-      isReadOnly={!isEditing}
-    />
-  </Box>
-
-  {/* Assembly */}
-  <Box marginBottom="0.75rem">
-    <Text
-      width="100%"
-      fontWeight="600"
-      fontFamily="'Wix Madefor Text', sans-serif"
-      fontSize="14px"
-      color="#1A1A1A"
-      marginBottom="4px"
-    >
-      &nbsp; Assembly
-    </Text>
-    <Input
-      background="#FFF"
-      fontWeight="500"
-      fontFamily="'Wix Madefor Text', sans-serif"
-      fontSize="12px"
-      value={assemblyName}
-      onChange={(e) => setAssemblyName(e.target.value)}
-      placeholder="Assembly Name"
-      isReadOnly={!isEditing}
-    />
-  </Box>
-
-  {/* PsNo */}
-  <Box marginBottom="0.75rem">
-    <Text
-      width="100%"
-      fontWeight="600"
-      fontFamily="'Wix Madefor Text', sans-serif"
-      fontSize="14px"
-      color="#1A1A1A"
-      marginBottom="4px"
-    >
-      &nbsp; PsNo.
-    </Text>
-    <Input
-      background="#FFF"
-      fontWeight="500"
-      fontFamily="'Wix Madefor Text', sans-serif"
-      fontSize="12px"
-      value={psNumber}
-      onChange={(e) => setPsNumber(e.target.value)}
-      placeholder="PS Number"
-      isReadOnly={!isEditing}
-    />
-  </Box>
-
-  {/* Location */}
-  <Box marginBottom="0.75rem">
-    <Text
-     width="100%"
-      fontWeight="600"
-      fontFamily="'Wix Madefor Text', sans-serif"
-      fontSize="14px"
-      color="#1A1A1A"
-      marginBottom="4px"
-    >
-      &nbsp; Location
-    </Text>
-    <Input
-      background="#FFF"
-      fontWeight="500"
-      fontFamily="'Wix Madefor Text', sans-serif"
-      fontSize="12px"
-      value={excelLocation}
-      onChange={(e) => setExcelLocation(e.target.value)}
-      placeholder="Location"
-      isReadOnly={!isEditing}
-    />
-  </Box>
-</Box>
-
-
-    <Flex justifyContent="center" alignItems="center" gap="20px">
-        { !isEditing ? (
-          <Button
-            background="#3F77A5"
-            color="white"
-            onClick={() => setIsEditing(true)} // Set isEditing to true on "Edit"
-            width="120px"
-            height="40px"
-            borderRadius="8px"
-            marginRight="10px"
-             marginBottom="50px"
-          >
-            Edit
-          </Button>
-        ) : (
-          <Button
-            colorScheme="gray"
-            onClick={() => {
-              setIsEditing(false);
-            }}
-            width="120px"
-            height="40px"
-            borderRadius="8px"
-            marginBottom="50px"
-          >
-            Cancel
-          </Button>
-        )}
-
-      <Button
-        background="#3F77A5"
-        color="white"
-        onClick={handleSubmit} // Submit - isEdited is determined by the state
-        width="120px"
-        height="40px"
-        borderRadius="8px"
-         marginBottom="50px"
-      >
-        Submit
-      </Button>
-    </Flex>
-  </Box>
-)}
-            </>
-          )}
-        </>
-      ) : (
-        <Container
-          maxW="98vw"
-          height="82vh"
-          display="flex"
-          flexDirection="column"
-          justifyContent="center"
-          alignItems="center"
-          p={4}
-          px={{ base: "0", sm: "8" }}
-          style={{ margin: "0px" }}
-        >
-          <Text textAlign="center">
-            To access this app, please turn on your 'LOCATION'
-          </Text>
-        </Container>
-      )}
-    </Container>
+              </div>
+            )}
+          </ModalBody>
+          <ModalFooter bg="gray.50" justify="center" gap={6}>
+            <Button
+              className="btn-secondary"
+              leftIcon={<LuFlipVertical2 />}
+              onClick={() => handleGetData(selectedCamera.deviceId, "flip")}
+            >
+              Flip Vertically
+            </Button>
+            <Button
+              className="btn-secondary"
+              leftIcon={<LuFlipHorizontal2 />}
+              onClick={() => handleGetData(selectedCamera.deviceId, "mirror")}
+            >
+              Mirror Stream
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+    </div>
   );
 };
 

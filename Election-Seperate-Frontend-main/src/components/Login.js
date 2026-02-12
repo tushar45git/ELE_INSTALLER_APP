@@ -3,7 +3,6 @@ import {
   Box,
   Button,
   Container,
-  Divider,
   FormControl,
   FormLabel,
   Heading,
@@ -13,42 +12,68 @@ import {
   InputLeftAddon,
   Text,
   Stack,
-  useStyleConfig,
-  background,
+  VStack,
+  Image,
+  useToast,
+  Fade,
+  ScaleFade,
+  Divider,
 } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
 import { login, verifyOtp } from "../actions/userActions";
-import { toast, ToastContainer } from "react-toastify";
+import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import logo from './images/logo/Vmuktilogo.png';
 
 const Login = () => {
   const [name, setName] = useState("");
   const [mobile, setMobile] = useState("");
-  const [otp, setOtp] = useState(["", "", "", "", "", ""]); // Array to store individual OTP digits
+  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [otpSent, setOtpSent] = useState(false);
   const [mobileForOtp, setMobileForOtp] = useState("");
-
   const [resendDisabled, setResendDisabled] = useState(false);
-  const [resendTimer, setResendTimer] = useState(10);
+  const [resendTimer, setResendTimer] = useState(0);
+  const [locationEnabled, setLocationEnabled] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const inputRefs = useRef([]); // Ref to focus on next input
+  const inputRefs = useRef([]);
+  const navigate = useNavigate();
+  const toast = useToast();
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      if (resendTimer > 0) {
-        setResendTimer(resendTimer - 1);
-      } else {
-        setResendDisabled(false);
-      }
-    }, 1000);
-
+    let timer;
+    if (resendTimer > 0) {
+      timer = setTimeout(() => setResendTimer(resendTimer - 1), 1000);
+    } else {
+      setResendDisabled(false);
+    }
     return () => clearTimeout(timer);
   }, [resendTimer]);
 
-  const handleNameChange = (event) => {
-    setName(event.target.value);
-  };
+  useEffect(() => {
+    if ("geolocation" in navigator) {
+      setLocationEnabled(true);
+    } else {
+      toast({
+        title: "Location Error",
+        description: "Please enable location to use this application.",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
+    }
+
+    const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
+    const userRole = localStorage.getItem("role");
+
+    if (isLoggedIn) {
+      if (userRole === "district") {
+        navigate("/head");
+      } else {
+        navigate("/autoinstaller");
+      }
+    }
+  }, []);
 
   const handleMobileChange = (e) => {
     const value = e.target.value;
@@ -57,35 +82,75 @@ const Login = () => {
     }
   };
 
-  const navigate = useNavigate();
-
   const handleSendOtp = async () => {
+    if (!name || mobile.length < 10) {
+      toast({
+        title: "Invalid Input",
+        description: "Please enter your name and a valid 10-digit mobile number.",
+        status: "warning",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+
+    setIsLoading(true);
     try {
       setMobileForOtp(mobile);
       const response = await login(name, mobile);
-      console.log("response", response);
-      setOtpSent(true);
-      setResendDisabled(true);
-      setResendTimer(30);
+      if (response && response.success !== false) {
+        setOtpSent(true);
+        setResendDisabled(true);
+        setResendTimer(30);
+        toast({
+          title: "OTP Sent",
+          description: "An OTP has been sent to your mobile number.",
+          status: "success",
+          duration: 3000,
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: response.message || "Failed to send OTP.",
+          status: "error",
+          duration: 3000,
+        });
+      }
     } catch (error) {
       console.error(error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleSignIn = async () => {
-    try {
-      console.log("Signing in with OTP:", otp, "for mobile:", mobileForOtp);
-      const otpString = otp.join(""); // Convert OTP array to a string
-      const response = await verifyOtp(mobile, otpString);
+    const otpString = otp.join("");
+    if (otpString.length < 6) {
+      toast({
+        title: "Incomplete OTP",
+        description: "Please enter the full 6-digit OTP.",
+        status: "warning",
+        duration: 3000,
+      });
+      return;
+    }
 
+    setIsLoading(true);
+    try {
+      const response = await verifyOtp(mobile, otpString);
       if (response && response.success) {
         localStorage.setItem("name", name);
         localStorage.setItem("mobile", mobile);
         localStorage.setItem("isLoggedIn", "true");
         localStorage.setItem("token", response.token);
         localStorage.setItem("role", response.role);
-        console.log("response", response);
-        setMobileForOtp("");
+
+        toast({
+          title: "Success",
+          description: "Login successful!",
+          status: "success",
+          duration: 2000,
+        });
 
         if (response.role === "district") {
           navigate("/head");
@@ -97,439 +162,246 @@ const Login = () => {
           navigate("/autoinstaller");
         }
       } else {
-        console.error("Failed to sign in:", response.message);
-        toast.error("Invalid OTP / Mobile No.", {
-          position: "top-right",
-          autoClose: 5000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
+        toast({
+          title: "Login Failed",
+          description: "Invalid OTP or Mobile Number.",
+          status: "error",
+          duration: 5000,
         });
       }
     } catch (error) {
       console.error(error);
+    } finally {
+      setIsLoading(false);
     }
-  };
-
-  const [locationEnabled, setLocationEnabled] = useState(false);
-
-  useEffect(() => {
-    if ("geolocation" in navigator) {
-      setLocationEnabled(true);
-    }
-
-    const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
-    const userRole = localStorage.getItem("role");
-
-    console.log(isLoggedIn, userRole);
-
-    if (isLoggedIn) {
-      if (userRole === "district") {
-        navigate("/head");
-      } else {
-        navigate("/autoinstaller");
-      }
-    }
-  }, []);
-
-  const handleClearInputs = () => {
-    setName("");
-    setMobile("");
-    setOtpSent(false);
-    setOtp(["", "", "", "", "", ""]); // Clear the OTP array
   };
 
   const handleOtpChange = (index, value) => {
-    // Allow only numbers
     if (/^\d*$/.test(value) && value.length <= 1) {
       const newOtp = [...otp];
       newOtp[index] = value;
       setOtp(newOtp);
-
-      // Auto-focus on the next input if a digit is entered
-      if (value && index < 5 && inputRefs.current[index + 1]) {
+      if (value && index < 5) {
         inputRefs.current[index + 1].focus();
       }
     }
   };
 
   const handleKeyDown = (index, e) => {
-    if (
-      e.key === "Backspace" &&
-      !otp[index] &&
-      index > 0 &&
-      inputRefs.current[index - 1]
-    ) {
+    if (e.key === "Backspace" && !otp[index] && index > 0) {
       inputRefs.current[index - 1].focus();
     }
   };
 
-  // Base styles for buttons (shared properties)
-  const buttonBaseStyles = {
-    width: "370px",
-    height: "40px",
-    right: "68px",
-    top: "100px",
-
-    flexShrink: 0,
-    borderRadius: "8px",
-    fontFamily: "Inter",
-    fontSize: "14px",
-    fontStyle: "normal",
-    fontWeight: "700",
-    lineHeight: "24px",
-    textAlign: "center",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    border: "none",
-    cursor: "pointer",
-    transition: "background-color 0.2s ease",
-    color: "white",
-  };
-
-  const otpInputStyles = {
-    width: "45.22px",
-    height: "41.22px",
-    flexShrink: 0,
-    borderRadius: "4px",
-    background: "#F4F4F5",
-    textAlign: "center",
-    fontFamily: "Wix Madefor Display",
-    fontSize: "25px",
-    fontStyle: "normal",
-    fontWeight: "700",
-    lineHeight: "20px",
-    color: "#3F77A5",
-    margin: "0.10rem", //Added small margin for spacing
-  };
-
-  return (<div style={{
-      position: "fixed",
-      width: "100%",
-      height: "100%",
-      left: 0,
-      top: 0,
-      background: "#F4F4F5",
-      zIndex: 10,
-    }}>
-    <Container
-      maxW="lg"
-      py={{ base: "12", md: "24" }}
-      px={{ base: "0", sm: "8" }}
-      
-      
+  return (
+    <Box
+      minH="100vh"
+      display="flex"
+      alignItems="center"
+      justifyContent="center"
+      bgGradient="linear(to-br, #f0f4f8, #d9e2ec)"
+      position="relative"
+      overflow="hidden"
+      p={4}
     >
-      <ToastContainer />
-      <Stack spacing="8">
-        <Stack spacing="6">
-          <Stack spacing={{ base: "2", md: "3" }} textAlign="center">
-             <Heading  display='flex' justifyContent='center' alignItems='center'><img width="157px"
-            height= "40px" src={logo} />&nbsp;</Heading>
+      {/* Decorative Elements */}
+      <Box
+        position="absolute"
+        top="-10%"
+        right="-10%"
+        w="400px"
+        h="400px"
+        bg="blue.100"
+        filter="blur(100px)"
+        borderRadius="full"
+        opacity="0.6"
+      />
+      <Box
+        position="absolute"
+        bottom="-10%"
+        left="-10%"
+        w="400px"
+        h="400px"
+        bg="blue.200"
+        filter="blur(100px)"
+        borderRadius="full"
+        opacity="0.6"
+      />
 
-         {!otpSent && (
-  <>
-    <Heading
-      as="h2"
-      style={{
-        color: "#1A1A1A !important",
-        textAlign: "center !important",
-        fontFamily: "Inter !important",
-        fontSize: "20px",
-        fontStyle: "normal !important",
-        fontWeight: "700",
-        lineHeight: "normal",
-        letterSpacing: "-0.4px !important",
-        marginTop:"15px"
-      }}
-    >
-      Login into your account
-    </Heading>
+      <Container maxW={{ base: "95%", sm: "450px" }} zIndex={1} px={0}>
+        <ScaleFade initialScale={0.9} in={true}>
+          <VStack
+            spacing={{ base: 6, md: 8 }}
+            bg="rgba(255, 255, 255, 0.85)"
+            backdropFilter="blur(20px)"
+            p={{ base: 6, sm: 8, md: 10 }}
+            borderRadius={{ base: "2xl", md: "3xl" }}
+            boxShadow="2xl"
+            border="1px solid rgba(255, 255, 255, 0.4)"
+            textAlign="center"
+            w="full"
+          >
+            <VStack spacing={3}>
+              <Image src={logo} h={{ base: "40px", md: "50px" }} mb={2} alt="VMukti Logo" />
+              <Heading as="h1" size={{ base: "md", md: "lg" }} color="gray.800" fontWeight="800" letterSpacing="-0.5px">
+                Election Installer Portal
+              </Heading>
+              <Text color="gray.600" fontSize={{ base: "sm", md: "md" }}>
+                Securely access your account to proceed
+              </Text>
+            </VStack>
 
-    <Text
-      style={{
-        width: "252px !important",
-        color: "#1A1A1A !important",
-        textAlign: "center !important",
-        fontFamily: "'Wix Madefor Text' !important",
-        fontSize: "14px",
-        fontStyle: "normal !important",
-        fontWeight: "400 !important",
-        lineHeight: "normal !important",
-      }}
-    >
-      Please enter your details
-    </Text>
-  </>
-)}
+            {!otpSent ? (
+              <VStack spacing={5} w="full">
+                <FormControl isRequired>
+                  <FormLabel fontWeight="700" color="gray.700" fontSize="sm">Full Name</FormLabel>
+                  <Input
+                    placeholder="Enter your name"
+                    bg="white"
+                    size="lg"
+                    borderRadius="xl"
+                    boxShadow="sm"
+                    _focus={{ borderColor: "blue.400", boxShadow: "0 0 0 1px #3182ce" }}
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                  />
+                </FormControl>
 
+                <FormControl isRequired>
+                  <FormLabel fontWeight="700" color="gray.700" fontSize="sm">Mobile Number</FormLabel>
+                  <InputGroup size="lg">
+                    <InputLeftAddon borderLeftRadius="xl" bg="gray.100" color="gray.600" fontWeight="600">
+                      +91
+                    </InputLeftAddon>
+                    <Input
+                      type="tel"
+                      placeholder="Enter mobile number"
+                      bg="white"
+                      borderRightRadius="xl"
+                      boxShadow="sm"
+                      _focus={{ borderColor: "blue.400", boxShadow: "0 0 0 1px #3182ce" }}
+                      value={mobile}
+                      onChange={handleMobileChange}
+                    />
+                  </InputGroup>
+                </FormControl>
 
+                <Button
+                  w="full"
+                  colorScheme="blue"
+                  size="lg"
+                  height={{ base: "50px", md: "56px" }}
+                  borderRadius="xl"
+                  fontSize="md"
+                  fontWeight="bold"
+                  boxShadow="lg"
+                  _hover={{ transform: "translateY(-2px)", boxShadow: "xl" }}
+                  _active={{ transform: "translateY(0)" }}
+                  onClick={handleSendOtp}
+                  isLoading={isLoading}
+                  isDisabled={!locationEnabled}
+                >
+                  Get Verification Code
+                </Button>
+                
+                {!locationEnabled && (
+                  <Text color="red.500" fontSize="xs" fontWeight="600">
+                    * Please enable location to continue
+                  </Text>
+                )}
+              </VStack>
+            ) : (
+              <Fade in={otpSent} style={{ width: '100%' }}>
+                <VStack spacing={6} w="full">
+                  <VStack spacing={1}>
+                    <Text fontWeight="800" fontSize={{ base: "lg", md: "xl" }} color="gray.800">Verify Identity</Text>
+                    <Text color="gray.600" fontSize="sm">
+                      Enter the 6-digit code sent to
+                    </Text>
+                    <Text fontWeight="800" color="blue.600">+91 - {mobile}</Text>
+                  </VStack>
 
-          </Stack>
-        </Stack>
-        
-        <Box
-          py={{ base: "0", sm: "8" }}
-          px={{ base: "4", sm: "10" }}
-          // bg={{ base: 'transparent', sm: 'bg.surface' }}
-          //boxShadow={{ base: 'none', sm: 'md' }}
-          borderRadius={{ base: "none", sm: "xl" }}
-        >
-          <Stack spacing="5">
-           {!otpSent && (
-             <>
-            <FormControl>
-              <FormLabel htmlFor="name">Name</FormLabel>
-              <Input
-                id="name"
-                type="text"
-                placeholder="Enter your full name"
-                bg="white"
-                value={name}
-                onChange={handleNameChange}
-               
-              />
-            </FormControl>
-            <FormControl >
-              <FormLabel htmlFor="mobile">Mobile Number</FormLabel>
-              <InputGroup height="44px" >
-                <InputLeftAddon children="+91" />
-                <Input
-                  id="mobile"
-                  type="tel"
-                  placeholder="Enter your mobile number"
-                  bg="white"
-                  value={mobile}
-                  onChange={handleMobileChange}
+                  <HStack spacing={{ base: 1, sm: 2 }} justify="center" w="full">
+                    {otp.map((digit, index) => (
+                      <Input
+                        key={index}
+                        ref={(el) => (inputRefs.current[index] = el)}
+                        w={{ base: "40px", sm: "45px", md: "50px" }}
+                        h={{ base: "50px", sm: "56px" }}
+                        textAlign="center"
+                        fontSize={{ base: "xl", md: "2xl" }}
+                        fontWeight="800"
+                        bg="white"
+                        borderRadius="lg"
+                        border="2px solid"
+                        borderColor="gray.200"
+                        _focus={{ borderColor: "blue.400", bg: "blue.50", boxShadow: "none" }}
+                        value={digit}
+                        onChange={(e) => handleOtpChange(index, e.target.value)}
+                        onKeyDown={(e) => handleKeyDown(index, e)}
+                        maxLength={1}
+                        type="tel"
+                        p={0}
+                      />
+                    ))}
+                  </HStack>
+
+                  <Button
+                    w="full"
+                    colorScheme="blue"
+                    size="lg"
+                    height={{ base: "50px", md: "56px" }}
+                    borderRadius="xl"
+                    fontSize="md"
+                    fontWeight="bold"
+                    boxShadow="lg"
+                    _hover={{ transform: "translateY(-2px)", boxShadow: "xl" }}
+                    _active={{ transform: "translateY(0)" }}
+                    onClick={handleSignIn}
+                    isLoading={isLoading}
+                  >
+                    Verify & Sign In
+                  </Button>
+
+                  <HStack justify="center" pt={2} flexWrap="wrap">
+                    <Text fontSize="sm" color="gray.600">Didn't receive the code?</Text>
+                    <Button
+                      variant="link"
+                      colorScheme="blue"
+                      fontSize="sm"
+                      isDisabled={resendDisabled}
+                      onClick={handleSendOtp}
+                      fontWeight="700"
+                    >
+                      {resendDisabled ? `Resend in ${resendTimer}s` : "Resend Now"}
+                    </Button>
+                  </HStack>
                   
-                />
-              </InputGroup>
-            </FormControl>
-           </>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    color="gray.500"
+                    onClick={() => setOtpSent(false)}
+                    _hover={{ bg: "transparent", color: "blue.500" }}
+                  >
+                    Back to Login
+                  </Button>
+                </VStack>
+              </Fade>
             )}
 
-           
-
-            {otpSent && (
-              <FormControl >
-               <FormLabel
-  htmlFor="otp"
-  style={{
-    color: "#1A1A1A",
-    textAlign: "center",
-    fontFamily: "Wix Madefor Text !important",
-    fontSize: "20px",
-    fontStyle: "normal !important",
-    fontWeight: "700",
-    lineHeight: "normal",
-    letterSpacing: "-0.4px",
-    marginBottom: "12px", // bottom spacing
-  }}
->
-  OTP verification
-</FormLabel>
-
-<p
-  style={{
-    color: "#1A1A1A",
-    textAlign: "center",
-    fontFamily: "Wix Madefor Text !important",
-    fontSize: "14px",
-    fontStyle: "normal",
-    fontWeight: "400",
-    lineHeight: "normal",
-     // bottom spacing
-  }}
->
-  Enter 6 digit OTP shared on your 
-</p>
-<p 
-style={{
-    color: "#1A1A1A",
-    textAlign: "center",
-    fontFamily: "Wix Madefor Text !important",
-    fontSize: "14px",
-    fontStyle: "normal",
-    fontWeight: "700",
-    lineHeight: "normal",
-    marginBottom: "20px", // bottom spacing
-  }}>+91-{mobile}</p>
-
-
-               <HStack justify="center" spacing={3}>
-  {otp.map((digit, index) => (
-    <Input
-      key={index}
-      backgroundColor="white"
-      type="text"
-      maxLength={1}
-      value={digit}
-      placeholder="-" // <-- shows dash when input is empty
-      onChange={(e) => handleOtpChange(index, e.target.value)}
-      onKeyDown={(e) => handleKeyDown(index, e)}
-      sx={{
-        ...otpInputStyles,
-        textAlign: "center", // center the digit/dash
-        fontWeight: "normal",  // make it more visible
-        letterSpacing: "0.1em" // optional: spacing for better look
-      }}
-      ref={(el) => (inputRefs.current[index] = el)}
-       style={{
-        ...otpInputStyles,
-        width: "48px",              // wider for better visibility
-        height: "48px",             // enough height to center text
-        textAlign: "center",        // center digit/dash
-        fontSize: "24px",           // large and readable
-        fontWeight: "500",
-        borderRadius: "10px",
-        border: "1px solid #ccc",
-        color: "#1A1A1A",
-        _placeholder: {
-          color: "#A0A0A0",
-          fontSize: "22px",
-          fontWeight: "400",
-        },
-        _focus: {
-          borderColor: "#3182CE",
-          boxShadow: "0 0 0 1px #3182CE",
-        },
-      }}
-    />
-  ))}
-</HStack>
-
-
-              </FormControl>
-            )}
-          </Stack>
-         
-        </Box>
-        
-      </Stack>
-      
-    </Container>
-    
- {!otpSent && locationEnabled && (
-  
-    <Button
-      onClick={handleSendOtp}
-      sx={{
-         position: "fixed",
-      bottom: "40", // Adjusted so it's inside the black bar
-      left: "50%",
-      transform: "translateX(-50%)",
-      width: "325px",
-      height: "44px",
-      flexShrink: 0,
-      borderRadius: "8px",
-     fontFamily: "Inter, sans-serif !important",
-      fontSize: "14px",
-      fontStyle: "normal",
-      fontWeight: "700",
-      lineHeight: "24px",
-      textAlign: "center",
-      display: "flex",
-      justifyContent: "center",
-      alignItems: "center",
-      border: "none",
-      cursor: "pointer",
-      transition: "background-color 0.2s ease",
-      color: "white",
-      background: "#3F77A5",
-      zIndex: 10,
-      _hover: {
-        background: "#305e82",
-      },
-      }}
-    >
-      Send OTP
-    </Button>
-  
-)}
-
-
-
-  {!locationEnabled && (
-    <Text color="red.500">Please enable location to proceed.</Text>
-  )}
-
-  {otpSent && locationEnabled && (
-    <>
-   
-
-  <Button
-    onClick={handleSignIn}
-    sx={{
-      position: "fixed",
-      bottom: "40", // Adjusted so it's inside the black bar
-      left: "50%",
-      transform: "translateX(-50%)",
-      width: "325px",
-      height: "44px",
-      flexShrink: 0,
-      borderRadius: "8px",
-     fontFamily: "Inter, sans-serif !important",
-      fontSize: "14px",
-      fontStyle: "normal",
-      fontWeight: "700",
-      lineHeight: "24px",
-      textAlign: "center",
-      display: "flex",
-      justifyContent: "center",
-      alignItems: "center",
-      border: "none",
-      cursor: "pointer",
-      transition: "background-color 0.2s ease",
-      color: "white",
-      background: "#3F77A5",
-      zIndex: 10,
-      _hover: {
-        background: "#305e82",
-      },
-    }}
-  >
-    Sign In
-  </Button>
-
-
-
-     <Box
-  width="100%"
-  display="flex"
-  justifyContent="center"  // ✅ fix spelling
-  alignItems="center"       // ✅ vertical center if needed
-  textAlign="center"
-  mb={2}
-  pr={2}
-  position="relative"
-  top="-10px"
->
-  {resendDisabled ? (
-    <Text textAlign="center" fontSize="sm" color="red.500">
-      Resend OTP ({resendTimer})
-    </Text>
-  ) : (
-    <Text
-      textAlign="center"
-      fontSize="sm"
-      color="blue.500"
-      cursor="pointer"
-      onClick={handleSendOtp}
-      opacity={resendDisabled ? 0.5 : 1}
-      _hover={{ textDecoration: "underline" }}
-    >
-      Resend OTP
-    </Text>
-  )}
-</Box>
-
-
-    </>
-  )}
- </div>
+            <VStack spacing={3} pt={4} w="full">
+              <Divider borderColor="gray.300" />
+              <Text fontSize="xs" color="gray.400" fontWeight="600">
+                &copy; {new Date().getFullYear()} VMukti Solutions. All rights reserved.
+              </Text>
+            </VStack>
+          </VStack>
+        </ScaleFade>
+      </Container>
+      <ToastContainer position="top-right" />
+    </Box>
   );
-  
 };
 
 export default Login;
