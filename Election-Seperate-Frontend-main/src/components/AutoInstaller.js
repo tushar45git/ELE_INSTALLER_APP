@@ -10,6 +10,7 @@ import * as XLSX from "xlsx";
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import "./auto-installer.css";
 import {
+  Badge,
   Button,
   Container,
   Flex,
@@ -46,6 +47,7 @@ import {
   HStack,
   VStack,
   InputGroup,
+  InputLeftElement,
   InputRightElement,
   List,
   ListItem,
@@ -999,89 +1001,32 @@ const downloadReport = async () => {
 
             {!showAdditionalInputs ? (
               /* List View */
-              <div className="glass-card">
-                <Flex justify="space-between" align="center" mb={6} flexWrap="wrap" gap={4}>
-                  <VStack align="flex-start" spacing={1}>
-                    <Heading size="md" color="blue.900">
-                      Your Installations
-                    </Heading>
-                    <Text fontSize="sm" color="gray.600">
-                      {searchDeviceId ? (
-                        <>
-                          Showing <Text as="span" fontWeight="700" color="blue.600">{totalFilteredCameras}</Text> of {cameraa.length} cameras
-                        </>
-                      ) : (
-                        <>{cameraa.length} total cameras</>
-                      )}
-                    </Text>
-                  </VStack>
-                  <HStack 
-                    spacing={{ base: 4, md: 5 }} 
-                    align="center"
-                  >
-{/* <Text className="custom-label" m="0" whiteSpace="nowrap">Sort by PS No:</Text>
-                    
-                    <Box
-                      as="button"
-                      onClick={handleSort}
-                      p={2}
-                      borderRadius="full"
-                      cursor="pointer"
-                      bg="transparent"
-                      transition="all 0.2s"
-                      _hover={{ 
-                        bg: "gray.100", 
-                        transform: "scale(1.1)" 
-                      }}
-                      _active={{ transform: "scale(0.95)" }}
-                      display="flex"
-                      alignItems="center"
-                      justifyContent="center"
-                    >
-                      <Image
-                        src={sortIcon}
-                        alt="Sort"
-                        boxSize="24px"
+              <>
+                {/* Search Section - Professional & Minimalist */}
+                <Box className="search-section" mb={8}>
+                  <Box position="relative">
+                    <InputGroup size="lg">
+                      <InputLeftElement pointerEvents="none" height="100%" pl={2}>
+                        <FaSearch color="var(--gray-400)" />
+                      </InputLeftElement>
+                      <Input
+                        className="custom-input"
+                        value={searchDeviceId}
+                        onChange={handleSearchChange}
+                        onFocus={() => searchDeviceId && setShowSuggestions(searchSuggestions.length > 0)}
+                        onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                        placeholder="Filter by Device ID..."
+                        pl="3rem"
+                        pr="3rem"
+                        fontSize="md"
+                        _placeholder={{ color: "gray.400" }}
                       />
-                    </Box> */}
-
-                    <IconButton
-                      size="sm"
-                      icon={<IoIosRefresh size="20px" />}
-                      onClick={refresh}
-                      aria-label="Refresh list"
-                      className="btn-secondary"
-                      isRound
-                      bg="white"
-                      transition="all 0.4s ease"
-                      _hover={{ 
-                        transform: "rotate(180deg)",
-                        bg: "gray.100",
-                        boxShadow: "md"
-                       }}
-                    />
-                  </HStack>
-                </Flex>
-
-                {/* Enhanced Search with Autocomplete */}
-                <Box position="relative" mb={6}>
-                  <InputGroup size="lg">
-                    <Input
-                      className="custom-input"
-                      value={searchDeviceId}
-                      onChange={handleSearchChange}
-                      onFocus={() => searchDeviceId && setShowSuggestions(searchSuggestions.length > 0)}
-                      onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-                      placeholder="Search by Device ID..."
-                      pr="4.5rem"
-                      fontSize="md"
-                      _placeholder={{ color: "gray.400" }}
-                    />
-                    <InputRightElement width="4.5rem" height="100%">
-                      {searchDeviceId ? (
-                        <HStack spacing={0}>
+                      <InputRightElement height="100%" pr={1}>
+                        {searchDeviceId && (
                           <IconButton
                             h="2rem"
+                            w="2rem"
+                            minW="2rem"
                             size="sm"
                             icon={<Text fontSize="lg">×</Text>}
                             onClick={() => {
@@ -1092,80 +1037,96 @@ const downloadReport = async () => {
                             }}
                             aria-label="Clear search"
                             variant="ghost"
+                            color="gray.400"
                             _hover={{ bg: "red.50", color: "red.600" }}
                           />
-                          <IconButton
-                            h="2rem"
-                            size="sm"
-                            icon={<FaSearch />}
-                            onClick={handleSearchClick}
-                            aria-label="Search"
-                            colorScheme="blue"
-                            variant="ghost"
-                            _hover={{ bg: "blue.50" }}
-                          />
-                        </HStack>
-                      ) : (
-                        <IconButton
-                          h="2.5rem"
-                          size="md"
-                          icon={<FaSearch />}
-                          onClick={handleSearchClick}
-                          aria-label="Search"
-                          colorScheme="blue"
-                          variant="ghost"
-                          _hover={{ bg: "blue.50" }}
-                        />
-                      )}
-                    </InputRightElement>
-                  </InputGroup>
-                  
-                  {/* Autocomplete Suggestions Dropdown */}
-                  {showSuggestions && searchSuggestions.length > 0 && (
-                    <Box
-                      position="absolute"
-                      top="100%"
-                      left={0}
-                      right={0}
-                      zIndex={10}
-                      mt={2}
-                      bg="white"
-                      borderRadius="lg"
-                      boxShadow="xl"
-                      border="1px solid"
-                      borderColor="gray.200"
-                      maxH="300px"
-                      overflowY="auto"
-                    >
-                      <List spacing={0}>
-                        {searchSuggestions.map((suggestion, index) => (
-                          <ListItem
-                            key={index}
-                            px={4}
-                            py={3}
-                            cursor="pointer"
-                            transition="all 0.2s"
-                            borderBottom={index < searchSuggestions.length - 1 ? "1px solid" : "none"}
-                            borderColor="gray.100"
-                            _hover={{
-                              bg: "blue.50",
-                              color: "blue.700",
-                            }}
-                            onClick={() => handleSuggestionClick(suggestion)}
-                            display="flex"
-                            alignItems="center"
-                            gap={2}
-                          >
-                            <FaSearch size={14} color="gray" />
-                            <Text fontWeight="500" fontSize="sm">
-                              {suggestion}
-                            </Text>
-                          </ListItem>
-                        ))}
-                      </List>
-                    </Box>
-                  )}
+                        )}
+                      </InputRightElement>
+                    </InputGroup>
+                    
+                    {/* Autocomplete Suggestions Dropdown */}
+                    {showSuggestions && searchSuggestions.length > 0 && (
+                      <Box
+                        position="absolute"
+                        top="100%"
+                        left={0}
+                        right={0}
+                        zIndex={10}
+                        mt={2}
+                        bg="white"
+                        borderRadius="lg"
+                        boxShadow="xl"
+                        border="1px solid"
+                        borderColor="gray.200"
+                        maxH="300px"
+                        overflowY="auto"
+                      >
+                        <List spacing={0}>
+                          {searchSuggestions.map((suggestion, index) => (
+                            <ListItem
+                              key={index}
+                              px={4}
+                              py={3}
+                              cursor="pointer"
+                              transition="all 0.2s"
+                              borderBottom={index < searchSuggestions.length - 1 ? "1px solid" : "none"}
+                              borderColor="gray.100"
+                              _hover={{
+                                bg: "blue.50",
+                                color: "blue.700",
+                              }}
+                              onClick={() => handleSuggestionClick(suggestion)}
+                              display="flex"
+                              alignItems="center"
+                              gap={2}
+                            >
+                              <FaSearch size={14} color="gray" />
+                              <Text fontWeight="500" fontSize="sm">
+                                {suggestion}
+                              </Text>
+                            </ListItem>
+                          ))}
+                        </List>
+                      </Box>
+                    )}
+                  </Box>
                 </Box>
+
+                {/* Device List Section */}
+                <div className="glass-card list-section">
+                  <Flex justify="space-between" align="center" mb={6} flexWrap="wrap" gap={4}>
+                    <VStack align="flex-start" spacing={1}>
+                      <Heading size="md" color="blue.900">
+                        Installation Directory
+                      </Heading>
+                      <Text fontSize="sm" color="gray.600">
+                        {searchDeviceId ? (
+                          <>
+                            Found <Text as="span" fontWeight="700" color="blue.600">{totalFilteredCameras}</Text> matching cameras
+                          </>
+                        ) : (
+                          <>{cameraa.length} total active devices</>
+                        )}
+                      </Text>
+                    </VStack>
+                    <HStack spacing={3} align="center">
+                      <IconButton
+                        size="sm"
+                        icon={<IoIosRefresh size="20px" />}
+                        onClick={refresh}
+                        aria-label="Refresh list"
+                        className="btn-secondary"
+                        isRound
+                        bg="white"
+                        transition="all 0.4s ease"
+                        _hover={{ 
+                          transform: "rotate(180deg)",
+                          bg: "gray.100",
+                          boxShadow: "md"
+                        }}
+                      />
+                    </HStack>
+                  </Flex>
 
                 <Box display={{ base: "none", md: "block" }} className="table-container">
                   <Table variant="simple" className="premium-table">
@@ -1355,6 +1316,7 @@ const downloadReport = async () => {
                   </Stack>
                 </Flex>
               </div>
+              </>
             ) : (
               /* Add New / Detail View */
               <Box>
@@ -1543,32 +1505,34 @@ const downloadReport = async () => {
 
                       {/* Location Data Form */}
                       <div className="glass-card" style={{ padding: 'clamp(1rem, 3vw, 2rem)' }}>
-                        <Heading size={{ base: "xs", md: "sm" }} mb={{ base: 4, md: 6 }} textAlign={{ base: "center", md: "left" }}>Installation Site Details</Heading>
+                        <Heading size={{ base: "sm", md: "md" }} color="blue.900" mb={{ base: 4, md: 6 }} textAlign={{ base: "center", md: "left" }}>
+                          Installation Site Details
+                        </Heading>
                         <VStack spacing={{ base: 3, md: 5 }} align="stretch">
                           <div className="form-group" style={{ marginBottom: '0' }}>
-                            <Text className="custom-label" fontSize={{ base: "10px", md: "xs" }}>State</Text>
-                            <Input className="custom-input" value={state} isReadOnly bg="gray.50" fontWeight="700" color="gray.600" size={{ base: "sm", md: "md" }} />
+                            <Text className="custom-label">State</Text>
+                            <Input className="custom-input" value={state} isReadOnly bg="gray.50" fontWeight="700" color="gray.600" size="md" />
                           </div>
                           
                           <Grid templateColumns={{ base: "1fr", md: "1fr 1fr" }} gap={{ base: 3, md: 5 }}>
                             <div className="form-group" style={{ marginBottom: '0' }}>
-                              <Text className="custom-label" fontSize={{ base: "10px", md: "xs" }}>District Name</Text>
-                              <Input className="custom-input" value={district} onChange={(e) => setDistrict(e.target.value)} isReadOnly={!isEditing} size={{ base: "sm", md: "md" }} />
+                              <Text className="custom-label">District Name</Text>
+                              <Input className="custom-input" value={district} onChange={(e) => setDistrict(e.target.value)} isReadOnly={!isEditing} size="md" />
                             </div>
                             <div className="form-group" style={{ marginBottom: '0' }}>
-                              <Text className="custom-label" fontSize={{ base: "10px", md: "xs" }}>Assembly Name</Text>
-                              <Input className="custom-input" value={assemblyName} onChange={(e) => setAssemblyName(e.target.value)} isReadOnly={!isEditing} size={{ base: "sm", md: "md" }} />
+                              <Text className="custom-label">Assembly Name</Text>
+                              <Input className="custom-input" value={assemblyName} onChange={(e) => setAssemblyName(e.target.value)} isReadOnly={!isEditing} size="md" />
                             </div>
                           </Grid>
                           
                           <Grid templateColumns={{ base: "1fr", md: "100px 1fr" }} gap={{ base: 3, md: 5 }}>
                             <div className="form-group" style={{ marginBottom: '0' }}>
-                              <Text className="custom-label" fontSize={{ base: "10px", md: "xs" }}>PS No.</Text>
-                              <Input className="custom-input" value={psNumber} onChange={(e) => setPsNumber(e.target.value)} isReadOnly={!isEditing} textAlign="center" fontWeight="800" size={{ base: "sm", md: "md" }} />
+                              <Text className="custom-label">PS No.</Text>
+                              <Input className="custom-input" value={psNumber} onChange={(e) => setPsNumber(e.target.value)} isReadOnly={!isEditing} textAlign="center" fontWeight="800" size="md" />
                             </div>
                             <div className="form-group" style={{ marginBottom: '0' }}>
-                              <Text className="custom-label" fontSize={{ base: "10px", md: "xs" }}>Location Info</Text>
-                              <Input className="custom-input" value={excelLocation} onChange={(e) => setExcelLocation(e.target.value)} isReadOnly={!isEditing} placeholder="e.g., Room 102, 1st Floor" size={{ base: "sm", md: "md" }} />
+                              <Text className="custom-label">Location Info</Text>
+                              <Input className="custom-input" value={excelLocation} onChange={(e) => setExcelLocation(e.target.value)} isReadOnly={!isEditing} placeholder="e.g., Room 102, 1st Floor" size="md" />
                             </div>
                           </Grid>
 
