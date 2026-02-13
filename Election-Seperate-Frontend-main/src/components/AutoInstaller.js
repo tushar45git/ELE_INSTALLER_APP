@@ -3,7 +3,7 @@ import axios from "axios";
 import logo from "./images/logo/cam.png";
 import Delete from "./images/logo/deleteicon.png";
 import Trash from "./images/logo/Trash.png";
-import { FiList, FiPlus } from "react-icons/fi";
+import { FiList, FiPlus, FiMap, FiHome, FiHash, FiMapPin, FiGlobe, FiEdit } from "react-icons/fi";
 import * as FileSaver from "file-saver";
 import { FaFileExcel, FaSearch } from "react-icons/fa";
 import * as XLSX from "xlsx";
@@ -297,25 +297,13 @@ const handleAddInputs = async () => {
   try {
     const response = await getCameraByDid(deviceId);
 
-    if (!response?.flvUrl?.url2) {
-      toast.error(
-        `Please Enter Full DeviceID 'OR' URL2 is not available, so contact Support`
-      );
+    if (!response?.flvUrl?.url2 || !response.success) {
+      toast.error("Device ID is not available. Please check and try again.");
       setIsFetchingCameraDetails(false);
       return;
     }
 
     setFlvUrl(response.flvUrl.url2);
-
-    if (!response.success) {
-      toast.error("Failed to get camera data");
-      toast.error(
-        "Plz connect support team before installing camera, from below right corner..."
-      );
-      toast.warning("If testing camera than wait for the view");
-      setIsFetchingCameraDetails(false);
-      return;
-    }
 
     if (response.data.state === "PUNJAB") {
       toast.error("State is PUNJAB. Refreshing the page...");
@@ -838,9 +826,15 @@ const downloadReport = async () => {
         setIsLoading(true);
         try {
           const response = await getFullDid(numericValue);
-          setSuggestions(response.streamnames);
+          const results = response.streamnames || [];
+          if (results.length === 0) {
+            setSuggestions([{ isNoResult: true }]);
+          } else {
+            setSuggestions(results);
+          }
         } catch (error) {
           console.error('Error fetching suggestions:', error);
+          setSuggestions([]);
         } finally {
           setIsLoading(false);
         }
@@ -851,6 +845,9 @@ const downloadReport = async () => {
   };
 
   const handleSuggestionSelected = (event, { suggestion, suggestionValue, suggestionIndex, sectionIndex, method }) => {
+    if (suggestion && suggestion.isNoResult) {
+        return;
+    }
     setDeviceId(suggestionValue);
     setSuggestions([]); // Clear suggestions after selection
     if (autosuggestRef.current) {
@@ -858,8 +855,23 @@ const downloadReport = async () => {
     }
   };
 
-  const getSuggestionValue = (suggestion) => suggestion;
-  const renderSuggestion = (suggestion) => <div>{suggestion}</div>;
+  const getSuggestionValue = (suggestion) => {
+    if (suggestion && suggestion.isNoResult) {
+      return deviceId;
+    }
+    return suggestion;
+  };
+
+  const renderSuggestion = (suggestion) => {
+    if (suggestion && suggestion.isNoResult) {
+      return (
+        <div style={{ padding: '10px', color: 'gray', fontStyle: 'italic', fontSize: '14px' }}>
+          No devices found with this ID
+        </div>
+      );
+    }
+    return <div>{suggestion}</div>;
+  };
 
   const inputProps = {
     placeholder: 'Enter Device ID',
@@ -1018,14 +1030,12 @@ const downloadReport = async () => {
                         <FaSearch color="var(--gray-400)" />
                       </InputLeftElement>
                       <Input
-                        className="custom-input"
+                        className="custom-input input-with-icon"
                         value={searchDeviceId}
                         onChange={handleSearchChange}
                         onFocus={() => searchDeviceId && setShowSuggestions(searchSuggestions.length > 0)}
                         onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
                         placeholder="Filter by Device ID..."
-                        pl="3rem"
-                        pr="3rem"
                         fontSize="md"
                         _placeholder={{ color: "gray.400" }}
                       />
@@ -1389,7 +1399,7 @@ const downloadReport = async () => {
                     {/* Live Preview Section */}
                     {flvUrl && (
                       <div>
-                        <Heading size="sm" mb={4}>Live Installation Feed</Heading>
+                        <Heading className="section-title">Live Installation Feed</Heading>
                         <div className="video-wrapper">
                           <ReactPlayer
                             url={flvUrl}
@@ -1405,7 +1415,7 @@ const downloadReport = async () => {
                     <VStack spacing={{ base: 4, md: 8 }} align="stretch">
                       {/* Technical Analysis */}
                       <div className="glass-card" style={{ padding: 'clamp(1rem, 3vw, 2rem)' }}>
-                        <Heading size={{ base: "xs", md: "sm" }} mb={{ base: 4, md: 6 }} textAlign={{ base: "center", md: "left" }}>AI Technical Status Analysis</Heading>
+                        <Heading className="section-title" textAlign={{ base: "center", md: "left" }}>AI Technical Status Analysis</Heading>
                         {isFetchingCameraDetails ? (
                           <VStack py={{ base: 6, md: 10 }} spacing={4}>
                             <div className="loading-spinner"></div>
@@ -1511,61 +1521,88 @@ const downloadReport = async () => {
                         )}
                       </div>
 
-                      {/* Location Data Form */}
-                      <div className="glass-card" style={{ padding: 'clamp(1rem, 3vw, 2rem)' }}>
-                        <Heading size={{ base: "sm", md: "md" }} color="blue.900" mb={{ base: 4, md: 6 }} textAlign={{ base: "center", md: "left" }}>
+                      {/* Location Data Form - Professional SaaS Redesign */}
+                      <div className="glass-card site-details-card" style={{ padding: '24px' }}>
+                        <Heading className="section-title">
                           Installation Site Details
                         </Heading>
-                        <VStack spacing={{ base: 3, md: 5 }} align="stretch">
+                        <VStack spacing={4} align="stretch" className="site-details-field-group">
+                          {/* State Field */}
                           <div className="form-group" style={{ marginBottom: '0' }}>
                             <Text className="custom-label">State</Text>
-                            <Input className="custom-input" value={state} isReadOnly bg="gray.50" fontWeight="700" color="gray.600" size="md" />
+                            <InputGroup>
+                              <InputLeftElement pointerEvents="none">
+                                <FiGlobe className="site-details-input-icon" />
+                              </InputLeftElement>
+                              <Input className="custom-input input-with-icon" value={state} isReadOnly size="md" />
+                            </InputGroup>
                           </div>
                           
-                          <Grid templateColumns={{ base: "1fr", md: "1fr 1fr" }} gap={{ base: 3, md: 5 }}>
-                            <div className="form-group" style={{ marginBottom: '0' }}>
-                              <Text className="custom-label">District Name</Text>
-                              <Input className="custom-input" value={district} onChange={(e) => setDistrict(e.target.value)} isReadOnly={!isEditing} size="md" />
-                            </div>
-                            <div className="form-group" style={{ marginBottom: '0' }}>
-                              <Text className="custom-label">Assembly Name</Text>
-                              <Input className="custom-input" value={assemblyName} onChange={(e) => setAssemblyName(e.target.value)} isReadOnly={!isEditing} size="md" />
-                            </div>
-                          </Grid>
-                          
-                          <Grid templateColumns={{ base: "1fr", md: "100px 1fr" }} gap={{ base: 3, md: 5 }}>
-                            <div className="form-group" style={{ marginBottom: '0' }}>
-                              <Text className="custom-label">PS No.</Text>
-                              <Input className="custom-input" value={psNumber} onChange={(e) => setPsNumber(e.target.value)} isReadOnly={!isEditing} textAlign="center" fontWeight="800" size="md" />
-                            </div>
-                            <div className="form-group" style={{ marginBottom: '0' }}>
-                              <Text className="custom-label">Location Info</Text>
-                              <Input className="custom-input" value={excelLocation} onChange={(e) => setExcelLocation(e.target.value)} isReadOnly={!isEditing} placeholder="e.g., Room 102, 1st Floor" size="md" />
-                            </div>
-                          </Grid>
+                          {/* District Field */}
+                          <div className="form-group" style={{ marginBottom: '0' }}>
+                            <Text className="custom-label">District Name</Text>
+                            <InputGroup>
+                              <InputLeftElement pointerEvents="none">
+                                <FiMap className="site-details-input-icon" />
+                              </InputLeftElement>
+                              <Input className="custom-input input-with-icon" value={district} onChange={(e) => setDistrict(e.target.value)} isReadOnly={!isEditing} size="md" />
+                            </InputGroup>
+                          </div>
 
-                          <Stack direction={{ base: "column", sm: "row" }} spacing={{ base: 3, md: 4 }} pt={{ base: 4, md: 6 }}>
-                            <Button
-                              className="btn-secondary"
-                              w="full"
-                              height={{ base: "44px", md: "52px" }}
-                              onClick={() => setIsEditing(!isEditing)}
-                              fontSize={{ base: "xs", md: "sm" }}
-                            >
-                              {isEditing ? "🔐 Lock Changes" : "✏️ Edit Site Data"}
-                            </Button>
-                            <Button
-                              className="btn-premium"
-                              w="full"
-                              height={{ base: "44px", md: "52px" }}
-                              onClick={handleSubmit}
-                              fontSize={{ base: "xs", md: "sm" }}
-                            >
-                              🚀 Finalize & Save
-                            </Button>
-                          </Stack>
+                          {/* Assembly Field */}
+                          <div className="form-group" style={{ marginBottom: '0' }}>
+                            <Text className="custom-label">Assembly Name</Text>
+                            <InputGroup>
+                              <InputLeftElement pointerEvents="none">
+                                <FiHome className="site-details-input-icon" />
+                              </InputLeftElement>
+                              <Input className="custom-input input-with-icon" value={assemblyName} onChange={(e) => setAssemblyName(e.target.value)} isReadOnly={!isEditing} size="md" />
+                            </InputGroup>
+                          </div>
+                          
+                          {/* PS No & Location Info - Using simple stack for mobile thumb comfort */}
+                          <div className="form-group" style={{ marginBottom: '0' }}>
+                            <Text className="custom-label">PS No.</Text>
+                            <InputGroup>
+                              <InputLeftElement pointerEvents="none">
+                                <FiHash className="site-details-input-icon" />
+                              </InputLeftElement>
+                              <Input className="custom-input input-with-icon" value={psNumber} onChange={(e) => setPsNumber(e.target.value)} isReadOnly={!isEditing} fontWeight="800" size="md" />
+                            </InputGroup>
+                          </div>
+
+                          <div className="form-group" style={{ marginBottom: '0' }}>
+                            <Text className="custom-label">Location Info</Text>
+                            <InputGroup>
+                              <InputLeftElement pointerEvents="none">
+                                <FiMapPin className="site-details-input-icon" />
+                              </InputLeftElement>
+                              <Input className="custom-input input-with-icon" value={excelLocation} onChange={(e) => setExcelLocation(e.target.value)} isReadOnly={!isEditing} placeholder="e.g., Room 102, 1st Floor" size="md" />
+                            </InputGroup>
+                          </div>
                         </VStack>
                       </div>
+
+                      <Stack direction={{ base: "column", sm: "row" }} spacing={{ base: 3, md: 4 }} pt={{ base: 4, md: 6 }}>
+                        <Button
+                          className="btn-secondary"
+                          w="full"
+                          onClick={() => setIsEditing(!isEditing)}
+                          leftIcon={isEditing ? <FiPlus /> : <FiEdit />}
+                        >
+                          {isEditing ? 'Cancel Edit' : 'Edit Details'}
+                        </Button>
+                        {isEditing && (
+                          <Button 
+                            colorScheme="blue" 
+                            className="btn-premium"
+                            w="full" 
+                            onClick={handleSubmit}
+                          >
+                            Save Changes
+                          </Button>
+                        )}
+                      </Stack>
                     </VStack>
                   </VStack>
                 )}
@@ -1573,7 +1610,8 @@ const downloadReport = async () => {
             )}
           </>
         )}
-      </Box>
+
+
 
       {/* Shared Modals */}
       <Modal isOpen={isDeleteModalOpen} onClose={closeDeleteModal} isCentered>
@@ -1637,28 +1675,11 @@ const downloadReport = async () => {
             gap={{ base: 3, sm: 6 }}
             py={4}
           >
-            {/* <Button
-              className="btn-secondary"
-              size={{ base: "sm", md: "md" }}
-              leftIcon={<LuFlipVertical2 />}
-              onClick={() => handleGetData(selectedCamera.deviceId, "flip")}
-              w={{ base: "full", sm: "auto" }}
-            >
-              Flip Vertically
-            </Button>
-            <Button
-              className="btn-secondary"
-              size={{ base: "sm", md: "md" }}
-              leftIcon={<LuFlipHorizontal2 />}
-              onClick={() => handleGetData(selectedCamera.deviceId, "mirror")}
-              w={{ base: "full", sm: "auto" }}
-            >
-              Mirror Stream
-            </Button> */}
           </ModalFooter>
         </ModalContent>
       </Modal>
-    </div>
+        </Box>
+      </div>
   );
 };
 

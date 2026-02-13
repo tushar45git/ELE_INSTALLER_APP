@@ -258,7 +258,7 @@ const Login = () => {
                   <Input
                     placeholder="Enter your name"
                     bg="white"
-                    size="lg"
+                    size="md"
                     borderRadius="xl"
                     boxShadow="sm"
                     _focus={{ borderColor: "blue.400", boxShadow: "0 0 0 1px #3182ce" }}
@@ -269,14 +269,15 @@ const Login = () => {
 
                 <FormControl isRequired>
                   <FormLabel fontWeight="700" color="gray.700" fontSize="sm">Mobile Number</FormLabel>
-                  <InputGroup size="lg">
-                    <InputLeftAddon borderLeftRadius="xl" bg="gray.100" color="gray.600" fontWeight="600">
+                  <InputGroup size="md">
+                    <InputLeftAddon borderLeftRadius="xl" bg="gray.100" color="gray.600" fontWeight="600" >
                       +91
                     </InputLeftAddon>
                     <Input
                       type="tel"
                       placeholder="Enter mobile number"
                       bg="white"
+                      size="md"
                       borderRightRadius="xl"
                       boxShadow="sm"
                       _focus={{ borderColor: "blue.400", boxShadow: "0 0 0 1px #3182ce" }}
@@ -288,15 +289,27 @@ const Login = () => {
 
                 <Button
                   w="full"
-                  colorScheme="blue"
+                  className="btn-premium"
+                  sx={{
+                    backgroundColor: "#4f46e5 !important",
+                    color: "white !important",
+                    _hover: {
+                      backgroundColor: "#4338ca !important",
+                      transform: "translateY(-2px)",
+                      boxShadow: "xl",
+                    },
+                    _active: {
+                      backgroundColor: "#3730a3 !important",
+                      transform: "translateY(0)",
+                    }
+                  }}
                   size="lg"
                   height={{ base: "50px", md: "56px" }}
                   borderRadius="xl"
                   fontSize="md"
                   fontWeight="bold"
                   boxShadow="lg"
-                  _hover={{ transform: "translateY(-2px)", boxShadow: "xl" }}
-                  _active={{ transform: "translateY(0)" }}
+                  top={5}
                   onClick={handleSendOtp}
                   isLoading={isLoading}
                   isDisabled={!locationEnabled}
@@ -348,15 +361,26 @@ const Login = () => {
 
                   <Button
                     w="full"
-                    colorScheme="blue"
+                    className="btn-premium"
+                    sx={{
+                      backgroundColor: "#4f46e5 !important",
+                      color: "white !important",
+                      _hover: {
+                        backgroundColor: "#4338ca !important",
+                        transform: "translateY(-2px)",
+                        boxShadow: "xl",
+                      },
+                      _active: {
+                        backgroundColor: "#3730a3 !important",
+                        transform: "translateY(0)",
+                      }
+                    }}
                     size="lg"
                     height={{ base: "50px", md: "56px" }}
                     borderRadius="xl"
                     fontSize="md"
                     fontWeight="bold"
                     boxShadow="lg"
-                    _hover={{ transform: "translateY(-2px)", boxShadow: "xl" }}
-                    _active={{ transform: "translateY(0)" }}
                     onClick={handleSignIn}
                     isLoading={isLoading}
                   >

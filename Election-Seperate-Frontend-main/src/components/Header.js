@@ -75,8 +75,8 @@ const Header = () => {
                     <Stack pl={4} pr={4} justifyContent="space-between" sx={{ display: "flex", flexDirection: "row", alignItems: 'center' }}>
                         <DrawerButton display='flex' alignItems='center' drawerContent={<DrawerContent />} />
 
-                        <Heading fontSize={fontSize} display='flex' justifyContent='center' alignItems='center'><img width=" 96.152px"
-height= "24.919px" src={logo} />&nbsp;</Heading>
+                        <Heading fontSize={fontSize} display='flex' justifyContent='center' alignItems='center'><img width=" 100px"
+height= "30px" src={logo} />&nbsp;</Heading>
                         {/* <Button onClick={handleSignOut} alignSelf="flex-end">Logout</Button> */}
                         <Menu>
                             <MenuButton as={IconButton} icon={<MdAccountCircle />} aria-label="Profile" variant="outline" />
