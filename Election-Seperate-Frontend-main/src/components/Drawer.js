@@ -15,9 +15,13 @@ const DrawerButton = ({ drawerContent }) => {
     const navigate = useNavigate();
 
     const handleRedirect = (path) => {
+    if (location.pathname === path) {
+        window.location.reload();
+    } else {
         navigate(path);
-        toggleDrawer();
-    };
+    }
+    toggleDrawer();
+};
 
     const location = useLocation();
 
@@ -96,7 +100,7 @@ const DrawerButton = ({ drawerContent }) => {
                                     src='./logo.png' 
                                     alt="Logo"
                                 />
-                                <Text fontWeight="800" fontSize="lg" color="indigo.800">VMUKTI - ELE</Text>
+                                <Text fontWeight="800" fontSize="lg" color="blue.800">VMUKTI - ELE</Text>
                             </DrawerHeader>
                             <DrawerBody pt={6}>
                                 <VStack spacing={6} align="start">
@@ -110,21 +114,21 @@ const DrawerButton = ({ drawerContent }) => {
                                             alignItems="center" 
                                             cursor="pointer"
                                             transition="all 0.2s"
-                                            _hover={{ bg: "indigo.50", color: "indigo.600" }}
-                                            _active={{ bg: "indigo.100" }}
+                                            _hover={{ bg: "blue.50", color: "blue.600" }}
+                                            _active={{ bg: "blue.100" }}
                                             gap={4}
                                         >
                                             <Box 
                                                 p={2} 
                                                 borderRadius="lg" 
-                                                bg={location.pathname === item.path ? "indigo.600" : "gray.100"}
+                                                bg={location.pathname === item.path ? "blue.600" : "gray.100"}
                                                 color={location.pathname === item.path ? "white" : "gray.600"}
                                             >
                                                 <Icon as={item.icon} boxSize={5} /> 
                                             </Box>
                                             <Text 
                                                 fontWeight={location.pathname === item.path ? "700" : "600"}
-                                                color={location.pathname === item.path ? "indigo.700" : "gray.700"}
+                                                color={location.pathname === item.path ? "blue.700" : "gray.700"}
                                                 fontSize="md"
                                             >
                                                 {item.label}

@@ -1150,26 +1150,22 @@ const downloadReport = async () => {
                   <Table variant="simple" className="premium-table">
                     <Thead>
                       <Tr>
+                        <Th>District</Th>
                         <Th>PS No.</Th>
                         <Th>Device ID</Th>
                         <Th>Assembly Name</Th>
                         <Th>Location</Th>
-                        <Th>Status</Th>
                         <Th textAlign="right">Actions</Th>
                       </Tr>
                     </Thead>
                     <Tbody>
                       {camerasOnPage.map((camera) => (
                         <Tr key={camera.deviceId}>
+                          <Td data-label="District">{camera.district}</Td>
                           <Td data-label="PS No."><b>{camera.psNo}</b></Td>
                           <Td data-label="Device ID">{camera.deviceId}</Td>
                           <Td data-label="Assembly Name">{camera.assemblyName}</Td>
                           <Td data-label="Location">{camera.location}</Td>
-                          <Td data-label="Status">
-                            <span className={`badge ${camera.status === 'RUNNING' ? 'badge-success' : 'badge-error'}`}>
-                              {camera.status}
-                            </span>
-                          </Td>
                           <Td data-label="Actions" textAlign={{ base: "left", md: "right" }}>
                             <HStack justify={{ base: "flex-start", md: "flex-end" }} spacing={2}>
                               <IconButton
@@ -1238,6 +1234,11 @@ const downloadReport = async () => {
                           <Divider borderColor="gray.100" />
                           
                           <HStack justify="space-between">
+                            <Text fontSize="sm" color="gray.500">District</Text>
+                            <Text fontSize="sm" fontWeight="medium">{camera.district}</Text>
+                          </HStack>
+                          
+                          <HStack justify="space-between">
                             <Text fontSize="sm" color="gray.500">PS No</Text>
                             <Text fontSize="sm" fontWeight="semibold">{camera.psNo}</Text>
                           </HStack>
@@ -1251,14 +1252,6 @@ const downloadReport = async () => {
                             <Text fontSize="sm" color="gray.500">Location</Text>
                             <Text fontSize="sm" textAlign="right" maxW="60%">{camera.location}</Text>
                           </HStack>
-
-                          <HStack justify="space-between">
-                            <Text fontSize="sm" color="gray.500">Status</Text>
-                            <span className={`badge ${camera.status === 'RUNNING' ? 'badge-success' : 'badge-error'}`}>
-                              {camera.status}
-                            </span>
-                          </HStack>
-
                           <Box pt={2}>
                             <Text fontSize="xs" fontWeight="bold" color="gray.400" mb={2} textTransform="uppercase">Actions</Text>
                             <HStack spacing={2}>
