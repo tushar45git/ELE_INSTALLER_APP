@@ -315,7 +315,10 @@ h3 {
 
 /* Main Container */
 .main-wrapper {
-    padding: clamp(var(--space-4), 4vw, var(--space-8));
+    padding-top: max(var(--space-6), env(safe-area-inset-top));
+    padding-bottom: max(var(--space-16), env(safe-area-inset-bottom));
+    padding-left: clamp(var(--space-4), 4vw, var(--space-8));
+    padding-right: clamp(var(--space-4), 4vw, var(--space-8));
     max-width: 1400px;
     margin: 0 auto;
     animation: fadeIn 0.5s ease-out;

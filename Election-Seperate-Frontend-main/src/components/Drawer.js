@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Button, Drawer, DrawerBody, DrawerCloseButton, IconButton, Menu, MenuButton, MenuItem, MenuList, useBreakpointValue, DrawerContent, DrawerFooter, DrawerHeader, DrawerOverlay, Flex, Icon, Text, VStack } from '@chakra-ui/react';
+import { Box, Button, Drawer, DrawerBody, DrawerCloseButton, IconButton, Menu, MenuButton, MenuItem, MenuList, useBreakpointValue, DrawerContent, DrawerFooter, DrawerHeader, DrawerOverlay, Flex, Icon, Text, VStack } from '@chakra-ui/react';
 import { MdAccountCircle, MdAdd, MdBuild, MdDashboard, MdTableRows } from "react-icons/md";
 import { useNavigate, useLocation } from 'react-router-dom';
 import logo1 from './images/logo/logo1.png';
@@ -42,13 +42,13 @@ const DrawerButton = ({ drawerContent }) => {
             { path: "/installer", label: "Installer", icon: MdBuild },
             { path: "/autoinstaller", label: "Auto Installer", icon: MdBuild }
         );
-    } else if (role === "installer") {
+    } else if (role === "installer" || role === "autoinstaller" || role === "punjabInstaller") {
         menuItems.push(
             { path: "/autoinstaller", label: "Auto Installer", icon: MdBuild }
         );
-    } else if (role === "autoinstaller") {
+    } else if (role === "checkpost") {
         menuItems.push(
-            { path: "/autoinstaller", label: "Auto Installer", icon: MdBuild }
+            { path: "/attendance", label: "Attendance", icon: MdAccountCircle }
         );
     }
 
@@ -72,25 +72,71 @@ const DrawerButton = ({ drawerContent }) => {
                         <MdTableRows />
                     </Button>
                     <Drawer placement="left" onClose={toggleDrawer} isOpen={isDrawerOpen}>
-                        <DrawerOverlay>
-                            <DrawerContent>
-                                <DrawerCloseButton />
-                                <DrawerHeader display='flex'><img style={{ objectFit: 'contain' }} width='8%' src='./logo.png'></img>   VMUKTI - ELE</DrawerHeader>
-                                <DrawerBody>
-                                    <VStack spacing={4} align="start">
-                                        {menuItems.map((item, index) => (
-                                            <Text key={index} onClick={() => handleRedirect(item.path)} display='flex' justifyContent='center' alignItems='center' cursor='pointer'>
-                                                <Icon as={item.icon} boxSize={5} color="gray.500" /> 
+                        <DrawerOverlay backdropFilter="blur(4px)" />
+                        <DrawerContent 
+                            borderTopRightRadius="2xl" 
+                            borderBottomRightRadius="2xl"
+                            pt="env(safe-area-inset-top)"
+                        >
+                            <DrawerCloseButton 
+                                top="calc(10px + env(safe-area-inset-top))" 
+                                zIndex="1001"
+                            />
+                            <DrawerHeader 
+                                display='flex' 
+                                alignItems='center' 
+                                gap={3}
+                                borderBottomWidth="1px"
+                                borderBottomColor="gray.100"
+                                py={6}
+                            >
+                                <img 
+                                    style={{ objectFit: 'contain' }} 
+                                    width='32px' 
+                                    src='./logo.png' 
+                                    alt="Logo"
+                                />
+                                <Text fontWeight="800" fontSize="lg" color="indigo.800">VMUKTI - ELE</Text>
+                            </DrawerHeader>
+                            <DrawerBody pt={6}>
+                                <VStack spacing={6} align="start">
+                                    {menuItems.map((item, index) => (
+                                        <Flex 
+                                            key={index} 
+                                            onClick={() => handleRedirect(item.path)} 
+                                            w="full"
+                                            p={3}
+                                            borderRadius="xl"
+                                            alignItems="center" 
+                                            cursor="pointer"
+                                            transition="all 0.2s"
+                                            _hover={{ bg: "indigo.50", color: "indigo.600" }}
+                                            _active={{ bg: "indigo.100" }}
+                                            gap={4}
+                                        >
+                                            <Box 
+                                                p={2} 
+                                                borderRadius="lg" 
+                                                bg={location.pathname === item.path ? "indigo.600" : "gray.100"}
+                                                color={location.pathname === item.path ? "white" : "gray.600"}
+                                            >
+                                                <Icon as={item.icon} boxSize={5} /> 
+                                            </Box>
+                                            <Text 
+                                                fontWeight={location.pathname === item.path ? "700" : "600"}
+                                                color={location.pathname === item.path ? "indigo.700" : "gray.700"}
+                                                fontSize="md"
+                                            >
                                                 {item.label}
                                             </Text>
-                                        ))}
-                                    </VStack>
-                                </DrawerBody>
-                                <DrawerFooter>
-                                    {/* Footer content goes here */}
-                                </DrawerFooter>
-                            </DrawerContent>
-                        </DrawerOverlay>
+                                        </Flex>
+                                    ))}
+                                </VStack>
+                            </DrawerBody>
+                            <DrawerFooter>
+                                {/* Footer content goes here */}
+                            </DrawerFooter>
+                        </DrawerContent>
                     </Drawer>
                 </div>
             )}

@@ -42,7 +42,7 @@ function AppContent() {
 
   return (
     <Container maxW="100vw" p='0'>
-      <Box>
+      <Box pb="env(safe-area-inset-bottom)">
         {!isLoginPage && <Header />}
 
         <Routes>

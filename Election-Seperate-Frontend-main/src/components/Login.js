@@ -203,6 +203,8 @@ const Login = () => {
       position="relative"
       overflow="hidden"
       p={4}
+      pt="max(1rem, env(safe-area-inset-top))"
+      pb="max(1rem, env(safe-area-inset-bottom))"
     >
       {/* Decorative Elements */}
       <Box

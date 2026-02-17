@@ -962,7 +962,7 @@ const downloadReport = async () => {
     <div className="main-wrapper">
       <style>{customCSS}</style>
       <ToastContainer />
-      <div style={{ position: "fixed", bottom: "20px", right: "20px" }}>
+      <div style={{ position: "fixed", bottom: "calc(20px + env(safe-area-inset-bottom))", right: "20px", zIndex: 1000 }}>
         <TawkToWidget />
       </div>
 

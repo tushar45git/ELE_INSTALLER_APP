@@ -416,7 +416,13 @@ const ElectionInstaller = () => {
 
 
   return (
-    <Container maxW="full" px={{ base: '0', sm: '8' }} p={4} style={{ margin: "0px" }}> {/* py={{ base: '0', md: '24' }} */}
+    <Container 
+      maxW="full" 
+      px={{ base: '4', sm: '8' }} 
+      pt={{ base: '4', md: '8' }} 
+      pb="max(4rem, env(safe-area-inset-bottom))" 
+      style={{ margin: "0px" }}
+    >
       <ToastContainer />
 
       <Box borderWidth="1px" borderRadius="lg" p="4" display="grid" gridTemplateColumns={{ base: '1fr', md: 'repeat(5, 1fr)' }} gridGap="2">
