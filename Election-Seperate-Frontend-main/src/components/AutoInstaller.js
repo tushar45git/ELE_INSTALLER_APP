@@ -1335,8 +1335,24 @@ const downloadReport = async () => {
                   <VStack spacing={6} align="stretch">
                     <Flex justify="space-between" align="center">
                       <Heading size="md" color="blue.900">Device Configuration</Heading>
-                      <Button className="btn-secondary" size="sm" onClick={handleBackClick}>
-                        Return to List
+                       <Button
+                        size="sm"
+                        variant="outline"
+                        leftIcon={<FaArrowLeft />}
+                        borderRadius="full"
+                        px={4}
+                        fontSize="xs"
+                        fontWeight="700"
+                        color="blue.600"
+                        bg="blue.50"
+                        borderColor="blue.200"
+                        _hover={{ bg: "blue.100", borderColor: "blue.300", transform: "translateY(-1px)" }}
+                        _active={{ bg: "blue.200" }}
+                        onClick={handleBackClick}
+                        transition="all 0.2s"
+                        boxShadow="sm"
+                      >
+                        Installation List
                       </Button>
                     </Flex>
 
