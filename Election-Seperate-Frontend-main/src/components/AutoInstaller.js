@@ -5,7 +5,7 @@ import Delete from "./images/logo/deleteicon.png";
 import Trash from "./images/logo/Trash.png";
 import { FiList, FiPlus, FiMap, FiHome, FiHash, FiMapPin, FiGlobe, FiEdit } from "react-icons/fi";
 import * as FileSaver from "file-saver";
-import { FaFileExcel, FaSearch } from "react-icons/fa";
+import { FaFileExcel, FaSearch, FaArrowLeft } from "react-icons/fa";
 import * as XLSX from "xlsx";
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import "./auto-installer.css";
