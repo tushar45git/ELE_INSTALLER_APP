@@ -916,6 +916,37 @@ const downloadReport = async () => {
     visibility: visible;
     animation: blink-animation 1s steps(5, start) infinite;
 }
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-spinner {
+  border: 4px solid rgba(0, 0, 0, 0.1); 
+  border-left-color: #3182ce;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin: 0 auto;
+}
+
+@keyframes pulse-border {
+  0% {
+    box-shadow: 0 0 0 0 rgba(66, 153, 225, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(66, 153, 225, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(66, 153, 225, 0);
+  }
+}
+
+.pulse-border {
+  animation: pulse-border 2s infinite;
+}
 `;
 
   // Pagination functions
@@ -1523,9 +1554,18 @@ const downloadReport = async () => {
                             </Grid>
                           </VStack>
                         ) : (
-                          <VStack py={{ base: 6, md: 10 }} bg="orange.50" borderRadius="xl" border="1px dashed" borderColor="orange.200">
-                            <Text color="orange.800" fontWeight="800" fontSize={{ base: "sm", md: "md" }}>Connection Interrupted</Text>
-                            <Text fontSize="xs" color="orange.600" textAlign="center" px={4}>We couldn't retrieve AI analytics. Please check device status.</Text>
+                          <VStack 
+                            py={{ base: 6, md: 10 }} 
+                            bg="blue.50" 
+                            borderRadius="xl" 
+                            border="2px solid" 
+                            borderColor="blue.400"
+                            boxShadow="lg"
+                            className="pulse-border"
+                          >
+                            <div className="loading-spinner" style={{ width: '24px', height: '24px', borderWidth: '3px', borderTopColor: '#3182ce' }}></div>
+                            <Text color="blue.900" fontWeight="800" fontSize={{ base: "md", md: "lg" }}>Fetching AI Status</Text>
+                            <Text fontSize="sm" color="blue.700" textAlign="center" px={4} fontWeight="500">We are retrieving the technical analysis parameters. Please wait...</Text>
                           </VStack>
                         )}
                       </div>
