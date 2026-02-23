@@ -1675,24 +1675,34 @@ const downloadReport = async () => {
 
 
       {/* Shared Modals */}
-      <Modal isOpen={isDeleteModalOpen} onClose={closeDeleteModal} isCentered>
-        <ModalOverlay backdropFilter="blur(5px)" />
-        <ModalContent borderRadius="xl" overflow="hidden">
-          <ModalHeader textAlign="center" pt={8} color="red.700">Confirm Deletion</ModalHeader>
-          <ModalBody textAlign="center" py={6}>
-            <Center mb={6}>
-              <Box p={4} bg="red.50" borderRadius="full">
-                <Image src={Trash} alt="Delete" boxSize="64px" />
-              </Box>
-            </Center>
-            <Text fontWeight="600" fontSize="lg">Are you absolutely sure?</Text>
-            <Text color="gray.500" mt={2}>
-              This will permanently remove the device <b>{cameraToDelete}</b> from the database.
-            </Text>
+       <Modal isOpen={isDeleteModalOpen} onClose={closeDeleteModal} isCentered size="xs">
+        <ModalOverlay backdropFilter="blur(4px)" />
+        <ModalContent borderRadius="2xl" p={2}>
+          <ModalBody textAlign="center" pt={6} pb={2}>
+             <Center mb={4}>
+               <Box p={3} bg="red.50" borderRadius="full">
+                 <Image src={Trash} alt="Delete" boxSize="40px" />
+               </Box>
+             </Center>
+             <Heading size="sm" mb={2} color="gray.800">Remove Device?</Heading>
+             <Text fontSize="xs" color="gray.600">
+               Are you sure you want to delete <br/>
+               <b>{cameraToDelete}</b>?
+             </Text>
           </ModalBody>
-          <ModalFooter justifyContent="center" gap={4} pb={8}>
-            <Button className="btn-secondary" onClick={closeDeleteModal} px={8}>Stay Back</Button>
-            <Button colorScheme="red" onClick={handleDeleteClickConfirmed} px={8} boxShadow="lg">Confirm Delete</Button>
+          <ModalFooter justifyContent="center" gap={3} pb={4}>
+            <Button size="sm" variant="ghost" onClick={closeDeleteModal} flex={1}>
+              Cancel
+            </Button>
+            <Button 
+              size="sm" 
+              colorScheme="red" 
+              onClick={handleDeleteClickConfirmed} 
+              flex={1}
+              borderRadius="lg"
+            >
+              Delete
+            </Button>
           </ModalFooter>
         </ModalContent>
       </Modal>
