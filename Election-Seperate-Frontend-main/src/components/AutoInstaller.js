@@ -393,18 +393,29 @@ const handleAddInputs = async () => {
 };
 const downloadReport = async () => {
   const exportData = cameraa.map((camera) => ({
-     "Installer Name": camera.personName,
+    "Installer Name": camera.personName,
     "Mobile Number": camera.personMobile,
     "Device ID": camera.deviceId,
     District: camera.district,
     "Assembly Name": camera.assemblyName,
     "PS No.": camera.psNo,
     Location: camera.location,
-    "Last Seen": camera.lastSeen,
+    "Last Seen": `${camera.date || ''}  ${camera.time || ''}`.trim(),
     "Is Edited": camera.isEdited,
   }));
 
   const ws = XLSX.utils.json_to_sheet(exportData);
+  
+  // Add footer row
+  const now = new Date();
+  const footerDate = now.toLocaleDateString("en-GB");
+  const footerTime = now.toLocaleTimeString("en-GB", { hour12: false });
+  const footerText = `This is system generated report of installation list on date ${footerDate} ${footerTime}`;
+  
+  // Append footer at the end (leaving one empty row)
+  const footerRow = [[], [footerText]];
+  XLSX.utils.sheet_add_aoa(ws, footerRow, { origin: -1 });
+
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Camera Report");
 
