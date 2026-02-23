@@ -393,13 +393,14 @@ const handleAddInputs = async () => {
 };
 const downloadReport = async () => {
   const exportData = cameraa.map((camera) => ({
+     "Installer Name": camera.personName,
+    "Mobile Number": camera.personMobile,
     "Device ID": camera.deviceId,
     District: camera.district,
     "Assembly Name": camera.assemblyName,
     "PS No.": camera.psNo,
     Location: camera.location,
     "Last Seen": camera.lastSeen,
-    Status: camera.status,
     "Is Edited": camera.isEdited,
   }));
 
