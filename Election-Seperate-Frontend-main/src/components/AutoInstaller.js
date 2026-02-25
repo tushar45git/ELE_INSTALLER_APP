@@ -412,6 +412,9 @@ const downloadReport = async () => {
   const footerTime = now.toLocaleTimeString("en-GB", { hour12: false });
   const footerText = `This is system generated report of installation list on date ${footerDate} ${footerTime}`;
   
+  // Dynamic filename with date and time
+  const fileName = `camera_report_${footerDate.replace(/\//g, '-')}_${footerTime.replace(/:/g, '-')}.xlsx`;
+
   // Append footer at the end (leaving one empty row)
   const footerRow = [[], [footerText]];
   XLSX.utils.sheet_add_aoa(ws, footerRow, { origin: -1 });
@@ -427,19 +430,19 @@ const downloadReport = async () => {
     const wbout = XLSX.write(wb, { type: 'base64', bookType: 'xlsx' });
     try {
       const result = await Filesystem.writeFile({
-        path: 'camera_report.xlsx',
+        path: fileName,
         data: wbout,
         directory: Directory.Documents,
       });
       console.log('✅ Excel report saved to:', result.uri);
-      alert('Camera report saved successfully on your device >> Go to files >> Documents');
+      alert(`Camera report saved successfully as ${fileName} >> Go to files >> Documents`);
     } catch (error) {
       console.error('❌ Error saving Excel file:', error);
       alert('Failed to save report.');
     }
   } else {
     // 🌐 Web browser: trigger normal file download
-    XLSX.writeFile(wb, 'camera_report.xlsx');
+    XLSX.writeFile(wb, fileName);
   }
 };
   const startCameraStatusPolling = (deviceId) => {
