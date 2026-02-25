@@ -55,6 +55,12 @@ const DrawerButton = ({ drawerContent }) => {
             { path: "/attendance", label: "Attendance", icon: MdAccountCircle }
         );
     }
+    else {
+        // Fallback for other roles
+        menuItems.push(
+            { path: "/autoinstaller", label: "Auto Installer", icon: MdBuild },
+        );
+    }
 
     return (
         <>
