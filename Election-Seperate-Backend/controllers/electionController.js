@@ -269,7 +269,7 @@ exports.createCamera = async (req, res, next) => {
 
         if (!existingCamera) {
             // Camera doesn't exist, create a new one
-            let newCamera = await EleCamera.create({ ...req.body, flvUrl: flvUrl, phase: phase });
+            let newCamera = await EleCamera.create({ ...req.body, flvUrl: flvUrl });
             res.status(200).json({
                 success: true,
                 data: newCamera
@@ -285,7 +285,7 @@ exports.createCamera = async (req, res, next) => {
             // Camera exists, update its values
             const updatedCamera = await EleCamera.findOneAndUpdate(
                 { deviceId: deviceId },
-                { $set: { ...req.body, flvUrl: flvUrl, phase: phase } },
+                { $set: { ...req.body, flvUrl: flvUrl } },
                 { new: true } // To return the updated document
             );
 
@@ -644,9 +644,9 @@ exports.addData = async (req, res, next) => {
                         assemblyName: data.assemblyName,
                         psNo: data.psNo,
                         district: data.district,
+                        latitude: data.latitude,
                         longitude: data.longitude,
-                        flvUrl: flvUrl,
-                        phase: phase
+                        flvUrl: flvUrl
                     },
                     { new: true }
                 );
@@ -666,8 +666,7 @@ exports.addData = async (req, res, next) => {
                     district: data.district,
                     latitude: data.latitude,
                     longitude: data.longitude,
-                    flvUrl: flvUrl,
-                    phase: phase
+                    flvUrl: flvUrl
                 });
 
                 results.push(newCamera);
@@ -1710,7 +1709,7 @@ exports.getDashboardDetails = async (req, res, next) => {
         const totalOfflineCamera = await EleCamera.countDocuments({ status: 'STOPPED' })
         const totalInstallers = await electionUser.countDocuments({ role: { $ne: 'district' } });
         const totalDistrictManager = await electionUser.countDocuments({ role: 'district' });
-        const uniqueState = await EleCamera.distinct('state');
+        const uniqueState = await Booth.distinct('state');
 
         const dataByState = [];
 
@@ -1763,7 +1762,7 @@ exports.getStateData = async (req, res, next) => {
             EleCamera.countDocuments({ state: state, status: 'STOPPED' }),
             electionUser.countDocuments({ state: state, role: { $ne: 'district' } }),
             electionUser.countDocuments({ state: state, role: 'district' }),
-            EleCamera.distinct('district', { state })
+            Booth.distinct('district', { state })
         ]);
 
         const dataByStatePromises = uniqueState.map(async (district) => {
@@ -1829,7 +1828,7 @@ exports.getDistrictData = async (req, res, next) => {
             EleCamera.countDocuments({ district, status: 'STOPPED' }),
             electionUser.countDocuments({ district, role: { $ne: 'district' } }),
             electionUser.countDocuments({ district, role: 'district' }),
-            EleCamera.distinct('assemblyName', { district }) // Assuming 'assemblyName' is the field for assembly name in Booth collection
+            Booth.distinct('assemblyName', { district }) // Assuming 'assemblyName' is the field for assembly name in Booth collection
         ]);
 
         const dataByDistrictPromises = uniqueDistricts.map(async (assemblyName) => {
@@ -1986,7 +1985,7 @@ exports.getAssemblyData = async (req, res, next) => {
             EleCamera.countDocuments({ assemblyName, status: 'STOPPED' }),
             electionUser.countDocuments({ assemblyName, role: { $ne: 'district' } }),
             electionUser.countDocuments({ assemblyName, role: 'district' }),
-            EleCamera.distinct('location', { assemblyName })
+            Booth.distinct('location', { assemblyName })
         ]);
 
         const dataByAssemblyPromises = uniqueBooths.map(async (location) => {
