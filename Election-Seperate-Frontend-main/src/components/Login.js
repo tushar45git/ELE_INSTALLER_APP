@@ -146,7 +146,7 @@ const Login = () => {
         localStorage.setItem("isLoggedIn", "true");
         localStorage.setItem("token", response.token);
         localStorage.setItem("role", response.role);
-        localStorage.setItem("phase", response.phase || "");
+        localStorage.setItem("phase", phase); // Use local state 'phase' instead of response.phase
 
         toast({
           title: "Success",
