@@ -841,7 +841,8 @@ const downloadReport = async () => {
       if (numericValue.length === 6) {
         setIsLoading(true);
         try {
-          const response = await getFullDid(numericValue);
+          const phase = localStorage.getItem('phase');
+          const response = await getFullDid(numericValue, phase);
           const results = response.streamnames || [];
           if (results.length === 0) {
             setSuggestions([{ isNoResult: true }]);
@@ -1424,7 +1425,12 @@ const downloadReport = async () => {
                                 const phase = localStorage.getItem('phase');
                                 const response = await searchDevices(value, phase);
                                 if (response && response.success) {
-                                  setSuggestions(response.streamnames);
+                                  const results = response.streamnames || [];
+                                  if (results.length === 0) {
+                                    setSuggestions([{ isNoResult: true }]);
+                                  } else {
+                                    setSuggestions(results);
+                                  }
                                 }
                               }
                             }}

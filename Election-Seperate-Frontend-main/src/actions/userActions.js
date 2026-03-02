@@ -3,7 +3,7 @@ import axios from 'axios';
 // const baseURL = 'http://192.168.29.33:7073/election';
 // const baseURL = 'https://seahorse-app-2-3o2pf.ondigitalocean.app/election';
 // const baseURL = 'http://192.168.29.123:7073/election';
-const baseURL = 'https://esp.vmukti.com/backend/election';
+const baseURL = 'http://localhost:8080/election';
 
 const instance = axios.create({
   baseURL: baseURL
@@ -801,11 +801,11 @@ export const getFlvLatDid = async (deviceId) => {
   }
 };
 
-export const getFullDid = async (deviceId) => {
+export const getFullDid = async (deviceId, phase) => {
   // const token = localStorage.getItem('mobile');
   try {
     // console.log(mobile);
-    const params = { deviceId: deviceId };
+    const params = { deviceId: deviceId, phase: phase };
     const response = await instance.get(`/getFullDid`, {
       params: params
     });
