@@ -19,6 +19,51 @@ const elePhaseOneData = require('../models/phaseonedata');
 const EleReboot = require('../models/election-reboot');
 const punjabElection = require('../models/election-users-punjab');
 const AiStatus = require('../models/AiStatus');
+const { getSqlConnection } = require('../config/sqlDatabase');
+
+const getSqlData = async (phase, deviceId) => {
+    const pool = await getSqlConnection(phase);
+    
+    const query = `
+        SELECT top(1) 
+            s.streamname, 
+            s.prourl, 
+            s.servername, 
+            'https://' + s.servername + '/live-record/' + s.streamname + '.flv' AS url2,
+            b.district,
+            b.acname AS assemblyName,
+            b.PSNum AS psNo,
+            b.location,
+            s.deviceid AS deviceId,
+            'WestBengal' AS state 
+        FROM streamlist s WITH (NOLOCK)
+        INNER JOIN booth b WITH (NOLOCK) ON s.id = b.streamid 
+        WHERE ISNULL(b.isdelete,'')=0 AND s.deviceid = @deviceId
+    `;
+
+    const result = await pool.request()
+        .input('deviceId', deviceId)
+        .query(query);
+
+    const data = result.recordset[0] || null;
+
+    return {
+        stream: data ? {
+            streamname: data.streamname,
+            prourl: data.prourl,
+            servername: data.servername,
+            url2: data.url2
+        } : null,
+        booth: data ? {
+            district: data.district,
+            assemblyName: data.assemblyName,
+            psNo: data.psNo,
+            location: data.location,
+            deviceId: data.deviceId,
+            state: data.state
+        } : null
+    };
+};
 
 exports.setIsEdited = async (req, res) => {
   try {
@@ -197,23 +242,34 @@ exports.createCamera = async (req, res, next) => {
     try {
         // console.log(req.body)
         let deviceId = req.body.deviceId;
-        console.log("deviceId:", deviceId); // For debugging
+        let phase = req.body.phase;
+        console.log("deviceId:", deviceId, "phase:", phase); // For debugging
 
         // Search for existing camera
         const existingCamera = await EleCamera.findOne({ deviceId: deviceId });
 
-        // Find EleFlv record matching the deviceId
-        const getFlv = await EleFlv.findOne({ streamname: deviceId });
-        console.log("getFlvurl2", getFlv); // For debugging
+        let flvUrl = "";
+        if (phase) {
+            const sqlData = await getSqlData(phase, deviceId);
+            if (!sqlData.stream) {
+                throw new Error("Stream record not found in SQL for deviceId: " + deviceId);
+            }
+            flvUrl = sqlData.stream.url2;
+        } else {
+            // Find EleFlv record matching the deviceId
+            const getFlv = await EleFlv.findOne({ streamname: deviceId });
+            console.log("getFlvurl2", getFlv); // For debugging
 
-        if (!getFlv) {
-            // If EleFlv record not found, handle the error
-            throw new Error("EleFlv record not found for deviceId: " + deviceId);
+            if (!getFlv) {
+                // If EleFlv record not found, handle the error
+                throw new Error("EleFlv record not found for deviceId: " + deviceId);
+            }
+            flvUrl = getFlv.url2;
         }
 
         if (!existingCamera) {
             // Camera doesn't exist, create a new one
-            let newCamera = await EleCamera.create({ ...req.body, flvUrl: getFlv.url2 });
+            let newCamera = await EleCamera.create({ ...req.body, flvUrl: flvUrl, phase: phase });
             res.status(200).json({
                 success: true,
                 data: newCamera
@@ -229,7 +285,7 @@ exports.createCamera = async (req, res, next) => {
             // Camera exists, update its values
             const updatedCamera = await EleCamera.findOneAndUpdate(
                 { deviceId: deviceId },
-                { $set: { ...req.body, flvUrl: getFlv.url2 } },
+                { $set: { ...req.body, flvUrl: flvUrl, phase: phase } },
                 { new: true } // To return the updated document
             );
 
@@ -367,7 +423,8 @@ exports.signin = async (req, res, next) => {
 
 exports.verifyOtp = async (req, res, next) => {
     try {
-        const { mobile, otp } = req.body;
+        const { mobile, otp, phase } = req.body;
+        console.log("verifyOtp received:", { mobile, otp, phase });
         const user = await electionUser.findOne({ mobile: parseInt(mobile) });
 
         if (!mobile || !otp) {
@@ -378,24 +435,33 @@ exports.verifyOtp = async (req, res, next) => {
             // Successful OTP verification
             delete otpStorage[mobile];
 
+            const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+                expiresIn: process.env.JWT_EXPIRE,
+            });
+
+            const options = {
+                expires: new Date(Date.now() + process.env.COOKIE_EXPIRE * 24 * 60 * 60 * 1000),
+                httpOnly: true,
+                secure: true,
+            };
+
             let punjabInstaller = await punjabElection.findOne({ mobile: parseInt(mobile) })
-            console.log(punjabInstaller, "punjabInstaller")
             if (punjabInstaller) {
-                user.role = 'punjabInstaller'
-                user.state = 'PUNJAB',
-                user.district = punjabInstaller.district,
-                user.assemblyName = punjabInstaller.assemblyName,
-
+                user.role = 'punjabInstaller';
+                user.state = 'PUNJAB';
+                user.district = punjabInstaller.district;
+                user.assemblyName = punjabInstaller.assemblyName;
                 await user.save();
-                console.log(user, "user")
-
-                return res.json({ success: true, role: user.role, message: 'OTP verified successfully' });
-            }
-            if (!punjabInstaller) {
-                return res.json({ success: true, role: user.role, message: 'OTP verified successfully' });
             }
 
-
+            console.log("verifyOtp returning phase:", phase);
+            return res.status(200).cookie("token", token, options).json({
+                success: true,
+                token,
+                role: user.role,
+                message: 'OTP verified successfully',
+                phase: phase
+            });
         } else {
             // Incorrect OTP
             res.status(401).json({ error: 'Invalid OTP' });
@@ -412,6 +478,26 @@ exports.verifyOtp = async (req, res, next) => {
 exports.getCameraByDid = async (req, res, next) => {
     console.log(req.query.deviceId)
     try {
+        const { deviceId, phase } = req.query;
+
+        if (phase) {
+            const sqlData = await getSqlData(phase, deviceId);
+            
+            if (!sqlData.booth) {
+                return res.status(200).json({
+                    success: false,
+                    data: 'Device Id not found in election (SQL)',
+                    flvUrl: sqlData.stream
+                });
+            }
+
+            return res.status(200).json({
+                success: true,
+                data: sqlData.booth,
+                flvUrl: sqlData.stream,
+            });
+        }
+
         const cameras = await Booth.findOne({ deviceId: req.query.deviceId }).sort({ _id: -1 }).limit(1);
 
         const getFlv = await EleFlv.findOne({ streamname: req.query.deviceId }).sort({ _id: -1 }).limit(1);
@@ -442,44 +528,27 @@ exports.getCameraByDid = async (req, res, next) => {
 exports.getCameraByDidInfo = async (req, res, next) => {
     console.log(req.query.deviceId)
     try {
+        const { deviceId, phase } = req.query;
+
+        if (phase) {
+            const sqlData = await getSqlData(phase, deviceId);
+            
+            if (!sqlData.booth) {
+                return res.status(200).json({
+                    success: false,
+                    data: 'Device Id not found in election (SQL)',
+                    flvUrl: sqlData.stream
+                });
+            }
+
+            return res.status(200).json({
+                success: true,
+                data: sqlData.booth,
+                flvUrl: sqlData.stream,
+            });
+        }
+
         const cameras = await Booth.findOne({ deviceId: req.query.deviceId })
-
-        // for (let camera of cameras) {
-        // try {
-        // let LastSeenResponse = await axios.get(`https://tn2023demo.vmukti.com/Stream/GetCameraDatatest?cameraId=${req.query.deviceId}`);
-
-        // const lastSeenDates = LastSeenResponse.data.map(item => ({
-        //     date: new Date(item.LastSeen),
-        //     status: item.Status
-        // }));
-
-        // Finding the item with the latest LastSeen date
-        // const latestItem = lastSeenDates.reduce((prev, current) => (prev.date > current.date) ? prev : current);
-
-        // Format the date into "dd/mm/yyyy hh/mm/ss" format
-        // const formattedDate = latestItem.date.toLocaleString('en-GB', {
-        //     day: '2-digit',
-        //     month: '2-digit',
-        //     year: 'numeric',
-        //     hour: '2-digit',
-        //     minute: '2-digit',
-        //     second: '2-digit'
-        // });
-
-        // Assigning the formatted date and status to the camera document
-        // cameras.lastSeen = formattedDate;
-        // cameras.status = latestItem.status;
-
-        // Update the date and status fields with the last seen date and status
-        // await cameras.save();
-
-        //     console.log("Last live", cameras.lastSeen);
-        //     console.log("Status", cameras.status);
-        // } catch (error) {
-        //     console.error("Error fetching LastSeen:", error.message);
-        //     // Handle error if needed
-        // }
-        // }
 
         const getFlv = await EleFlv.findOne({ streamname: req.query.deviceId });
         console.log("getFlvurl2", getFlv); // For debugging
@@ -505,11 +574,48 @@ exports.getCameraByDidInfo = async (req, res, next) => {
     }
 };
 
-// assign data using excel
+exports.searchDevices = async (req, res, next) => {
+    try {
+        const { query, phase } = req.query;
+        console.log("searchDevices received:", { query, phase });
+        if (!query) {
+            return res.status(200).json({ success: true, streamnames: [] });
+        }
+
+        if (phase) {
+            const pool = await getSqlConnection(phase);
+            const sqlQuery = "SELECT top(5) streamname FROM streamlist s WITH (NOLOCK) INNER JOIN booth b WITH (NOLOCK) ON s.id = b.streamid WHERE (streamname LIKE @query OR deviceid LIKE @query) AND ISNULL(b.isdelete,'')=0";
+            const result = await pool.request()
+                .input('query', `%${query}%`)
+                .query(sqlQuery);
+            return res.status(200).json({
+                success: true,
+                streamnames: [...new Set(result.recordset.map(row => row.streamname))]
+            });
+        } else {
+            const regex = new RegExp(query, 'i');
+            const getFlv = await EleFlv.aggregate([
+                { $match: { streamname: { $regex: regex } } },
+                { $project: { streamname: 1, _id: 0 } },
+                { $limit: 10 }
+            ]);
+
+            return res.status(200).json({
+                success: true,
+                streamnames: getFlv.map(doc => doc.streamname)
+            });
+        }
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: error.message,
+        });
+    }
+};
 exports.addData = async (req, res, next) => {
     try {
         // Extract data from the request body
-        const { deviceIds, personMobile, number, location } = req.body;
+        const { deviceIds, personMobile, number, location, phase } = req.body;
 
         const results = [];
 
@@ -517,8 +623,14 @@ exports.addData = async (req, res, next) => {
             // Check if a camera with the same deviceId already exists in the database
             const existingCamera = await EleCamera.findOne({ deviceId: data.deviceId });
 
-            const getFlv = await EleFlv.findOne({ streamname: data.deviceId });
-            console.log("getFlvurl2", getFlv); // For debugging
+            let flvUrl = "";
+            if (phase) {
+                const sqlData = await getSqlData(phase, data.deviceId);
+                flvUrl = sqlData.stream ? sqlData.stream.url2 : "";
+            } else {
+                const getFlv = await EleFlv.findOne({ streamname: data.deviceId });
+                flvUrl = getFlv ? getFlv.url2 : "";
+            }
 
             if (existingCamera) {
                 // If the camera already exists, update its details
@@ -532,8 +644,9 @@ exports.addData = async (req, res, next) => {
                         assemblyName: data.assemblyName,
                         psNo: data.psNo,
                         district: data.district,
-                        latitude: data.latitude,
                         longitude: data.longitude,
+                        flvUrl: flvUrl,
+                        phase: phase
                     },
                     { new: true }
                 );
@@ -553,7 +666,8 @@ exports.addData = async (req, res, next) => {
                     district: data.district,
                     latitude: data.latitude,
                     longitude: data.longitude,
-                    flvUrl: getFlv.url2
+                    flvUrl: flvUrl,
+                    phase: phase
                 });
 
                 results.push(newCamera);
@@ -583,16 +697,38 @@ exports.assignCamera = async (req, res, next) => {
         const didArray = req.body.deviceIds;
         const number = req.body.personMobile;
         const assignTo = req.body.number;
+        const phase = req.body.phase;
         // const location = req.body.location;
         const results = [];
 
         for (const did of didArray) {
-            const camera = await EleFlv.findOne({ streamname: did });
+            let cameraData = null;
+            if (phase) {
+                const sqlData = await getSqlData(phase, did);
+                if (sqlData.booth) {
+                    cameraData = {
+                        AssemblyName: sqlData.booth.assemblyName,
+                        PSNumber: sqlData.booth.psNo,
+                        district: sqlData.booth.district,
+                        state: sqlData.booth.state
+                    };
+                }
+            } else {
+                const camera = await EleFlv.findOne({ streamname: did });
+                if (camera) {
+                    cameraData = {
+                        AssemblyName: camera.AssemblyName,
+                        PSNumber: camera.PSNumber,
+                        district: camera.district,
+                        state: camera.state
+                    };
+                }
+            }
 
-            if (!camera) {
+            if (!cameraData) {
                 return res.status(400).json({
                     success: false,
-                    data: `Camera with deviceId ${did} not found in election`,
+                    data: `Camera with deviceId ${did} not found`,
                 });
             }
 
@@ -617,10 +753,10 @@ exports.assignCamera = async (req, res, next) => {
                         personName: person ? person.name : '',
                         personMobile: assignTo,
                         // location: location,
-                        assemblyName: camera.AssemblyName,
-                        psNo: camera.PSNumber,
-                        district: camera.district,
-                        state: camera.state
+                        assemblyName: cameraData.AssemblyName,
+                        psNo: cameraData.PSNumber,
+                        district: cameraData.district,
+                        state: cameraData.state
                     }
                 },
                 updateOptions
@@ -1574,7 +1710,7 @@ exports.getDashboardDetails = async (req, res, next) => {
         const totalOfflineCamera = await EleCamera.countDocuments({ status: 'STOPPED' })
         const totalInstallers = await electionUser.countDocuments({ role: { $ne: 'district' } });
         const totalDistrictManager = await electionUser.countDocuments({ role: 'district' });
-        const uniqueState = await Booth.distinct('state');
+        const uniqueState = await EleCamera.distinct('state');
 
         const dataByState = [];
 
@@ -1627,7 +1763,7 @@ exports.getStateData = async (req, res, next) => {
             EleCamera.countDocuments({ state: state, status: 'STOPPED' }),
             electionUser.countDocuments({ state: state, role: { $ne: 'district' } }),
             electionUser.countDocuments({ state: state, role: 'district' }),
-            Booth.distinct('district', { state })
+            EleCamera.distinct('district', { state })
         ]);
 
         const dataByStatePromises = uniqueState.map(async (district) => {
@@ -1693,7 +1829,7 @@ exports.getDistrictData = async (req, res, next) => {
             EleCamera.countDocuments({ district, status: 'STOPPED' }),
             electionUser.countDocuments({ district, role: { $ne: 'district' } }),
             electionUser.countDocuments({ district, role: 'district' }),
-            Booth.distinct('assemblyName', { district }) // Assuming 'assemblyName' is the field for assembly name in Booth collection
+            EleCamera.distinct('assemblyName', { district }) // Assuming 'assemblyName' is the field for assembly name in Booth collection
         ]);
 
         const dataByDistrictPromises = uniqueDistricts.map(async (assemblyName) => {
@@ -1850,7 +1986,7 @@ exports.getAssemblyData = async (req, res, next) => {
             EleCamera.countDocuments({ assemblyName, status: 'STOPPED' }),
             electionUser.countDocuments({ assemblyName, role: { $ne: 'district' } }),
             electionUser.countDocuments({ assemblyName, role: 'district' }),
-            Booth.distinct('location', { assemblyName })
+            EleCamera.distinct('location', { assemblyName })
         ]);
 
         const dataByAssemblyPromises = uniqueBooths.map(async (location) => {
@@ -2091,6 +2227,28 @@ exports.getFlvLatDid = async (req, res, next) => {
 exports.getFullDid = async (req, res, next) => {
     console.log(req.query.deviceId)
     try {
+        const { deviceId, phase } = req.query;
+        
+        if (phase) {
+            const pool = await getSqlConnection(phase);
+            const sqlQuery = "SELECT streamname FROM streamlist WHERE streamname LIKE @query ORDER BY streamname DESC";
+            const result = await pool.request()
+                .input('query', `%${deviceId}%`)
+                .query(sqlQuery);
+
+            if (!result.recordset || result.recordset.length === 0) {
+                return res.status(200).json({
+                    success: false,
+                    data: 'Device Id not found in election (SQL)',
+                });
+            }
+
+            return res.status(200).json({
+                success: true,
+                streamnames: result.recordset.map(row => row.streamname)
+            });
+        }
+
         const regex = new RegExp(req.query.deviceId, 'i'); // Case-insensitive regex
 
         const getFlv = await EleFlv.aggregate([

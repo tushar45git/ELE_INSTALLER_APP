@@ -1,7 +1,7 @@
 const express = require('express');
 const adiancerouter = express.Router();
 const {isAuthenticatedUser, authorizeRoles, authorizeRolesElection} = require('../middleware/auth');
-const { setIsEdited,getCameraStatus,getCameraById, getLocation, updateCamera, signin, verifyOtp, createCamera, getCameraByDid, getCamerasbyAssignedBy, getCamerasbyNumber, assignCamera, addData, getAcdetails, updateAssemblyNames, updateDistrict, convertDistrictToUpperCase, getDistrictdetails, updateStr, getdetails, getsetting, setsetting, getStateData, getDashboardDetails, updateUser, getPsDetails, getPsLocation, getDistrictData, getAssemblyData, getCameraByLocation, attendance, getLatLongFsv, getFlvLatDid, getFullDid, getLatLongPolling, removeEleCamera, trackLiveLatLong, getElectionUser, getLatLongPhaseOne, getCameraByDidInfo, getElectionUserChart, getElectionCameraChart, rebootCamera, getRebootCamera, getAssemblyByNumber, getCamerasbyDid, getElectionUserPage, getBiharReport, getBiharReportUser, getSixDistrictDataBihar } = require('../controllers/electionController');
+const { searchDevices, setIsEdited,getCameraStatus,getCameraById, getLocation, updateCamera, signin, verifyOtp, createCamera, getCameraByDid, getCamerasbyAssignedBy, getCamerasbyNumber, assignCamera, addData, getAcdetails, updateAssemblyNames, updateDistrict, convertDistrictToUpperCase, getDistrictdetails, updateStr, getdetails, getsetting, setsetting, getStateData, getDashboardDetails, updateUser, getPsDetails, getPsLocation, getDistrictData, getAssemblyData, getCameraByLocation, attendance, getLatLongFsv, getFlvLatDid, getFullDid, getLatLongPolling, removeEleCamera, trackLiveLatLong, getElectionUser, getLatLongPhaseOne, getCameraByDidInfo, getElectionUserChart, getElectionCameraChart, rebootCamera, getRebootCamera, getAssemblyByNumber, getCamerasbyDid, getElectionUserPage, getBiharReport, getBiharReportUser, getSixDistrictDataBihar } = require('../controllers/electionController');
 
 adiancerouter.route('/cameras').get( getCameraById );
 adiancerouter.route('/getLocation').get( getLocation );
@@ -10,6 +10,7 @@ adiancerouter.route('/login').post( signin );
 adiancerouter.route('/verify').post( verifyOtp );
 adiancerouter.route('/create').post( createCamera );
 adiancerouter.route('/getcamerabydid').get( getCameraByDid );
+adiancerouter.route('/searchDevices').get( searchDevices );
 adiancerouter.route('/getCamerasByAssignedBy').get(authorizeRolesElection('district'),getCamerasbyAssignedBy );
 adiancerouter.route('/getCamerasByNumber').get( getCamerasbyNumber );
 adiancerouter.route('/assignCamera').post( assignCamera );
