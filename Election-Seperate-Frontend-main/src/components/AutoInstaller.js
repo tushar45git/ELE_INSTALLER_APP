@@ -55,6 +55,7 @@ import {
 } from "@chakra-ui/react";
 import { ToastContainer, toast } from "react-toastify";
 import {
+  searchDevices,
   getAcdetails,
   getCamera,
   getCameraByDid,
@@ -1418,9 +1419,13 @@ const downloadReport = async () => {
                           <Autosuggest
                             ref={autosuggestRef}
                             suggestions={suggestions}
-                            onSuggestionsFetchRequested={({ value, reason }) => {
+                            onSuggestionsFetchRequested={async ({ value, reason }) => {
                               if (reason === 'input-changed') {
-                                handleInputChange(null, { newValue: value, method: 'type' });
+                                const phase = localStorage.getItem('phase');
+                                const response = await searchDevices(value, phase);
+                                if (response && response.success) {
+                                  setSuggestions(response.streamnames);
+                                }
                               }
                             }}
                             onSuggestionsClearRequested={() => setSuggestions([])}

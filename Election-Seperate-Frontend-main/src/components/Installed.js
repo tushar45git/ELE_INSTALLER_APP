@@ -339,6 +339,7 @@ const Installed = () => {
           <option value="BIHAR">BIHAR</option>
           <option value="NAGALAND">NAGALAND</option>
           <option value="MEGHALAYA">MEGHALAYA</option>
+          <option value="WestBengal">WestBengal</option>
         </Select>
         <Button onClick={handleStateChange}>Submit</Button>
       </div>

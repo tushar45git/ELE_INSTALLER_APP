@@ -3,7 +3,7 @@ import axios from 'axios';
 // const baseURL = 'http://192.168.29.33:7073/election';
 // const baseURL = 'https://seahorse-app-2-3o2pf.ondigitalocean.app/election';
 // const baseURL = 'http://192.168.29.123:7073/election';
-const baseURL = 'https://goldfish-app-4tta3.ondigitalocean.app/backend/election';
+const baseURL = 'http://localhost:8080/election';
 
 const instance = axios.create({
   baseURL: baseURL
@@ -35,10 +35,10 @@ export const getCameraStatus = async (deviceId) => {
 
 
 export const getCamera = async (mobile) => {
-
+  const phase = localStorage.getItem('phase');
   try {
     console.log(mobile);
-    const params = { personMobile: mobile };
+    const params = { personMobile: mobile, phase: phase };
     const response = await instance.get('/cameras', {
       params: params
     });
@@ -286,9 +286,10 @@ export const getPsLocation = async (state, district, assembly, psNo) => {
 
 export const getCameraByDid = async (mobile) => {
   const token = localStorage.getItem('mobile');
+  const phase = localStorage.getItem('phase');
   try {
     console.log(mobile);
-    const params = { deviceId: mobile };
+    const params = { deviceId: mobile, phase: phase };
     const response = await instance.get('/getcamerabydid', {
       params: params
     }, {
@@ -336,9 +337,10 @@ export const getCamerasByDid = async (mobile) => {
 
 export const getCameraByDidInfo = async (mobile) => {
   const token = localStorage.getItem('mobile');
+  const phase = localStorage.getItem('phase');
   try {
     console.log(mobile);
-    const params = { deviceId: mobile };
+    const params = { deviceId: mobile, phase: phase };
     const response = await instance.get('/getcamerabydidInfo', {
       params: params
     }, {
@@ -380,13 +382,14 @@ export async function updateCamera(deviceId, installed_status) /* type, */ {
   }
 }
 
-export const login = async (name, mobile) => {
+export const login = async (name, mobile, phase) => {
   try {
-    console.log(name, mobile);
+    console.log(name, mobile, phase);
 
     const response = await instance.post('/login', {
       name: name,
       mobile: mobile,
+      phase: phase
     });
 
     console.log(response.data);
@@ -424,13 +427,14 @@ export const trackLiveLatLong = async (name, mobile, lat, long, date, time, stat
   }
 };
 
-export const verifyOtp = async (mobile, otp) => {
+export const verifyOtp = async (mobile, otp, phase) => {
   try {
-    console.log(mobile, otp);
+    console.log(mobile, otp, phase);
 
     const response = await instance.post('/verify', {
       mobile: mobile,
       otp: otp,
+      phase: phase
     });
 
     console.log(response.data);
@@ -443,7 +447,20 @@ export const verifyOtp = async (mobile, otp) => {
   }
 };
 
+export const searchDevices = async (query, phase) => {
+  try {
+    const response = await instance.get('/searchDevices', {
+      params: { query, phase }
+    });
+    return response.data;
+  } catch (error) {
+    console.error(error);
+    return { success: false, message: error.message || 'An error occurred during search.' };
+  }
+};
+
 export const installCamera = async (deviceId, name, mobile, assemblyName, psNumber, state, district, excelLocation, latitude, longitude, installed_status, status ,date, time, remarks) => {
+  const phase = localStorage.getItem('phase');
   try {
 
     const response = await instance.post('/create', {
@@ -461,7 +478,8 @@ export const installCamera = async (deviceId, name, mobile, assemblyName, psNumb
       date: date,
       time: time,
       remarks: remarks,
-      status : status
+      status : status,
+      phase: phase
     });
 
     console.log(response.data);

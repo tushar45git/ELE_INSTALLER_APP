@@ -18,6 +18,7 @@ import {
   Fade,
   ScaleFade,
   Divider,
+  Select,
 } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
 import { login, verifyOtp } from "../actions/userActions";
@@ -35,6 +36,7 @@ const Login = () => {
   const [resendTimer, setResendTimer] = useState(0);
   const [locationEnabled, setLocationEnabled] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [phase, setPhase] = useState("");
 
   const inputRefs = useRef([]);
   const navigate = useNavigate();
@@ -97,7 +99,7 @@ const Login = () => {
     setIsLoading(true);
     try {
       setMobileForOtp(mobile);
-      const response = await login(name, mobile);
+      const response = await login(name, mobile, phase);
       if (response && response.success !== false) {
         setOtpSent(true);
         setResendDisabled(true);
@@ -137,13 +139,14 @@ const Login = () => {
 
     setIsLoading(true);
     try {
-      const response = await verifyOtp(mobile, otpString);
+      const response = await verifyOtp(mobile, otpString, phase);
       if (response && response.success) {
         localStorage.setItem("name", name);
         localStorage.setItem("mobile", mobile);
         localStorage.setItem("isLoggedIn", "true");
         localStorage.setItem("token", response.token);
         localStorage.setItem("role", response.role);
+        localStorage.setItem("phase", response.phase || "");
 
         toast({
           title: "Success",
@@ -287,6 +290,24 @@ const Login = () => {
                       onChange={handleMobileChange}
                     />
                   </InputGroup>
+                </FormControl>
+
+                <FormControl isRequired>
+                  <FormLabel fontWeight="700" color="gray.700" fontSize="sm">Select Phase</FormLabel>
+                  <Select
+                    placeholder="Choose Phase"
+                    bg="white"
+                    size="md"
+                    borderRadius="xl"
+                    boxShadow="sm"
+                    _focus={{ borderColor: "blue.400", boxShadow: "0 0 0 1px #3182ce" }}
+                    value={phase}
+                    onChange={(e) => setPhase(e.target.value)}
+                  >
+                    <option value="phase1">Phase 1 </option>
+                    <option value="phase2">Phase 2 </option>
+                    <option value="phase3">Phase 3 </option>
+                  </Select>
                 </FormControl>
 
                 <Button
