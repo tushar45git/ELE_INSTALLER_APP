@@ -39,26 +39,31 @@ const DrawerButton = ({ drawerContent }) => {
             { path: "/installer", label: "Installer", icon: MdBuild },
             { path: "/autoinstaller", label: "Auto Installer", icon: MdBuild },
             { path: "/eleuser", label: "User Analytics", icon: MdBuild },
+            { path: "/attendance", label: "Attendance", icon: MdAccountCircle }
         );
     } else if (role === "district") {
         menuItems.push(
             { path: "/head", label: "District Manager", icon: MdAccountCircle },
             { path: "/installer", label: "Installer", icon: MdBuild },
-            { path: "/autoinstaller", label: "Auto Installer", icon: MdBuild }
+            { path: "/autoinstaller", label: "Auto Installer", icon: MdBuild },
+             { path: "/attendance", label: "Attendance", icon: MdAccountCircle },
         );
     } else if (role === "installer" || role === "autoinstaller" || role === "punjabInstaller") {
         menuItems.push(
-            { path: "/autoinstaller", label: "Auto Installer", icon: MdBuild }
+            { path: "/autoinstaller", label: "Auto Installer", icon: MdBuild },
+             { path: "/attendance", label: "Attendance", icon: MdAccountCircle }
         );
     } else if (role === "checkpost") {
         menuItems.push(
-            { path: "/attendance", label: "Attendance", icon: MdAccountCircle }
+            { path: "/attendance", label: "Attendance", icon: MdAccountCircle },
+             { path: "/attendance", label: "Attendance", icon: MdAccountCircle }
         );
     }
     else {
         // Fallback for other roles
         menuItems.push(
             { path: "/autoinstaller", label: "Auto Installer", icon: MdBuild },
+             { path: "/attendance", label: "Attendance", icon: MdAccountCircle }
         );
     }
 

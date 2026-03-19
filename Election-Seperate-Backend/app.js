@@ -39,6 +39,15 @@
 
 
 const express = require('express');
+if (!global.crypto) {
+    try {
+        global.crypto = require('isomorphic-crypto');
+    } catch (e) {
+        console.warn('isomorphic-crypto not found, attempting to use built-in crypto');
+        global.crypto = require('crypto').webcrypto || require('crypto');
+    }
+}
+
 const cors = require('cors');
 const morgan = require('morgan');
 const multer = require('multer');
@@ -144,10 +153,11 @@ app.get('/', (req, res) => {
 
 // Import all routes
 const electionRoutes = require('./routes/electionRoute')
-
+const attendanceRoutes = require('./routes/attendanceRoute')
 
 // Mount all routes
 app.use('/election', electionRoutes);
+app.use('/election/api/attendance', attendanceRoutes);
 // Start the server
 app.listen(port, () => {
     console.log(`Server is running at http://localhost:${port}`);

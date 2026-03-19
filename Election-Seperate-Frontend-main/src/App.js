@@ -13,6 +13,7 @@ import StatePage from './components/StatePage';
 import DistrictPage from './components/DistrictPage';
 import AssemblyPage from './components/AssemblyPage';
 import Attendance from './components/Attendance';
+import AttendanceManagement from './components/AttendanceManagement';
 import Eci from './components/Eci';
 import AutoInstaller from './components/AutoInstaller';
 import Installed from './components/Installed';
@@ -59,6 +60,7 @@ function AppContent() {
           <Route path="/head" element={<Head />} />
           <Route path="/" element={<Login />} />
           {/* <Route path="/attendance" element={<Attendance />} />  */}
+          <Route path="/attendance" element={<AttendanceManagement />} />
           <Route path="/eci" element={<Eci />} />
           <Route path="/installed" element={<Installed />} />
           <Route path="/eleuser" element={<ElectionInstaller />} />
