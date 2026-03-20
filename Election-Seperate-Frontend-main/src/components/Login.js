@@ -306,7 +306,6 @@ const Login = () => {
                   >
                     <option value="phase1">Phase 1 </option>
                     <option value="phase2">Phase 2 </option>
-                    <option value="phase3">Phase 3 </option>
                   </Select>
                 </FormControl>
 

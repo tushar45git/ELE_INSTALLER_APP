@@ -32,22 +32,6 @@ const phaseConfigs = {
       min: 0,
       idleTimeoutMillis: 30000
     }
-  },
-  phase3: {
-    user: 'vmukti',
-    password: 'bhargav@123456',
-    server: '20.244.109.231',
-    database: 'mpflc2024august',
-    port: 1433,
-    options: {
-      encrypt: false,
-      trustServerCertificate: true,
-    },
-    pool: {
-      max: 10,
-      min: 0,
-      idleTimeoutMillis: 30000
-    }
   }
 };
 
