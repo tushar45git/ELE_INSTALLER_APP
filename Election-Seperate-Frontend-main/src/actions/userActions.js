@@ -584,7 +584,8 @@ export const getCamerasByNumber = async (mobile) => {
   const token = localStorage.getItem('mobile');
   try {
     // console.log(mobile);
-    const params = { personMobile: mobile };
+    const phase = localStorage.getItem('phase');
+    const params = { personMobile: mobile, phase: phase };
     const response = await instance.get('/getCamerasByNumber', {
       params: params
     },
@@ -625,13 +626,13 @@ export const getLatLongFsv = async (mobile, currentPage) => {
   }
 };
 
-export const getLatLongPolling = async () => {
+export const getLatLongPolling = async (state) => {
   // const token = localStorage.getItem('mobile');
   try {
-    // console.log(mobile);
-    // const params = { state: state };
+    const phase = localStorage.getItem('phase');
+    const params = { phase: phase, state: state };
     const response = await instance.get('/getLatLongPolling', {
-      // params: params
+      params: params
     });
 
     console.log("getcameras", response.data);
@@ -825,10 +826,10 @@ export const getFullDid = async (deviceId, phase) => {
 export const getDashboardDetails = async (mobile) => {
   const token = localStorage.getItem('mobile');
   try {
-    // console.log(mobile);
-    // const params = { deviceId: mobile };
+    const phase = localStorage.getItem('phase');
+    const params = { phase: phase };
     const response = await instance.get('/getDashboardDetails', {
-      // params: params
+      params: params
     }, {
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -850,9 +851,10 @@ export const getDashboardDetails = async (mobile) => {
 export const getStateData = async (state) => {
   const token = localStorage.getItem('mobile');
   try {
-    // console.log(mobile);
-    // const params = { deviceId: mobile };
-    const response = await instance.get(`/getStateData?state=${state}`, {}, {
+    const phase = localStorage.getItem('phase');
+    const response = await instance.get(`/getStateData`, {
+      params: { state, phase }
+    }, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
@@ -873,9 +875,10 @@ export const getStateData = async (state) => {
 export const getDistrictData = async (state, district) => {
   const token = localStorage.getItem('mobile');
   try {
-    // console.log(mobile);
-    // const params = { deviceId: mobile };
-    const response = await instance.get(`/getDistrictData?state=${state}&district=${district}`, {}, {
+    const phase = localStorage.getItem('phase');
+    const response = await instance.get(`/getDistrictData`, {
+      params: { state, district, phase }
+    }, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
@@ -896,9 +899,10 @@ export const getDistrictData = async (state, district) => {
 export const getAssemblyData = async (state, district, assemblyName) => {
   const token = localStorage.getItem('mobile');
   try {
-    // console.log(mobile);
-    // const params = { deviceId: mobile };
-    const response = await instance.get(`/getAssemblyData?state=${state}&district=${district}&assemblyName=${assemblyName}`, {}, {
+    const phase = localStorage.getItem('phase');
+    const response = await instance.get(`/getAssemblyData`, {
+      params: { state, district, assemblyName, phase }
+    }, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
@@ -919,9 +923,10 @@ export const getAssemblyData = async (state, district, assemblyName) => {
 export const getCameraByLocation = async (location) => {
   const token = localStorage.getItem('mobile');
   try {
-    // console.log(mobile);
-    // const params = { deviceId: mobile };
-    const response = await instance.get(`/getCameraByLocation?location=${location}`, {}, {
+    const phase = localStorage.getItem('phase');
+    const response = await instance.get(`/getCameraByLocation`, {
+      params: { location, phase }
+    }, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',

@@ -145,46 +145,12 @@ exports.getLocation = async (req, res, next) => {
 
 exports.getCameraById = async (req, res, next) => {
     try {
-        const cameras = await EleCamera.find({ personMobile: req.query.personMobile, installed_status: 1 });
-
-        // for (let camera of cameras) {
-        //     try {
-        // let LastSeenResponse = await axios.get(`https://tn2023demo.vmukti.com/Stream/GetCameraDatatest?cameraId=${camera.deviceId}`);
-
-        // // Extracting LastSeen dates and Status from the API response
-        // const lastSeenDates = LastSeenResponse.data.map(item => ({
-        //     date: new Date(item.LastSeen),
-        //     status: item.Status
-        // }));
-
-        // // Finding the item with the latest LastSeen date
-        // const latestItem = lastSeenDates.reduce((prev, current) => (prev.date > current.date) ? prev : current);
-
-        // // Format the date into "dd/mm/yyyy hh/mm/ss" format
-        //         const formattedDate = latestItem.date.toLocaleString('en-GB', {
-        //             day: '2-digit',
-        //             month: '2-digit',
-        //             year: 'numeric',
-        //             hour: '2-digit',
-        //             minute: '2-digit',
-        //             second: '2-digit'
-        //         });
-
-        //         // Assigning the formatted date and status to the camera document
-        //         camera.lastSeen = formattedDate;
-        //         camera.status = latestItem.status;
-
-        //         // Update the date and status fields with the last seen date and status
-        //         await camera.save();
-
-        //         console.log("Last live", camera.lastSeen);
-        //         console.log("Status", camera.status);
-        //     } catch (error) {
-        //         console.error("Error fetching LastSeen:", error.message);
-        //         // Handle error if needed
-        //     }
-        // }
-
+        const { personMobile, phase } = req.query;
+        let query = { personMobile: personMobile, installed_status: 1 };
+        if (phase) {
+            query.phase = phase;
+        }
+        const cameras = await EleCamera.find(query);
 
         return res.status(200).json({
             success: true,
@@ -646,7 +612,8 @@ exports.addData = async (req, res, next) => {
                         district: data.district,
                         latitude: data.latitude,
                         longitude: data.longitude,
-                        flvUrl: flvUrl
+                        flvUrl: flvUrl,
+                        phase: phase
                     },
                     { new: true }
                 );
@@ -666,7 +633,8 @@ exports.addData = async (req, res, next) => {
                     district: data.district,
                     latitude: data.latitude,
                     longitude: data.longitude,
-                    flvUrl: flvUrl
+                    flvUrl: flvUrl,
+                    phase: phase
                 });
 
                 results.push(newCamera);
@@ -755,7 +723,8 @@ exports.assignCamera = async (req, res, next) => {
                         assemblyName: cameraData.AssemblyName,
                         psNo: cameraData.PSNumber,
                         district: cameraData.district,
-                        state: cameraData.state
+                        state: cameraData.state,
+                        phase: phase
                     }
                 },
                 updateOptions
@@ -788,8 +757,13 @@ exports.assignCamera = async (req, res, next) => {
 // get camera by number 
 exports.getCamerasbyNumber = async (req, res, next) => {
     try {
-        let number = req.query.personMobile
-        const cameras = await EleCamera.find({ assignedDid: number })
+        let number = req.query.personMobile;
+        const { phase } = req.query;
+        let query = { assignedDid: number };
+        if (phase) {
+            query.phase = phase;
+        }
+        const cameras = await EleCamera.find(query);
 
         res.status(200).json({
             success: true,
@@ -1703,10 +1677,16 @@ exports.updateUser = async (req, res, next) => {
 // dashboard details
 exports.getDashboardDetails = async (req, res, next) => {
     try {
-        const totalCameras = await EleCamera.countDocuments()
-        const installedCameras = await EleCamera.countDocuments({ installed_status: 1 });
-        const totalLiveCamera = await EleCamera.countDocuments({ status: 'RUNNING' })
-        const totalOfflineCamera = await EleCamera.countDocuments({ status: 'STOPPED' })
+        const { phase } = req.query;
+        let query = {};
+        if (phase) {
+            query.phase = phase;
+        }
+
+        const totalCameras = await EleCamera.countDocuments(query)
+        const installedCameras = await EleCamera.countDocuments({ ...query, installed_status: 1 });
+        const totalLiveCamera = await EleCamera.countDocuments({ ...query, status: 'RUNNING' })
+        const totalOfflineCamera = await EleCamera.countDocuments({ ...query, status: 'STOPPED' })
         const totalInstallers = await electionUser.countDocuments({ role: { $ne: 'district' } });
         const totalDistrictManager = await electionUser.countDocuments({ role: 'district' });
         const uniqueState = await Booth.distinct('state');
@@ -1714,10 +1694,10 @@ exports.getDashboardDetails = async (req, res, next) => {
         const dataByState = [];
 
         for (const state of uniqueState) {
-            const totalCameras = await EleCamera.countDocuments({ state });
-            const installedCameras = await EleCamera.countDocuments({ state, installed_status: 1 });
-            const totalLiveCamera = await EleCamera.countDocuments({ state, status: 'RUNNING' });
-            const totalOfflineCamera = await EleCamera.countDocuments({ state, status: 'STOPPED' });
+            const totalCameras = await EleCamera.countDocuments({ ...query, state });
+            const installedCameras = await EleCamera.countDocuments({ ...query, state, installed_status: 1 });
+            const totalLiveCamera = await EleCamera.countDocuments({ ...query, state, status: 'RUNNING' });
+            const totalOfflineCamera = await EleCamera.countDocuments({ ...query, state, status: 'STOPPED' });
             const totalInstallers = await electionUser.countDocuments({ state, role: { $ne: 'district' } });
             const totalDistrictManager = await electionUser.countDocuments({ state, role: 'district' });
 
@@ -1747,6 +1727,12 @@ exports.getDashboardDetails = async (req, res, next) => {
 exports.getStateData = async (req, res, next) => {
     try {
         let state = req.query.state
+        const { phase } = req.query;
+        let query = { state: state };
+        if (phase) {
+            query.phase = phase;
+        }
+
         const [
             totalCameras,
             installedCameras,
@@ -1756,16 +1742,21 @@ exports.getStateData = async (req, res, next) => {
             totalDistrictManager,
             uniqueState
         ] = await Promise.all([
-            EleCamera.countDocuments({ state: state }),
-            EleCamera.countDocuments({ state: state, installed_status: 1 }),
-            EleCamera.countDocuments({ state: state, status: 'RUNNING' }),
-            EleCamera.countDocuments({ state: state, status: 'STOPPED' }),
+            EleCamera.countDocuments(query),
+            EleCamera.countDocuments({ ...query, installed_status: 1 }),
+            EleCamera.countDocuments({ ...query, status: 'RUNNING' }),
+            EleCamera.countDocuments({ ...query, status: 'STOPPED' }),
             electionUser.countDocuments({ state: state, role: { $ne: 'district' } }),
             electionUser.countDocuments({ state: state, role: 'district' }),
             Booth.distinct('district', { state })
         ]);
 
         const dataByStatePromises = uniqueState.map(async (district) => {
+            let districtQuery = { district };
+            if (phase) {
+                districtQuery.phase = phase;
+            }
+
             const [
                 totalCameras,
                 installedCameras,
@@ -1774,10 +1765,10 @@ exports.getStateData = async (req, res, next) => {
                 totalInstallers,
                 totalDistrictManager
             ] = await Promise.all([
-                EleCamera.countDocuments({ district }),
-                EleCamera.countDocuments({ district, installed_status: 1 }),
-                EleCamera.countDocuments({ district, status: 'RUNNING' }),
-                EleCamera.countDocuments({ district, status: 'STOPPED' }),
+                EleCamera.countDocuments(districtQuery),
+                EleCamera.countDocuments({ ...districtQuery, installed_status: 1 }),
+                EleCamera.countDocuments({ ...districtQuery, status: 'RUNNING' }),
+                EleCamera.countDocuments({ ...districtQuery, status: 'STOPPED' }),
                 electionUser.countDocuments({ district, role: { $ne: 'district' } }),
                 electionUser.countDocuments({ district, role: 'district' })
             ]);
@@ -1812,6 +1803,12 @@ exports.getDistrictData = async (req, res, next) => {
     try {
         let state = req.query.state;
         let district = req.query.district;
+        const { phase } = req.query;
+        let query = { district: district };
+        if (phase) {
+            query.phase = phase;
+        }
+
         // Fetching district-level data
         const [
             totalCameras,
@@ -1822,16 +1819,21 @@ exports.getDistrictData = async (req, res, next) => {
             totalDistrictManager,
             uniqueDistricts
         ] = await Promise.all([
-            EleCamera.countDocuments({ district }),
-            EleCamera.countDocuments({ district, installed_status: 1 }),
-            EleCamera.countDocuments({ district, status: 'RUNNING' }),
-            EleCamera.countDocuments({ district, status: 'STOPPED' }),
+            EleCamera.countDocuments(query),
+            EleCamera.countDocuments({ ...query, installed_status: 1 }),
+            EleCamera.countDocuments({ ...query, status: 'RUNNING' }),
+            EleCamera.countDocuments({ ...query, status: 'STOPPED' }),
             electionUser.countDocuments({ district, role: { $ne: 'district' } }),
             electionUser.countDocuments({ district, role: 'district' }),
             Booth.distinct('assemblyName', { district }) // Assuming 'assemblyName' is the field for assembly name in Booth collection
         ]);
 
         const dataByDistrictPromises = uniqueDistricts.map(async (assemblyName) => {
+            let assemblyQuery = { district, assemblyName };
+            if (phase) {
+                assemblyQuery.phase = phase;
+            }
+
             const [
                 totalCameras,
                 installedCameras,
@@ -1840,10 +1842,10 @@ exports.getDistrictData = async (req, res, next) => {
                 totalInstallers,
                 totalDistrictManager
             ] = await Promise.all([
-                EleCamera.countDocuments({ district, assemblyName }),
-                EleCamera.countDocuments({ district, assemblyName, installed_status: 1 }),
-                EleCamera.countDocuments({ district, assemblyName, status: 'RUNNING' }),
-                EleCamera.countDocuments({ district, assemblyName, status: 'STOPPED' }),
+                EleCamera.countDocuments(assemblyQuery),
+                EleCamera.countDocuments({ ...assemblyQuery, installed_status: 1 }),
+                EleCamera.countDocuments({ ...assemblyQuery, status: 'RUNNING' }),
+                EleCamera.countDocuments({ ...assemblyQuery, status: 'STOPPED' }),
                 electionUser.countDocuments({ district, assemblyName, role: { $ne: 'district' } }),
                 electionUser.countDocuments({ district, assemblyName, role: 'district' })
             ]);
@@ -1968,6 +1970,11 @@ exports.getAssemblyData = async (req, res, next) => {
         let state = req.query.state;
         let district = req.query.district;
         let assemblyName = req.query.assemblyName;
+        const { phase } = req.query;
+        let query = { assemblyName: assemblyName };
+        if (phase) {
+            query.phase = phase;
+        }
 
         // Fetching assembly-level data
         const [
@@ -1979,16 +1986,21 @@ exports.getAssemblyData = async (req, res, next) => {
             totalDistrictManager,
             uniqueBooths
         ] = await Promise.all([
-            EleCamera.countDocuments({ assemblyName }),
-            EleCamera.countDocuments({ assemblyName, installed_status: 1 }),
-            EleCamera.countDocuments({ assemblyName, status: 'RUNNING' }),
-            EleCamera.countDocuments({ assemblyName, status: 'STOPPED' }),
+            EleCamera.countDocuments(query),
+            EleCamera.countDocuments({ ...query, installed_status: 1 }),
+            EleCamera.countDocuments({ ...query, status: 'RUNNING' }),
+            EleCamera.countDocuments({ ...query, status: 'STOPPED' }),
             electionUser.countDocuments({ assemblyName, role: { $ne: 'district' } }),
             electionUser.countDocuments({ assemblyName, role: 'district' }),
             Booth.distinct('location', { assemblyName })
         ]);
 
         const dataByAssemblyPromises = uniqueBooths.map(async (location) => {
+            let boothQuery = { district, assemblyName, location };
+            if (phase) {
+                boothQuery.phase = phase;
+            }
+
             const [
                 totalCameras,
                 installedCameras,
@@ -1997,10 +2009,10 @@ exports.getAssemblyData = async (req, res, next) => {
                 totalInstallers,
                 totalDistrictManager
             ] = await Promise.all([
-                EleCamera.countDocuments({ district, assemblyName, location }),
-                EleCamera.countDocuments({ district, assemblyName, location, installed_status: 1 }),
-                EleCamera.countDocuments({ district, assemblyName, location, status: 'RUNNING' }),
-                EleCamera.countDocuments({ district, assemblyName, location, status: 'STOPPED' }),
+                EleCamera.countDocuments(boothQuery),
+                EleCamera.countDocuments({ ...boothQuery, installed_status: 1 }),
+                EleCamera.countDocuments({ ...boothQuery, status: 'RUNNING' }),
+                EleCamera.countDocuments({ ...boothQuery, status: 'STOPPED' }),
                 electionUser.countDocuments({ district, assemblyName, location, role: { $ne: 'district' } }),
                 electionUser.countDocuments({ district, assemblyName, location, role: 'district' })
             ]);
@@ -2050,46 +2062,12 @@ exports.getAssemblyData = async (req, res, next) => {
 
 exports.getCameraByLocation = async (req, res, next) => {
     try {
-        const cameras = await EleCamera.find({ location: req.query.location });
-
-        // for (let camera of cameras) {
-        //     try {
-        //         let LastSeenResponse = await axios.get(`https://tn2023demo.vmukti.com/Stream/GetCameraDatatest?cameraId=${camera.deviceId}`);
-
-        //         // Extracting LastSeen dates and Status from the API response
-        //         const lastSeenDates = LastSeenResponse.data.map(item => ({
-        //             date: new Date(item.LastSeen),
-        //             status: item.Status
-        //         }));
-
-        //         // Finding the item with the latest LastSeen date
-        //         const latestItem = lastSeenDates.reduce((prev, current) => (prev.date > current.date) ? prev : current);
-
-        //         // Format the date into "dd/mm/yyyy hh/mm/ss" format
-        //         const formattedDate = latestItem.date.toLocaleString('en-GB', {
-        //             day: '2-digit',
-        //             month: '2-digit',
-        //             year: 'numeric',
-        //             hour: '2-digit',
-        //             minute: '2-digit',
-        //             second: '2-digit'
-        //         });
-
-        //         // Assigning the formatted date and status to the camera document
-        //         camera.lastSeen = formattedDate;
-        //         camera.status = latestItem.status;
-
-        //         // Update the date and status fields with the last seen date and status
-        //         await camera.save();
-
-        //         console.log("Last live", camera.lastSeen);
-        //         console.log("Status", camera.status);
-        //     } catch (error) {
-        //         console.error("Error fetching LastSeen:", error.message);
-        //         // Handle error if needed
-        //     }
-        // }
-
+        const { location, phase } = req.query;
+        let query = { location: location };
+        if (phase) {
+            query.phase = phase;
+        }
+        const cameras = await EleCamera.find(query);
 
         return res.status(200).json({
             success: true,
@@ -2283,6 +2261,7 @@ exports.getLatLongPolling = async (req, res, next) => {
     try {
         let state = req.query.state || '';
         let date = req.query.date || '';
+        const { phase } = req.query;
         let query = {};
 
         if (state) {
@@ -2291,6 +2270,10 @@ exports.getLatLongPolling = async (req, res, next) => {
 
         if (date) {
             query.date = date;
+        }
+        
+        if (phase) {
+            query.phase = phase;
         }
 
         const cameras = await EleCamera.find(query);

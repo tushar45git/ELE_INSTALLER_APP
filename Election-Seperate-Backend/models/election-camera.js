@@ -70,6 +70,9 @@ const cameraSchema = new mongoose.Schema({
     isEdited: { 
         type: Number,
         default: 0 
+    },
+    phase: {
+        type: String
     }
 });
 
