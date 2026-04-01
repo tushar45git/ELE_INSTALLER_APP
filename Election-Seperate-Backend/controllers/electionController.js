@@ -1,6 +1,7 @@
 const Booth = require('../models/election-booth-data');
 const Fsv = require('../models/election-fsv');
 const EleCamera = require('../models/election-camera');
+const Cameradetails = require('../models/Cameradetails');
 const EleFlv = require('../models/election-flv-data');
 const sendToken = require("../utils/jwtToken");
 const axios = require('axios')
@@ -20,6 +21,25 @@ const EleReboot = require('../models/election-reboot');
 const punjabElection = require('../models/election-users-punjab');
 const AiStatus = require('../models/AiStatus');
 const { getSqlConnection } = require('../config/sqlDatabase');
+const { BlobServiceClient } = require('@azure/storage-blob');
+const { v4: uuidv4 } = require('uuid');
+const path = require('path');
+
+const AZURE_STORAGE_CONNECTION_STRING = process.env.AZURE_STORAGE_CONNECTION_STRING;
+const CONTAINER_NAME = "election-camera-photos";
+
+const blobServiceClient = BlobServiceClient.fromConnectionString(AZURE_STORAGE_CONNECTION_STRING);
+const containerClient = blobServiceClient.getContainerClient(CONTAINER_NAME);
+
+// Ensure container exists
+const ensureContainerExists = async () => {
+    try {
+        await containerClient.createIfNotExists({ access: 'blob' });
+    } catch (error) {
+        console.error("Error creating container:", error.message);
+    }
+};
+ensureContainerExists();
 
 const getSqlData = async (phase, deviceId) => {
     const pool = await getSqlConnection(phase);
@@ -65,6 +85,42 @@ const getSqlData = async (phase, deviceId) => {
     };
 };
 
+// Function to upload camera photo
+exports.uploadCameraPhoto = async (req, res) => {
+    try {
+        const file = req.file;
+        const { deviceId } = req.body;
+
+        if (!file) {
+            return res.status(400).json({
+                success: false,
+                message: "No file uploaded"
+            });
+        }
+
+        const dateString = new Date().toISOString().split('T')[0];
+        const blobName = `camera-installations/${deviceId || 'unknown'}/${dateString}-${uuidv4()}${path.extname(file.originalname)}`;
+        const blockBlobClient = containerClient.getBlockBlobClient(blobName);
+
+        await blockBlobClient.uploadData(file.buffer, {
+            blobHTTPHeaders: { blobContentType: file.mimetype }
+        });
+
+        res.status(200).json({
+            success: true,
+            photoUrl: blockBlobClient.url
+        });
+
+    } catch (error) {
+        console.error("Error uploading photo:", error);
+        res.status(500).json({
+            success: false,
+            message: "Internal Server Error",
+            error: error.message
+        });
+    }
+};
+
 exports.setIsEdited = async (req, res) => {
   try {
     const { deviceId } = req.params;
@@ -73,6 +129,12 @@ exports.setIsEdited = async (req, res) => {
       { deviceId: deviceId },
       { $set: { isEdited: 1 } }, // Set isEdited to 1
       { new: true }
+    );
+
+    await Cameradetails.findOneAndUpdate(
+      { deviceId: deviceId },
+      { $set: { isEdited: 1 } },
+      { upsert: true }
     );
 
     if (!updatedCamera) {
@@ -183,6 +245,12 @@ exports.updateCamera = async (req, res, next) => {
             { $set: req.body } // Use $set to update only the specified fields in req.body
         );
 
+        await Cameradetails.updateOne(
+            { deviceId: deviceId },
+            { $set: req.body },
+            { upsert: true }
+        );
+
 
         let hist = { ...camera.toObject() };
         delete hist._id;
@@ -236,6 +304,7 @@ exports.createCamera = async (req, res, next) => {
         if (!existingCamera) {
             // Camera doesn't exist, create a new one
             let newCamera = await EleCamera.create({ ...req.body, flvUrl: flvUrl });
+            await Cameradetails.create({ ...req.body, flvUrl: flvUrl });
             res.status(200).json({
                 success: true,
                 data: newCamera
@@ -253,6 +322,11 @@ exports.createCamera = async (req, res, next) => {
                 { deviceId: deviceId },
                 { $set: { ...req.body, flvUrl: flvUrl } },
                 { new: true } // To return the updated document
+            );
+            await Cameradetails.findOneAndUpdate(
+                { deviceId: deviceId },
+                { $set: { ...req.body, flvUrl: flvUrl } },
+                { upsert: true }
             );
 
             let hist = { ...updatedCamera.toObject() };
@@ -301,7 +375,12 @@ exports.removeEleCamera = async (req, res, next) => {
         let CreateHistory = await Elehistory.create(hist);
 
         existingCamera.installed_status = 0;
-        existingCamera.save()
+        await existingCamera.save();
+
+        await Cameradetails.findOneAndUpdate(
+            { deviceId: deviceId },
+            { $set: { installed_status: 0 } }
+        );
 
 
         res.status(200).json({
@@ -618,10 +697,44 @@ exports.addData = async (req, res, next) => {
                     { new: true }
                 );
 
+                await Cameradetails.findOneAndUpdate(
+                    { deviceId: data.deviceId },
+                    {
+                        assignedBy: data.assignedBy,
+                        personName: data.personName,
+                        assignedDid: data.assignedDid,
+                        location: data.location,
+                        assemblyName: data.assemblyName,
+                        psNo: data.psNo,
+                        district: data.district,
+                        latitude: data.latitude,
+                        longitude: data.longitude,
+                        flvUrl: flvUrl,
+                        phase: phase
+                    },
+                    { upsert: true }
+                );
+
                 results.push(updatedCamera);
             } else {
                 // If the camera does not exist, create a new entry
                 const newCamera = await EleCamera.create({
+                    deviceId: data.deviceId,
+                    assignedBy: data.assignedBy,
+                    personName: data.personName,
+                    assignedDid: data.assignedDid,
+                    personMobile: data.assignedDid,
+                    location: data.location,
+                    assemblyName: data.assemblyName,
+                    psNo: data.psNo,
+                    district: data.district,
+                    latitude: data.latitude,
+                    longitude: data.longitude,
+                    flvUrl: flvUrl,
+                    phase: phase
+                });
+
+                await Cameradetails.create({
                     deviceId: data.deviceId,
                     assignedBy: data.assignedBy,
                     personName: data.personName,
@@ -712,6 +825,25 @@ exports.assignCamera = async (req, res, next) => {
             const updateOptions = { upsert: true, new: true, setDefaultsOnInsert: true };
 
             const AssignedDid = await EleCamera.findOneAndUpdate(
+                { deviceId: did },
+                {
+                    $set: {
+                        assignedDid: assignTo,
+                        assignedBy: number,
+                        personName: person ? person.name : '',
+                        personMobile: assignTo,
+                        // location: location,
+                        assemblyName: cameraData.AssemblyName,
+                        psNo: cameraData.PSNumber,
+                        district: cameraData.district,
+                        state: cameraData.state,
+                        phase: phase
+                    }
+                },
+                updateOptions
+            );
+
+            await Cameradetails.findOneAndUpdate(
                 { deviceId: did },
                 {
                     $set: {

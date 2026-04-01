@@ -3,7 +3,7 @@ import axios from "axios";
 import logo from "./images/logo/cam.png";
 import Delete from "./images/logo/deleteicon.png";
 import Trash from "./images/logo/Trash.png";
-import { FiList, FiPlus, FiMap, FiHome, FiHash, FiMapPin, FiGlobe, FiEdit } from "react-icons/fi";
+import { FiList, FiPlus, FiMap, FiHome, FiHash, FiMapPin, FiGlobe, FiEdit, FiCamera, FiUpload, FiImage } from "react-icons/fi";
 import * as FileSaver from "file-saver";
 import { FaFileExcel, FaSearch, FaArrowLeft } from "react-icons/fa";
 import * as XLSX from "xlsx";
@@ -69,7 +69,8 @@ import {
   trackLiveLatLong,
   updateCamera,
   getCameraStatus,
-   setIsEdited 
+  setIsEdited,
+  uploadCameraPhoto
 } from "../actions/userActions"; // Import the new action
 import { MdDelete, MdEdit, MdVisibility } from "react-icons/md";
 import withAuth from "./withAuth";
@@ -120,6 +121,14 @@ const AutoInstaller = () => {
   const [searchSuggestions, setSearchSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isFetchingCameraDetails, setIsFetchingCameraDetails] = useState(false); // New state for fetching status
+  const [cameraPhotoUrl, setCameraPhotoUrl] = useState("");
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [isCameraModalOpen, setIsCameraModalOpen] = useState(false);
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
+  const streamRef = useRef(null);
+  const [isPhotoViewerOpen, setIsPhotoViewerOpen] = useState(false);
+  const [currentPhotoView, setCurrentPhotoView] = useState({ url: "", deviceId: "" });
 
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [cameraToDelete, setCameraToDelete] = useState(null);
@@ -329,62 +338,6 @@ const handleAddInputs = async () => {
 
     sendUrlToExternalApi(response.flvUrl.url2);
     startCameraStatusPolling(deviceId);
-
-    // **Wait for State to Update (Important!)**
-    await new Promise((resolve) => setTimeout(resolve, 100)); // Adjust time as needed
-
-    // **Call the Submission Logic Directly:**
-    try {
-      let latitude = location.latitude;
-      let longitude = location.longitude;
-
-      const currentTime = new Date();
-      const formattedDate = currentTime.toLocaleDateString("en-GB");
-      const formattedTime = currentTime.toLocaleTimeString("en-US", {
-        hour12: false,
-      });
-
-      let installed_status = 1;
-      let status = "RUNNING";
-
-      const installResponse = await installCamera(
-        deviceId,
-        namee,
-        mobilee,
-        fetchedAssemblyName,
-        fetchedPsNumber,
-        fetchedState,
-        fetchedDistrict,
-        fetchedExcelLocation,
-        latitude,
-        longitude,
-        installed_status,
-        status,
-        formattedDate,
-        formattedTime,
-      );
-
-      console.log("response of installCamera", installResponse);
-      camera(); // Update the camera list
-
-      // **Crucially, DO NOT clear the form or hide it.**
-      // setState("");
-      // setDistrict("");
-      // setAssemblyName("");
-      // setPsNumber("");
-      // setExcelLocation("");
-      // setShowAdditionalInputs(false);  //<---REMOVE THIS
-      setIsEditing(false);
-
-      // Call the new API endpoint to update isEdited
-      if (isEditing) {
-        await setIsEdited(deviceId); // Call the new API function
-      }
-
-    } catch (error) {
-      console.error(error);
-    }
-
   } catch (error) {
     console.error("Error in handleAddInputs:", error);
     // Handle errors appropriately (e.g., display an error message)
@@ -402,7 +355,7 @@ const downloadReport = async () => {
     "PS No.": camera.psNo,
     Location: camera.location,
     "Last Seen": `${camera.date || ''}  ${camera.time || ''}`.trim(),
-    "Is Edited": camera.isEdited,
+    "Photo URL": camera.cameraPhoto || "",
   }));
 
   const ws = XLSX.utils.json_to_sheet(exportData);
@@ -616,6 +569,84 @@ const downloadReport = async () => {
   const [longie, setLongie] = useState("");
   const namee = localStorage.getItem("name");
   const mobilee = localStorage.getItem("mobile");
+  const handlePhotoUpload = async (file) => {
+    if (!file) return;
+
+    if (!deviceId) {
+      toast.error("Please enter a Device ID first");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("photo", file);
+    formData.append("deviceId", deviceId);
+
+    setIsUploadingPhoto(true);
+    try {
+      const response = await uploadCameraPhoto(formData);
+      if (response && response.success) {
+        setCameraPhotoUrl(response.photoUrl);
+        toast.success("Photo captured successfully!");
+      } else {
+        toast.error(response.message || "Failed to upload photo");
+      }
+    } catch (error) {
+      console.error("Error uploading photo:", error);
+      toast.error("An error occurred while uploading the photo");
+    } finally {
+      setIsUploadingPhoto(false);
+    }
+  };
+
+  const openCamera = async () => {
+    setIsCameraModalOpen(true);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: "environment" } 
+      });
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+      streamRef.current = stream;
+    } catch (err) {
+      console.error("Error accessing camera:", err);
+      toast.error("Could not access camera. Please allow permission.");
+      setIsCameraModalOpen(false);
+    }
+  };
+
+  const stopCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    setIsCameraModalOpen(false);
+  };
+
+  const capturePhoto = () => {
+    if (videoRef.current && canvasRef.current) {
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const context = canvas.getContext("2d");
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const file = new File([blob], `capture-${Date.now()}.jpg`, { type: "image/jpeg" });
+          handlePhotoUpload(file);
+          stopCamera();
+        }
+      }, "image/jpeg", 0.82);
+    }
+  };
+
+  const handleViewPhoto = (url, deviceId) => {
+    setCurrentPhotoView({ url, deviceId });
+    setIsPhotoViewerOpen(true);
+  };
+
   const handleSubmit = async () => {
     try {
       let latitude = location.latitude;
@@ -659,13 +690,17 @@ const downloadReport = async () => {
         installed_status,
         status,
         formattedDate,
-        formattedTime,      );
+        formattedTime,
+        "", // remarks
+        cameraPhotoUrl
+      );
 
       console.log("response of submit", response);
       camera();
       setState("");
       setDistrict("");
       setAssemblyName("");
+      setCameraPhotoUrl("");
       setPsNumber("");
       setExcelLocation("");
       setShowAdditionalInputs(false);
@@ -1203,6 +1238,7 @@ const downloadReport = async () => {
                         <Th>Device ID</Th>
                         <Th>Assembly Name</Th>
                         <Th>Location</Th>
+                        <Th>Photo</Th>
                         <Th textAlign="right">Actions</Th>
                       </Tr>
                     </Thead>
@@ -1214,6 +1250,24 @@ const downloadReport = async () => {
                           <Td data-label="Device ID">{camera.deviceId}</Td>
                           <Td data-label="Assembly Name">{camera.assemblyName}</Td>
                           <Td data-label="Location">{camera.location}</Td>
+                          <Td data-label="Photo">
+                            {camera.cameraPhoto ? (
+                              <Button 
+                                size="xs" 
+                                leftIcon={<FiCamera />} 
+                                colorScheme="green" 
+                                variant="outline" 
+                                onClick={() => handleViewPhoto(camera.cameraPhoto, camera.deviceId)}
+                                borderRadius="full"
+                              >
+                                View Photo
+                              </Button>
+                            ) : (
+                              <Badge colorScheme="gray" variant="subtle" borderRadius="full" fontSize="10px">
+                                No Photo
+                              </Badge>
+                            )}
+                          </Td>
                           <Td data-label="Actions" textAlign={{ base: "left", md: "right" }}>
                             <HStack justify={{ base: "flex-start", md: "flex-end" }} spacing={2}>
                               <IconButton
@@ -1314,6 +1368,19 @@ const downloadReport = async () => {
                               >
                                 View
                               </Button>
+                              {camera.cameraPhoto && (
+                                <Button 
+                                  size="sm" 
+                                  leftIcon={<FiCamera color="#38A169" />} 
+                                  onClick={(e) => { e.stopPropagation(); handleViewPhoto(camera.cameraPhoto, camera.deviceId); }} 
+                                  colorScheme="green" 
+                                  variant="outline" 
+                                  flex={1}
+                                  _hover={{ bg: "green.50" }}
+                                >
+                                  Photo
+                                </Button>
+                              )}
                               <Button 
                                 size="sm" 
                                 leftIcon={<MdDelete color="#e53e3e" />} 
@@ -1646,6 +1713,7 @@ const downloadReport = async () => {
                             </InputGroup>
                           </div>
 
+                          {/* Location Info Field */}
                           <div className="form-group" style={{ marginBottom: '0' }}>
                             <Text className="custom-label">Location Info</Text>
                             <InputGroup>
@@ -1654,6 +1722,57 @@ const downloadReport = async () => {
                               </InputLeftElement>
                               <Input className="custom-input input-with-icon" value={excelLocation} onChange={(e) => setExcelLocation(e.target.value)} isReadOnly={!isEditing} placeholder="e.g., Room 102, 1st Floor" size="md" />
                             </InputGroup>
+                          </div>
+
+                          <div className="form-group" style={{ marginBottom: '0' }}>
+                            <Text className="custom-label">Camera Installation Photo</Text>
+                            <Box 
+                              border="2px dashed" 
+                              borderColor={cameraPhotoUrl ? "green.200" : "blue.200"} 
+                              borderRadius="xl" 
+                              p={4} 
+                              bg={cameraPhotoUrl ? "green.50" : "blue.50"}
+                              textAlign="center"
+                            >
+                              {!cameraPhotoUrl ? (
+                                <VStack spacing={3}>
+                                  <IconButton
+                                    icon={<FiCamera size={24} />}
+                                    aria-label="Capture Photo"
+                                    colorScheme="blue"
+                                    variant="solid"
+                                    size="lg"
+                                    borderRadius="full"
+                                    isLoading={isUploadingPhoto || isCameraModalOpen}
+                                    onClick={openCamera}
+                                  />
+                                  <Text fontSize="xs" fontWeight="700" color="blue.600" textTransform="uppercase">
+                                    {isUploadingPhoto ? "UPLOADING..." : "OPEN CAMERA TO CAPTURE"}
+                                  </Text>
+                                </VStack>
+                              ) : (
+                                <VStack spacing={2}>
+                                  <Image 
+                                    src={cameraPhotoUrl} 
+                                    alt="Installed Camera" 
+                                    borderRadius="lg" 
+                                    maxH="150px" 
+                                    objectFit="cover" 
+                                  />
+                                  <HStack>
+                                    <Badge colorScheme="green">Uploaded Successfully</Badge>
+                                    <Button 
+                                      size="xs" 
+                                      variant="ghost" 
+                                      colorScheme="red" 
+                                      onClick={() => setCameraPhotoUrl("")}
+                                    >
+                                      Remove
+                                    </Button>
+                                  </HStack>
+                                </VStack>
+                              )}
+                            </Box>
                           </div>
                         </VStack>
                       </div>
@@ -1667,16 +1786,14 @@ const downloadReport = async () => {
                         >
                           {isEditing ? 'Cancel Edit' : 'Edit Details'}
                         </Button>
-                        {isEditing && (
-                          <Button 
-                            colorScheme="blue" 
-                            className="btn-premium"
-                            w="full" 
-                            onClick={handleSubmit}
-                          >
-                            Save Changes
-                          </Button>
-                        )}
+                        <Button 
+                          colorScheme="blue" 
+                          className="btn-premium"
+                          w="full" 
+                          onClick={handleSubmit}
+                        >
+                          {isEditing ? 'Save & Submit' : 'Submit Installation'}
+                        </Button>
                       </Stack>
                     </VStack>
                   </VStack>
@@ -1754,12 +1871,84 @@ const downloadReport = async () => {
           </ModalBody>
           <ModalFooter 
             bg="gray.50" 
-            flexDirection={{ base: "column", sm: "row" }} 
+            flexDirection="column" 
             justifyContent="center" 
             alignItems="center"
-            gap={{ base: 3, sm: 6 }}
             py={4}
           >
+            {selectedCamera?.cameraPhoto && (
+              <VStack w="full" spacing={2} align="center">
+                <Text fontSize="sm" fontWeight="bold" color="gray.600">INSTALLATION PHOTO</Text>
+                <Image 
+                  src={selectedCamera.cameraPhoto} 
+                  alt="Installation Preview" 
+                  borderRadius="lg" 
+                  maxH="200px" 
+                  objectFit="contain" 
+                  fallbackSrc="https://via.placeholder.com/400x200?text=No+Photo+Available"
+                />
+              </VStack>
+            )}
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      {/* Camera Capture Modal */}
+      <Modal isOpen={isCameraModalOpen} onClose={stopCamera} isCentered size="md">
+        <ModalOverlay backdropFilter="blur(8px)" />
+        <ModalContent borderRadius="2xl" overflow="hidden">
+          <ModalHeader bg="blue.600" color="white" py={3}>
+            Capture Installation Photo
+          </ModalHeader>
+          <ModalCloseButton color="white" />
+          <ModalBody p={0} bg="black" position="relative">
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              style={{ width: '100%', height: 'auto', display: 'block' }}
+            />
+            <canvas ref={canvasRef} style={{ display: 'none' }} />
+          </ModalBody>
+          <ModalFooter bg="white" justifyContent="center" py={4}>
+            <Button
+              colorScheme="blue"
+              size="lg"
+              borderRadius="full"
+              leftIcon={<FiCamera />}
+              onClick={capturePhoto}
+              px={8}
+            >
+              TAKE PHOTO
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      {/* Photo Viewer Modal */}
+      <Modal isOpen={isPhotoViewerOpen} onClose={() => setIsPhotoViewerOpen(false)} isCentered size="xl">
+        <ModalOverlay backdropFilter="blur(8px)" />
+        <ModalContent borderRadius="2xl" overflow="hidden">
+          <ModalHeader bg="green.500" color="white" py={3}>
+            Installation Photo: {currentPhotoView.deviceId}
+          </ModalHeader>
+          <ModalCloseButton color="white" />
+          <ModalBody p={4} bg="gray.50">
+            <Center>
+              <Image 
+                src={currentPhotoView.url} 
+                alt="Installation" 
+                borderRadius="xl" 
+                boxShadow="lg"
+                maxH="70vh"
+                width="auto"
+              />
+            </Center>
+          </ModalBody>
+          <ModalFooter bg="white" justifyContent="center">
+            <Button colorScheme="green" onClick={() => setIsPhotoViewerOpen(false)}>
+              Close
+            </Button>
           </ModalFooter>
         </ModalContent>
       </Modal>

@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const cameraSchema = new mongoose.Schema({
+const cameraDetailsSchema = new mongoose.Schema({
    deviceId: {
     type: String,
     required: true,
@@ -22,9 +22,6 @@ const cameraSchema = new mongoose.Schema({
    location: {
     type: String,
    },
-   // realLocation:{
-   //    type: String
-   // },
    latitude:{
       type: String
    },
@@ -79,6 +76,6 @@ const cameraSchema = new mongoose.Schema({
     }
 });
 
-const EleCamera = mongoose.model('election-camera', cameraSchema);
+const Cameradetails = mongoose.model('Cameradetails', cameraDetailsSchema);
 
-module.exports = EleCamera;  
+module.exports = Cameradetails;

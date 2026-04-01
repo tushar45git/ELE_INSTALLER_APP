@@ -459,7 +459,21 @@ export const searchDevices = async (query, phase) => {
   }
 };
 
-export const installCamera = async (deviceId, name, mobile, assemblyName, psNumber, state, district, excelLocation, latitude, longitude, installed_status, status ,date, time, remarks) => {
+export const uploadCameraPhoto = async (formData) => {
+  try {
+    const response = await instance.post('/upload-photo', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+    return response.data;
+  } catch (error) {
+    console.error(error);
+    return { success: false, message: error.message || 'An error occurred during photo upload.' };
+  }
+};
+
+export const installCamera = async (deviceId, name, mobile, assemblyName, psNumber, state, district, excelLocation, latitude, longitude, installed_status, status ,date, time, remarks, cameraPhoto) => {
   const phase = localStorage.getItem('phase');
   try {
 
@@ -479,7 +493,8 @@ export const installCamera = async (deviceId, name, mobile, assemblyName, psNumb
       time: time,
       remarks: remarks,
       status : status,
-      phase: phase
+      phase: phase,
+      cameraPhoto: cameraPhoto
     });
 
     console.log(response.data);
