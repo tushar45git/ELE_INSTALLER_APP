@@ -32,6 +32,38 @@ const phaseConfigs = {
       min: 0,
       idleTimeoutMillis: 30000
     }
+  },
+  phase3: {
+    user: 'vmukti',
+    password: 'shyam@123456',
+    server: '20.244.32.168',
+    database: 'tripura2026',
+    port: 1433,
+    options: {
+      encrypt: false,
+      trustServerCertificate: true,
+    },
+    pool: {
+      max: 10,
+      min: 0,
+      idleTimeoutMillis: 30000
+    }
+  },
+  phase4: {
+    user: 'vmukti',
+    password: 'shyam@123456',
+    server: '20.244.32.168',
+    database: 'nagaland2026',
+    port: 1433,
+    options: {
+      encrypt: false,
+      trustServerCertificate: true,
+    },
+    pool: {
+      max: 10,
+      min: 0,
+      idleTimeoutMillis: 30000
+    }
   }
 };
 

@@ -76,6 +76,9 @@ const cameraSchema = new mongoose.Schema({
     },
     cameraPhoto: {
         type: String
+    },
+    locationtype: {
+        type: String
     }
 });
 

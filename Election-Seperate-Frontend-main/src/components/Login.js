@@ -37,6 +37,21 @@ const Login = () => {
   const [locationEnabled, setLocationEnabled] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [phase, setPhase] = useState("");
+  const [selectedState, setSelectedState] = useState("");
+  const [selectedDistrict, setSelectedDistrict] = useState("");
+
+  const stateData = {
+    "West Bengal": {
+      "phase1": ["BANKURA", "BIRBHUM", "JHARGRAM", "PASCHIM BARDHAMAN", "PASCHIM MEDINIPUR", "PURBA MEDINIPUR", "PURULIA"],
+      "phase2": ["HOOGHLY", "PURBA BARDHAMAN", "NADIA"]
+    },
+    "Tripura": {
+      "phase3": ["Dharmanagar"]
+    },
+    "Nagaland": {
+      "phase4": ["Koridang"]
+    }
+  };
 
   const inputRefs = useRef([]);
   const navigate = useNavigate();
@@ -293,21 +308,59 @@ const Login = () => {
                 </FormControl>
 
                 <FormControl isRequired>
-                  <FormLabel fontWeight="700" color="gray.700" fontSize="sm">Select Phase</FormLabel>
+                  <FormLabel fontWeight="700" color="gray.700" fontSize="sm">Select State</FormLabel>
                   <Select
-                    placeholder="Choose Phase"
+                    placeholder="Choose State"
                     bg="white"
                     size="md"
                     borderRadius="xl"
                     boxShadow="sm"
                     _focus={{ borderColor: "blue.400", boxShadow: "0 0 0 1px #3182ce" }}
-                    value={phase}
-                    onChange={(e) => setPhase(e.target.value)}
+                    value={selectedState}
+                    onChange={(e) => {
+                      setSelectedState(e.target.value);
+                      setSelectedDistrict("");
+                      setPhase("");
+                    }}
                   >
-                    <option value="phase1">Phase 1 </option>
-                    <option value="phase2">Phase 2 </option>
+                    {Object.keys(stateData).map(state => (
+                      <option key={state} value={state}>{state}</option>
+                    ))}
                   </Select>
                 </FormControl>
+
+                {selectedState && (
+                  <FormControl isRequired>
+                    <FormLabel fontWeight="700" color="gray.700" fontSize="sm">Select District</FormLabel>
+                    <Select
+                      placeholder="Choose District"
+                      bg="white"
+                      size="md"
+                      borderRadius="xl"
+                      boxShadow="sm"
+                      _focus={{ borderColor: "blue.400", boxShadow: "0 0 0 1px #3182ce" }}
+                      value={selectedDistrict}
+                      onChange={(e) => {
+                        const district = e.target.value;
+                        setSelectedDistrict(district);
+                        // Find the phase for the selected district
+                        const statePhases = stateData[selectedState];
+                        for (const p in statePhases) {
+                          if (statePhases[p].includes(district)) {
+                            setPhase(p);
+                            break;
+                          }
+                        }
+                      }}
+                    >
+                      {Object.entries(stateData[selectedState]).flatMap(([p, districts]) => 
+                        districts.map(d => (
+                          <option key={d} value={d}>{d}</option>
+                        ))
+                      )}
+                    </Select>
+                  </FormControl>
+                )}
 
                 <Button
                   w="full"
