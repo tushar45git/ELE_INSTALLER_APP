@@ -55,7 +55,7 @@ const getSqlData = async (phase, deviceId) => {
 
   const query = `
         SELECT top(1) streamname, prourl, servername, 'https://' + servername + '/live-record/' + streamname + '.flv' AS url2,b.district,b.acname AS assemblyName,
-b.PSNum AS psNo,b.location,s.deviceid AS deviceId, statename as state FROM streamlist s WITH (NOLOCK)INNER JOIN booth b WITH (NOLOCK)ON s.id = b.streamid 
+b.PSNum AS psNo,b.location,b.cameralocationtype AS locationtype,s.deviceid AS deviceId, statename as state FROM streamlist s WITH (NOLOCK)INNER JOIN booth b WITH (NOLOCK)ON s.id = b.streamid 
 inner join state st  WITH (NOLOCK) on st.id=b.boothstateid 
 WHERE ISNULL(b.isdelete,'')=0  AND s.deviceid = @deviceId
     `;
