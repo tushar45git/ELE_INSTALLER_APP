@@ -1,11 +1,11 @@
-const sql = require('mssql');
+const sql = require("mssql");
 
 const phaseConfigs = {
   phase1: {
-    user: 'vmukti',
-    password: 'bhargav@123456',
-    server: '20.244.109.231',
-    database: 'brelep1',
+    user: "vmukti",
+    password: "bhargav@123456",
+    server: "20.244.109.231",
+    database: "brelep1",
     port: 1433,
     options: {
       encrypt: false,
@@ -14,14 +14,14 @@ const phaseConfigs = {
     pool: {
       max: 10,
       min: 0,
-      idleTimeoutMillis: 30000
-    }
+      idleTimeoutMillis: 30000,
+    },
   },
   phase2: {
-    user: 'vmukti',
-    password: 'bhargav@123456',
-    server: '20.244.109.231',
-    database: 'brelep2',
+    user: "vmukti",
+    password: "bhargav@123456",
+    server: "20.244.109.231",
+    database: "brelep2",
     port: 1433,
     options: {
       encrypt: false,
@@ -30,14 +30,14 @@ const phaseConfigs = {
     pool: {
       max: 10,
       min: 0,
-      idleTimeoutMillis: 30000
-    }
+      idleTimeoutMillis: 30000,
+    },
   },
   phase3: {
-    user: 'vmukti',
-    password: 'shyam@123456',
-    server: '20.244.32.168',
-    database: 'tripura2026',
+    user: "vmukti",
+    password: "shyam@123456",
+    server: "20.244.32.168",
+    database: "tripura2026",
     port: 1433,
     options: {
       encrypt: false,
@@ -46,14 +46,14 @@ const phaseConfigs = {
     pool: {
       max: 10,
       min: 0,
-      idleTimeoutMillis: 30000
-    }
+      idleTimeoutMillis: 30000,
+    },
   },
   phase4: {
-    user: 'vmukti',
-    password: 'shyam@123456',
-    server: '20.244.32.168',
-    database: 'nagaland2026',
+    user: "vmukti",
+    password: "shyam@123456",
+    server: "20.244.32.168",
+    database: "nagaland2026",
     port: 1433,
     options: {
       encrypt: false,
@@ -62,9 +62,9 @@ const phaseConfigs = {
     pool: {
       max: 10,
       min: 0,
-      idleTimeoutMillis: 30000
-    }
-  }
+      idleTimeoutMillis: 30000,
+    },
+  },
 };
 
 const pools = new Map();
