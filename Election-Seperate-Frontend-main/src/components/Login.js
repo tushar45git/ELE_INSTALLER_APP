@@ -24,7 +24,7 @@ import { useNavigate } from "react-router-dom";
 import { login, verifyOtp } from "../actions/userActions";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import logo from './images/logo/Vmuktilogo.png';
+import logo from "./images/logo/Vmuktilogo.png";
 
 const Login = () => {
   const [name, setName] = useState("");
@@ -37,20 +37,22 @@ const Login = () => {
   const [locationEnabled, setLocationEnabled] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [phase, setPhase] = useState("");
-  const [selectedState, setSelectedState] = useState("");
+  const [selectedState, setSelectedState] = useState("West Bengal");
   const [selectedDistrict, setSelectedDistrict] = useState("");
 
   const stateData = {
     "West Bengal": {
-      "phase1": ["BANKURA", "BIRBHUM", "JHARGRAM", "PASCHIM BARDHAMAN", "PASCHIM MEDINIPUR", "PURBA MEDINIPUR", "PURULIA"],
-      "phase2": ["HOOGHLY", "PURBA BARDHAMAN", "NADIA"]
+      phase1: [
+        "BANKURA",
+        "BIRBHUM",
+        "JHARGRAM",
+        "PASCHIM BARDHAMAN",
+        "PASCHIM MEDINIPUR",
+        "PURBA MEDINIPUR",
+        "PURULIA",
+      ],
+      phase2: ["HOOGHLY", "PURBA BARDHAMAN", "NADIA"],
     },
-    "Tripura": {
-      "phase3": ["Dharmanagar"]
-    },
-    "Nagaland": {
-      "phase4": ["Koridang"]
-    }
   };
 
   const inputRefs = useRef([]);
@@ -103,7 +105,19 @@ const Login = () => {
     if (!name || mobile.length < 10) {
       toast({
         title: "Invalid Input",
-        description: "Please enter your name and a valid 10-digit mobile number.",
+        description:
+          "Please enter your name and a valid 10-digit mobile number.",
+        status: "warning",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+
+    if (!selectedState || !selectedDistrict || !phase) {
+      toast({
+        title: "Selection Required",
+        description: "Please select both State and District before proceeding.",
         status: "warning",
         duration: 3000,
         isClosable: true,
@@ -262,8 +276,19 @@ const Login = () => {
             w="full"
           >
             <VStack spacing={3}>
-              <Image src={logo} h={{ base: "40px", md: "50px" }} mb={2} alt="VMukti Logo" />
-              <Heading as="h1" size={{ base: "md", md: "lg" }} color="gray.800" fontWeight="800" letterSpacing="-0.5px">
+              <Image
+                src={logo}
+                h={{ base: "40px", md: "50px" }}
+                mb={2}
+                alt="VMukti Logo"
+              />
+              <Heading
+                as="h1"
+                size={{ base: "md", md: "lg" }}
+                color="gray.800"
+                fontWeight="800"
+                letterSpacing="-0.5px"
+              >
                 Election Installer Portal
               </Heading>
               <Text color="gray.600" fontSize={{ base: "sm", md: "md" }}>
@@ -274,23 +299,35 @@ const Login = () => {
             {!otpSent ? (
               <VStack spacing={5} w="full">
                 <FormControl isRequired>
-                  <FormLabel fontWeight="700" color="gray.700" fontSize="sm">Full Name</FormLabel>
+                  <FormLabel fontWeight="700" color="gray.700" fontSize="sm">
+                    Full Name
+                  </FormLabel>
                   <Input
                     placeholder="Enter your name"
                     bg="white"
                     size="md"
                     borderRadius="xl"
                     boxShadow="sm"
-                    _focus={{ borderColor: "blue.400", boxShadow: "0 0 0 1px #3182ce" }}
+                    _focus={{
+                      borderColor: "blue.400",
+                      boxShadow: "0 0 0 1px #3182ce",
+                    }}
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                   />
                 </FormControl>
 
                 <FormControl isRequired>
-                  <FormLabel fontWeight="700" color="gray.700" fontSize="sm">Mobile Number</FormLabel>
+                  <FormLabel fontWeight="700" color="gray.700" fontSize="sm">
+                    Mobile Number
+                  </FormLabel>
                   <InputGroup size="md">
-                    <InputLeftAddon borderLeftRadius="xl" bg="gray.100" color="gray.600" fontWeight="600" >
+                    <InputLeftAddon
+                      borderLeftRadius="xl"
+                      bg="gray.100"
+                      color="gray.600"
+                      fontWeight="600"
+                    >
                       +91
                     </InputLeftAddon>
                     <Input
@@ -300,7 +337,10 @@ const Login = () => {
                       size="md"
                       borderRightRadius="xl"
                       boxShadow="sm"
-                      _focus={{ borderColor: "blue.400", boxShadow: "0 0 0 1px #3182ce" }}
+                      _focus={{
+                        borderColor: "blue.400",
+                        boxShadow: "0 0 0 1px #3182ce",
+                      }}
                       value={mobile}
                       onChange={handleMobileChange}
                     />
@@ -308,14 +348,19 @@ const Login = () => {
                 </FormControl>
 
                 <FormControl isRequired>
-                  <FormLabel fontWeight="700" color="gray.700" fontSize="sm">Select State</FormLabel>
+                  <FormLabel fontWeight="700" color="gray.700" fontSize="sm">
+                    Select State
+                  </FormLabel>
                   <Select
                     placeholder="Choose State"
                     bg="white"
                     size="md"
                     borderRadius="xl"
                     boxShadow="sm"
-                    _focus={{ borderColor: "blue.400", boxShadow: "0 0 0 1px #3182ce" }}
+                    _focus={{
+                      borderColor: "blue.400",
+                      boxShadow: "0 0 0 1px #3182ce",
+                    }}
                     value={selectedState}
                     onChange={(e) => {
                       setSelectedState(e.target.value);
@@ -323,22 +368,29 @@ const Login = () => {
                       setPhase("");
                     }}
                   >
-                    {Object.keys(stateData).map(state => (
-                      <option key={state} value={state}>{state}</option>
+                    {Object.keys(stateData).map((state) => (
+                      <option key={state} value={state}>
+                        {state}
+                      </option>
                     ))}
                   </Select>
                 </FormControl>
 
                 {selectedState && (
                   <FormControl isRequired>
-                    <FormLabel fontWeight="700" color="gray.700" fontSize="sm">Select District</FormLabel>
+                    <FormLabel fontWeight="700" color="gray.700" fontSize="sm">
+                      Select District
+                    </FormLabel>
                     <Select
                       placeholder="Choose District"
                       bg="white"
                       size="md"
                       borderRadius="xl"
                       boxShadow="sm"
-                      _focus={{ borderColor: "blue.400", boxShadow: "0 0 0 1px #3182ce" }}
+                      _focus={{
+                        borderColor: "blue.400",
+                        boxShadow: "0 0 0 1px #3182ce",
+                      }}
                       value={selectedDistrict}
                       onChange={(e) => {
                         const district = e.target.value;
@@ -353,10 +405,13 @@ const Login = () => {
                         }
                       }}
                     >
-                      {Object.entries(stateData[selectedState]).flatMap(([p, districts]) => 
-                        districts.map(d => (
-                          <option key={d} value={d}>{d}</option>
-                        ))
+                      {Object.entries(stateData[selectedState]).flatMap(
+                        ([p, districts]) =>
+                          districts.map((d) => (
+                            <option key={d} value={d}>
+                              {d}
+                            </option>
+                          )),
                       )}
                     </Select>
                   </FormControl>
@@ -376,7 +431,7 @@ const Login = () => {
                     _active: {
                       backgroundColor: "#3730a3 !important",
                       transform: "translateY(0)",
-                    }
+                    },
                   }}
                   size="lg"
                   height={{ base: "50px", md: "56px" }}
@@ -387,11 +442,13 @@ const Login = () => {
                   top={5}
                   onClick={handleSendOtp}
                   isLoading={isLoading}
-                  isDisabled={!locationEnabled}
+                  isDisabled={
+                    !locationEnabled || !selectedState || !selectedDistrict
+                  }
                 >
                   Get Verification Code
                 </Button>
-                
+
                 {!locationEnabled && (
                   <Text color="red.500" fontSize="xs" fontWeight="600">
                     * Please enable location to continue
@@ -399,17 +456,29 @@ const Login = () => {
                 )}
               </VStack>
             ) : (
-              <Fade in={otpSent} style={{ width: '100%' }}>
+              <Fade in={otpSent} style={{ width: "100%" }}>
                 <VStack spacing={6} w="full">
                   <VStack spacing={1}>
-                    <Text fontWeight="800" fontSize={{ base: "lg", md: "xl" }} color="gray.800">Verify Identity</Text>
+                    <Text
+                      fontWeight="800"
+                      fontSize={{ base: "lg", md: "xl" }}
+                      color="gray.800"
+                    >
+                      Verify Identity
+                    </Text>
                     <Text color="gray.600" fontSize="sm">
                       Enter the 6-digit code sent to
                     </Text>
-                    <Text fontWeight="800" color="blue.600">+91 - {mobile}</Text>
+                    <Text fontWeight="800" color="blue.600">
+                      +91 - {mobile}
+                    </Text>
                   </VStack>
 
-                  <HStack spacing={{ base: 1, sm: 2 }} justify="center" w="full">
+                  <HStack
+                    spacing={{ base: 1, sm: 2 }}
+                    justify="center"
+                    w="full"
+                  >
                     {otp.map((digit, index) => (
                       <Input
                         key={index}
@@ -423,7 +492,11 @@ const Login = () => {
                         borderRadius="lg"
                         border="2px solid"
                         borderColor="gray.200"
-                        _focus={{ borderColor: "blue.400", bg: "blue.50", boxShadow: "none" }}
+                        _focus={{
+                          borderColor: "blue.400",
+                          bg: "blue.50",
+                          boxShadow: "none",
+                        }}
                         value={digit}
                         onChange={(e) => handleOtpChange(index, e.target.value)}
                         onKeyDown={(e) => handleKeyDown(index, e)}
@@ -448,7 +521,7 @@ const Login = () => {
                       _active: {
                         backgroundColor: "#3730a3 !important",
                         transform: "translateY(0)",
-                      }
+                      },
                     }}
                     size="lg"
                     height={{ base: "50px", md: "56px" }}
@@ -463,7 +536,9 @@ const Login = () => {
                   </Button>
 
                   <HStack justify="center" pt={2} flexWrap="wrap">
-                    <Text fontSize="sm" color="gray.600">Didn't receive the code?</Text>
+                    <Text fontSize="sm" color="gray.600">
+                      Didn't receive the code?
+                    </Text>
                     <Button
                       variant="link"
                       colorScheme="blue"
@@ -472,10 +547,12 @@ const Login = () => {
                       onClick={handleSendOtp}
                       fontWeight="700"
                     >
-                      {resendDisabled ? `Resend in ${resendTimer}s` : "Resend Now"}
+                      {resendDisabled
+                        ? `Resend in ${resendTimer}s`
+                        : "Resend Now"}
                     </Button>
                   </HStack>
-                  
+
                   <Button
                     variant="ghost"
                     size="sm"
@@ -492,7 +569,8 @@ const Login = () => {
             <VStack spacing={3} pt={4} w="full">
               <Divider borderColor="gray.300" />
               <Text fontSize="xs" color="gray.400" fontWeight="600">
-                &copy; {new Date().getFullYear()} VMukti Solutions. All rights reserved.
+                &copy; {new Date().getFullYear()} VMukti Solutions. All rights
+                reserved.
               </Text>
             </VStack>
           </VStack>
