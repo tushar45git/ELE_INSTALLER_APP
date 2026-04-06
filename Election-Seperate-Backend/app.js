@@ -6,8 +6,6 @@
 
 // const connectDatabase = require("./config/database");   // Import database configuration
 
-
-
 // if (process.env.NODE_ENV !== "PRODUCTION") {
 //     require("dotenv").config({ path: "backend/config/config.env" });
 // }
@@ -22,8 +20,6 @@
 //     }
 // ));            // Enable CORS
 
-
-
 // // Import all routes
 // const masterRoutes = require('./routes/masterRoutes');
 
@@ -35,49 +31,50 @@
 //     console.log(`Server is running at http://localhost:${port}`);
 // });
 
-
-
-
-const express = require('express');
+const express = require("express");
 if (!global.crypto) {
-    try {
-        global.crypto = require('isomorphic-crypto');
-    } catch (e) {
-        console.warn('isomorphic-crypto not found, attempting to use built-in crypto');
-        global.crypto = require('crypto').webcrypto || require('crypto');
-    }
+  try {
+    global.crypto = require("isomorphic-crypto");
+  } catch (e) {
+    console.warn(
+      "isomorphic-crypto not found, attempting to use built-in crypto",
+    );
+    global.crypto = require("crypto").webcrypto || require("crypto");
+  }
 }
 
-const cors = require('cors');
-const morgan = require('morgan');
-const multer = require('multer');
-const fs = require('fs');
-const path = require('path');
-const bodyParser = require('body-parser');
-const connectDatabase = require('./config/database'); // Import database configuration
+const cors = require("cors");
+const morgan = require("morgan");
+const multer = require("multer");
+const fs = require("fs");
+const path = require("path");
+const bodyParser = require("body-parser");
+const connectDatabase = require("./config/database"); // Import database configuration
 
 const app = express();
 const port = 8080;
-app.use(bodyParser.json({ limit: '10mb' }));
-app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }));
+app.use(bodyParser.json({ limit: "10mb" }));
+app.use(bodyParser.urlencoded({ limit: "10mb", extended: true }));
 // if (process.env.NODE_ENV !== 'production') {
-require('dotenv').config({ path: './config/config.env' });
+require("dotenv").config({ path: "./config/config.env" });
 // }
 
 connectDatabase(); // Connect to the database
 
 app.use(express.json()); // Parse JSON bodies in requests
-app.use(cors({
-    origin: '*',
-    credentials: true
-})); // Enable CORS
-app.use(morgan('dev')); // Enable logging
+app.use(
+  cors({
+    origin: "*",
+    credentials: true,
+  }),
+); // Enable CORS
+app.use(morgan("dev")); // Enable logging
 
 // Health check / root route
-app.get('/', (req, res) => {
+app.get("/", (req, res) => {
   res.status(200).json({
     success: true,
-    message: 'Server is alive 🚀'
+    message: "Server is alive 🚀",
   });
 });
 
@@ -114,11 +111,11 @@ app.get('/', (req, res) => {
 //         // File doesn't exist
 //         return res.status(404).send('PDF file not found');
 //       }
-  
+
 //       // Set response headers
 //       res.setHeader('Content-Type', 'application/pdf');
 //       res.setHeader('Content-Disposition', 'inline; filename="quotation.pdf"');
-  
+
 //       // Stream the file as response
 //       const fileStream = fs.createReadStream(filePath);
 //       fileStream.pipe(res);
@@ -148,17 +145,16 @@ app.get('/', (req, res) => {
 //     }
 // });
 
-
-
-
 // Import all routes
-const electionRoutes = require('./routes/electionRoute')
-const attendanceRoutes = require('./routes/attendanceRoute')
+const electionRoutes = require("./routes/electionRoute");
+const attendanceRoutes = require("./routes/attendanceRoute");
+const kycRoutes = require("./routes/kycRoute");
 
 // Mount all routes
-app.use('/election', electionRoutes);
-app.use('/election/api/attendance', attendanceRoutes);
+app.use("/election", electionRoutes);
+app.use("/election/api/attendance", attendanceRoutes);
+app.use("/election/api/kyc", kycRoutes);
 // Start the server
 app.listen(port, () => {
-    console.log(`Server is running at http://localhost:${port}`);
+  console.log(`Server is running at http://localhost:${port}`);
 });
