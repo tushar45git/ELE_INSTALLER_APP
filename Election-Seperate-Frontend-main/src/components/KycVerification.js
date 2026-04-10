@@ -376,14 +376,18 @@ const KycVerification = () => {
       startResendTimer();
       showAlert("success", "OTP sent to your Aadhaar-linked mobile number");
     } catch (e) {
+      const status = e.response?.status;
       const errData = e.response?.data;
-      if (errData?.serviceUnavailable) {
+      // 504/502/503 from Nginx, or no response at all (network error)
+      const isGatewayOrNetworkError =
+        !e.response || status === 504 || status === 502 || status === 503;
+      if (isGatewayOrNetworkError || errData?.serviceUnavailable) {
         // Auto-redirect to document fallback when OTP service is down
         setStep("upload");
         showAlert(
           "warning",
-          errData.message ||
-            "OTP service unavailable. Please upload documents instead.",
+          errData?.message ||
+            "Aadhaar OTP service is currently unavailable (server timeout). Please verify using documents instead.",
         );
       } else {
         showAlert("error", errData?.message || "Failed to send OTP");
@@ -406,13 +410,16 @@ const KycVerification = () => {
       startResendTimer();
       showAlert("success", "OTP resent successfully");
     } catch (e) {
+      const status = e.response?.status;
       const errData = e.response?.data;
-      if (errData?.serviceUnavailable) {
+      const isGatewayOrNetworkError =
+        !e.response || status === 504 || status === 502 || status === 503;
+      if (isGatewayOrNetworkError || errData?.serviceUnavailable) {
         setStep("upload");
         showAlert(
           "warning",
-          errData.message ||
-            "OTP service unavailable. Please upload documents instead.",
+          errData?.message ||
+            "Aadhaar OTP service is currently unavailable (server timeout). Please verify using documents instead.",
         );
       } else {
         showAlert("error", errData?.message || "Failed to resend OTP");
