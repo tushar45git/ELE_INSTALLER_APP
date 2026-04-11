@@ -3,11 +3,28 @@ import axios from "axios";
 import logo from "./images/logo/cam.png";
 import Delete from "./images/logo/deleteicon.png";
 import Trash from "./images/logo/Trash.png";
-import { FiList, FiPlus, FiMap, FiHome, FiHash, FiMapPin, FiGlobe, FiEdit, FiCamera, FiUpload, FiImage } from "react-icons/fi";
+import {
+  FiList,
+  FiPlus,
+  FiMap,
+  FiHome,
+  FiHash,
+  FiMapPin,
+  FiGlobe,
+  FiEdit,
+  FiCamera,
+  FiUpload,
+  FiImage,
+} from "react-icons/fi";
 import * as FileSaver from "file-saver";
-import { FaFileExcel, FaSearch, FaArrowLeft } from "react-icons/fa";
+import {
+  FaFileExcel,
+  FaSearch,
+  FaArrowLeft,
+  FaArrowRight,
+} from "react-icons/fa";
 import * as XLSX from "xlsx";
-import { Filesystem, Directory } from '@capacitor/filesystem';
+import { Filesystem, Directory } from "@capacitor/filesystem";
 import "./auto-installer.css";
 import {
   Badge,
@@ -70,7 +87,7 @@ import {
   updateCamera,
   getCameraStatus,
   setIsEdited,
-  uploadCameraPhoto
+  uploadCameraPhoto,
 } from "../actions/userActions"; // Import the new action
 import { MdDelete, MdEdit, MdVisibility } from "react-icons/md";
 import withAuth from "./withAuth";
@@ -80,7 +97,12 @@ import "video.js/dist/video-js.css";
 import ReactPlayer from "react-player";
 import QRCodeScanner from "./QrCodeScanner";
 import TawkToWidget from "./tawkto";
-import { LuFlipHorizontal2, LuFlipVertical2, LuChevronDown, LuChevronUp } from "react-icons/lu";
+import {
+  LuFlipHorizontal2,
+  LuFlipVertical2,
+  LuChevronDown,
+  LuChevronUp,
+} from "react-icons/lu";
 import Autosuggest from "react-autosuggest";
 import { IoIosRefresh } from "react-icons/io";
 import { FaExclamationTriangle } from "react-icons/fa";
@@ -128,9 +150,12 @@ const AutoInstaller = () => {
   const canvasRef = useRef(null);
   const streamRef = useRef(null);
   const [isPhotoViewerOpen, setIsPhotoViewerOpen] = useState(false);
-  const [currentPhotoView, setCurrentPhotoView] = useState({ url: "", deviceId: "" });
+  const [currentPhotoView, setCurrentPhotoView] = useState({
+    url: "",
+    deviceId: "",
+  });
 
-    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [cameraToDelete, setCameraToDelete] = useState(null);
   // useRef to hold the interval ID
   const toastInterval = useRef(null);
@@ -146,12 +171,12 @@ const AutoInstaller = () => {
   const totalCameras = cameraa.length;
   const totalPages = Math.ceil(totalCameras / camerasPerPage); // Calculate the number of pages
 
-    const openDeleteModal = (cameraId) => {
+  const openDeleteModal = (cameraId) => {
     setCameraToDelete(cameraId);
     setIsDeleteModalOpen(true);
   };
 
-    // Function to close the confirmation modal
+  // Function to close the confirmation modal
   const closeDeleteModal = () => {
     setIsDeleteModalOpen(false);
     setCameraToDelete(null); // Clear the camera ID
@@ -173,11 +198,13 @@ const AutoInstaller = () => {
 
           try {
             const responsee = await axios.get(
-              `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=AIzaSyBNBVfpAQqikexY-8J0QDyBR4bWKiKe`
+              `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=AIzaSyBNBVfpAQqikexY-8J0QDyBR4bWKiKe`,
             );
             setAddress(responsee.data.results[0].formatted_address);
             setStateu(
-              responsee.data.plus_code.compound_code.split(",")[1].toUpperCase()
+              responsee.data.plus_code.compound_code
+                .split(",")[1]
+                .toUpperCase(),
             );
           } catch (error) {
             console.error("Error fetching address:", error.message);
@@ -185,7 +212,7 @@ const AutoInstaller = () => {
         },
         (error) => {
           console.error("Error getting location:", error.message);
-        }
+        },
       );
     } else {
       console.error("Geolocation is not supported by your browser.");
@@ -193,13 +220,13 @@ const AutoInstaller = () => {
 
     return () => {
       console.log(
-        "AutoInstaller component unmounting OR deviceId changed. Clearing intervals."
+        "AutoInstaller component unmounting OR deviceId changed. Clearing intervals.",
       );
       clearInterval(toastInterval.current);
       clearInterval(cameraStatusInterval.current);
     };
   }, [deviceId]);
-   const handleBackClick = () => {
+  const handleBackClick = () => {
     setShowAdditionalInputs(false);
     // Optionally clear any form fields or camera data here if needed
     setDeviceId(""); // Reset DeviceID
@@ -228,7 +255,7 @@ const AutoInstaller = () => {
 
     const setSet = await setSetting(
       response.flvUrl.prourl,
-      modifiedData.appSettings
+      modifiedData.appSettings,
     );
   };
   const filteredCameras = [...cameraa].sort((a, b) => {
@@ -249,16 +276,16 @@ const AutoInstaller = () => {
     const value = e.target.value;
     setSearchDeviceId(value);
     setCurrentPage(1); // Reset to first page when search changes
-    
+
     if (value.trim().length > 0) {
       // Filter cameras that match the search
       const suggestions = cameraa
-        .filter(camera => 
-          camera.deviceId.toLowerCase().includes(value.toLowerCase())
+        .filter((camera) =>
+          camera.deviceId.toLowerCase().includes(value.toLowerCase()),
         )
-        .map(camera => camera.deviceId)
+        .map((camera) => camera.deviceId)
         .slice(0, 5); // Limit to 5 suggestions
-      
+
       setSearchSuggestions(suggestions);
       setShowSuggestions(suggestions.length > 0);
     } else {
@@ -282,7 +309,11 @@ const AutoInstaller = () => {
       setCurrentPage(1); // Reset to first page
       const matchCount = filteredCameras.length;
       if (matchCount > 0) {
-        toast.success(`Found ${matchCount} camera${matchCount !== 1 ? 's' : ''} matching "${searchDeviceId}"`);
+        toast.success(
+          `Found ${matchCount} camera${
+            matchCount !== 1 ? "s" : ""
+          } matching "${searchDeviceId}"`,
+        );
       } else {
         toast.warning(`No cameras found matching "${searchDeviceId}"`);
       }
@@ -291,114 +322,119 @@ const AutoInstaller = () => {
     }
   };
 
-const handleAddInputs = async () => {
-  if (!deviceId) {
-    toast.error("Please enter a Device ID first");
-    return;
-  }
-
-  setShowAdditionalInputs(true);
-  setHasClickedCameraDidInfo(true);
-  clearInterval(cameraStatusInterval.current);
-  clearInterval(toastInterval.current);
-
-  setIsFetchingCameraDetails(true);
-
-  try {
-    const response = await getCameraByDid(deviceId);
-
-    if (!response?.flvUrl?.url2 || !response.success) {
-      toast.error("Device ID is not available. Please check and try again.");
-      setIsFetchingCameraDetails(false);
+  const handleAddInputs = async () => {
+    if (!deviceId) {
+      toast.error("Please enter a Device ID first");
       return;
     }
 
-    setFlvUrl(response.flvUrl.url2);
+    setShowAdditionalInputs(true);
+    setHasClickedCameraDidInfo(true);
+    clearInterval(cameraStatusInterval.current);
+    clearInterval(toastInterval.current);
 
-    if (response.data.state === "PUNJAB") {
-      toast.error("State is PUNJAB. Refreshing the page...");
-      setTimeout(() => {
-        window.location.reload();
-      }, 100);
-      setIsFetchingCameraDetails(false);
-      return;
-    }
+    setIsFetchingCameraDetails(true);
 
-    const fetchedState = response.data.state;
-    const fetchedAssemblyName = response.data.assemblyName;
-    const fetchedPsNumber = response.data.psNo;
-    const fetchedDistrict = response.data.district;
-    const fetchedExcelLocation = response.data.location;
-
-    setState(fetchedState);
-    setAssemblyName(fetchedAssemblyName);
-    setPsNumber(fetchedPsNumber);
-    setDistrict(fetchedDistrict);
-    setExcelLocation(fetchedExcelLocation);
-
-    sendUrlToExternalApi(response.flvUrl.url2);
-    startCameraStatusPolling(deviceId);
-  } catch (error) {
-    console.error("Error in handleAddInputs:", error);
-    // Handle errors appropriately (e.g., display an error message)
-  } finally {
-    setIsFetchingCameraDetails(false);
-  }
-};
-const downloadReport = async () => {
-  const exportData = cameraa.map((camera) => ({
-    "Installer Name": camera.personName,
-    "Mobile Number": camera.personMobile,
-    "Device ID": camera.deviceId,
-    District: camera.district,
-    "Assembly Name": camera.assemblyName,
-    "PS No.": camera.psNo,
-    Location: camera.location,
-    "Last Seen": `${camera.date || ''}  ${camera.time || ''}`.trim(),
-    "Photo URL": camera.cameraPhoto || "",
-  }));
-
-  const ws = XLSX.utils.json_to_sheet(exportData);
-  
-  // Add footer row
-  const now = new Date();
-  const footerDate = now.toLocaleDateString("en-GB");
-  const footerTime = now.toLocaleTimeString("en-GB", { hour12: false });
-  const footerText = `This is system generated report of installation list on date ${footerDate} ${footerTime}`;
-  
-  // Dynamic filename with date and time
-  const fileName = `camera_report_${footerDate.replace(/\//g, '-')}_${footerTime.replace(/:/g, '-')}.xlsx`;
-
-  // Append footer at the end (leaving one empty row)
-  const footerRow = [[], [footerText]];
-  XLSX.utils.sheet_add_aoa(ws, footerRow, { origin: -1 });
-
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Camera Report");
-
-  // Detect if running inside Capacitor native app
-  const isNative = window.Capacitor?.isNativePlatform?.();
-
-  if (isNative) {
-    // ✅ Native mobile: Save file in app's Documents directory
-    const wbout = XLSX.write(wb, { type: 'base64', bookType: 'xlsx' });
     try {
-      const result = await Filesystem.writeFile({
-        path: fileName,
-        data: wbout,
-        directory: Directory.Documents,
-      });
-      console.log('✅ Excel report saved to:', result.uri);
-      alert(`Camera report saved successfully as ${fileName} >> Go to files >> Documents`);
+      const response = await getCameraByDid(deviceId);
+
+      if (!response?.flvUrl?.url2 || !response.success) {
+        toast.error("Device ID is not available. Please check and try again.");
+        setIsFetchingCameraDetails(false);
+        return;
+      }
+
+      setFlvUrl(response.flvUrl.url2);
+
+      if (response.data.state === "PUNJAB") {
+        toast.error("State is PUNJAB. Refreshing the page...");
+        setTimeout(() => {
+          window.location.reload();
+        }, 100);
+        setIsFetchingCameraDetails(false);
+        return;
+      }
+
+      const fetchedState = response.data.state;
+      const fetchedAssemblyName = response.data.assemblyName;
+      const fetchedPsNumber = response.data.psNo;
+      const fetchedDistrict = response.data.district;
+      const fetchedExcelLocation = response.data.location;
+
+      setState(fetchedState);
+      setAssemblyName(fetchedAssemblyName);
+      setPsNumber(fetchedPsNumber);
+      setDistrict(fetchedDistrict);
+      setExcelLocation(fetchedExcelLocation);
+
+      sendUrlToExternalApi(response.flvUrl.url2);
+      startCameraStatusPolling(deviceId);
     } catch (error) {
-      console.error('❌ Error saving Excel file:', error);
-      alert('Failed to save report.');
+      console.error("Error in handleAddInputs:", error);
+      // Handle errors appropriately (e.g., display an error message)
+    } finally {
+      setIsFetchingCameraDetails(false);
     }
-  } else {
-    // 🌐 Web browser: trigger normal file download
-    XLSX.writeFile(wb, fileName);
-  }
-};
+  };
+  const downloadReport = async () => {
+    const exportData = cameraa.map((camera) => ({
+      "Installer Name": camera.personName,
+      "Mobile Number": camera.personMobile,
+      "Device ID": camera.deviceId,
+      District: camera.district,
+      "Assembly Name": camera.assemblyName,
+      "PS No.": camera.psNo,
+      Location: camera.location,
+      "Last Seen": `${camera.date || ""}  ${camera.time || ""}`.trim(),
+      "Photo URL": camera.cameraPhoto || "",
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(exportData);
+
+    // Add footer row
+    const now = new Date();
+    const footerDate = now.toLocaleDateString("en-GB");
+    const footerTime = now.toLocaleTimeString("en-GB", { hour12: false });
+    const footerText = `This is system generated report of installation list on date ${footerDate} ${footerTime}`;
+
+    // Dynamic filename with date and time
+    const fileName = `camera_report_${footerDate.replace(
+      /\//g,
+      "-",
+    )}_${footerTime.replace(/:/g, "-")}.xlsx`;
+
+    // Append footer at the end (leaving one empty row)
+    const footerRow = [[], [footerText]];
+    XLSX.utils.sheet_add_aoa(ws, footerRow, { origin: -1 });
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Camera Report");
+
+    // Detect if running inside Capacitor native app
+    const isNative = window.Capacitor?.isNativePlatform?.();
+
+    if (isNative) {
+      // ✅ Native mobile: Save file in app's Documents directory
+      const wbout = XLSX.write(wb, { type: "base64", bookType: "xlsx" });
+      try {
+        const result = await Filesystem.writeFile({
+          path: fileName,
+          data: wbout,
+          directory: Directory.Documents,
+        });
+        console.log("✅ Excel report saved to:", result.uri);
+        alert(
+          `Camera report saved successfully as ${fileName} >> Go to files >> Documents`,
+        );
+      } catch (error) {
+        console.error("❌ Error saving Excel file:", error);
+        alert("Failed to save report.");
+      }
+    } else {
+      // 🌐 Web browser: trigger normal file download
+      XLSX.writeFile(wb, fileName);
+    }
+  };
   const startCameraStatusPolling = (deviceId) => {
     setCameraStatus(undefined); // Set to undefined when polling starts
     fetchCameraStatus(deviceId);
@@ -434,69 +470,69 @@ const downloadReport = async () => {
         setCameraAngleAcceptable(cameraAngle <= 15);
         setIsFetchingCameraDetails(false);
 
-  //       if (cameraAngle > 15) {
-  //         if (!toastInterval.current) {
-  //           toastInterval.current = setInterval(() => {
-  //             toast.warn(
-  //               "Try to adjust the angle of camera. The angle of camera should be in range of 0-15 degree",
-  //               {
-  //                 position: "top-right",
-  //                 autoClose: 5000,
-  //                 hideProgressBar: false,
-  //                 closeOnClick: true,
-  //                 pauseOnHover: true,
-  //                 draggable: true,
-  //                 style: toastStyle, // Apply inline styles here
-  //               }
-  //             );
-  //           }, 9000);
-  //         }
-  //       } else {
-  //         clearInterval(toastInterval.current);
-  //         toastInterval.current = null;
-  //       }
-  //     }
+        //       if (cameraAngle > 15) {
+        //         if (!toastInterval.current) {
+        //           toastInterval.current = setInterval(() => {
+        //             toast.warn(
+        //               "Try to adjust the angle of camera. The angle of camera should be in range of 0-15 degree",
+        //               {
+        //                 position: "top-right",
+        //                 autoClose: 5000,
+        //                 hideProgressBar: false,
+        //                 closeOnClick: true,
+        //                 pauseOnHover: true,
+        //                 draggable: true,
+        //                 style: toastStyle, // Apply inline styles here
+        //               }
+        //             );
+        //           }, 9000);
+        //         }
+        //       } else {
+        //         clearInterval(toastInterval.current);
+        //         toastInterval.current = null;
+        //       }
+        //     }
 
-  //     if (status.blur) {
-  //       toast.warn("Camera is blur, try to fix it!", {
-  //         position: "top-right",
-  //         autoClose: 5000,
-  //         hideProgressBar: false,
-  //         closeOnClick: true,
-  //         pauseOnHover: true,
-  //         draggable: true,
-  //       });
-  //     }
-  //     if (status.blackview) {
-  //       toast.warn("Camera having black view, try to fix it!", {
-  //         position: "top-right",
-  //         autoClose: 5000,
-  //         hideProgressBar: false,
-  //         closeOnClick: true,
-  //         pauseOnHover: true,
-  //         draggable: true,
-  //       });
-  //     }
-  //     if (!status.brightness) {
-  //       toast.warn("Check the brightness of the camera!", {
-  //         position: "top-right",
-  //         autoClose: 5000,
-  //         hideProgressBar: false,
-  //         closeOnClick: true,
-  //         pauseOnHover: true,
-  //         draggable: true,
-  //       });
-  //     }
-  //     if (status.BlackAndWhite) {
-  //       toast.warn("Camera is black and white!", {
-  //         position: "top-right",
-  //         autoClose: 5000,
-  //         hideProgressBar: false,
-  //         closeOnClick: true,
-  //         pauseOnHover: true,
-  //         draggable: true,
-  //       });
-   }
+        //     if (status.blur) {
+        //       toast.warn("Camera is blur, try to fix it!", {
+        //         position: "top-right",
+        //         autoClose: 5000,
+        //         hideProgressBar: false,
+        //         closeOnClick: true,
+        //         pauseOnHover: true,
+        //         draggable: true,
+        //       });
+        //     }
+        //     if (status.blackview) {
+        //       toast.warn("Camera having black view, try to fix it!", {
+        //         position: "top-right",
+        //         autoClose: 5000,
+        //         hideProgressBar: false,
+        //         closeOnClick: true,
+        //         pauseOnHover: true,
+        //         draggable: true,
+        //       });
+        //     }
+        //     if (!status.brightness) {
+        //       toast.warn("Check the brightness of the camera!", {
+        //         position: "top-right",
+        //         autoClose: 5000,
+        //         hideProgressBar: false,
+        //         closeOnClick: true,
+        //         pauseOnHover: true,
+        //         draggable: true,
+        //       });
+        //     }
+        //     if (status.BlackAndWhite) {
+        //       toast.warn("Camera is black and white!", {
+        //         position: "top-right",
+        //         autoClose: 5000,
+        //         hideProgressBar: false,
+        //         closeOnClick: true,
+        //         pauseOnHover: true,
+        //         draggable: true,
+        //       });
+      }
     } catch (error) {
       console.error("Error fetching camera status:", error);
       setIsFetchingCameraDetails(false);
@@ -528,7 +564,7 @@ const downloadReport = async () => {
           headers: {
             "Content-Type": "application/json",
           },
-        }
+        },
       );
 
       console.log("External API Response:", response.data);
@@ -549,7 +585,7 @@ const downloadReport = async () => {
     window.location.reload();
   };
 
-   const handleDeleteClickConfirmed = async () => {
+  const handleDeleteClickConfirmed = async () => {
     try {
       // Only proceed if a camera ID is actually stored
       if (cameraToDelete) {
@@ -601,8 +637,8 @@ const downloadReport = async () => {
   const openCamera = async () => {
     setIsCameraModalOpen(true);
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: "environment" } 
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "environment" },
       });
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
@@ -617,7 +653,7 @@ const downloadReport = async () => {
 
   const stopCamera = () => {
     if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
     }
     setIsCameraModalOpen(false);
@@ -631,14 +667,20 @@ const downloadReport = async () => {
       canvas.height = video.videoHeight;
       const context = canvas.getContext("2d");
       context.drawImage(video, 0, 0, canvas.width, canvas.height);
-      
-      canvas.toBlob((blob) => {
-        if (blob) {
-          const file = new File([blob], `capture-${Date.now()}.jpg`, { type: "image/jpeg" });
-          handlePhotoUpload(file);
-          stopCamera();
-        }
-      }, "image/jpeg", 0.82);
+
+      canvas.toBlob(
+        (blob) => {
+          if (blob) {
+            const file = new File([blob], `capture-${Date.now()}.jpg`, {
+              type: "image/jpeg",
+            });
+            handlePhotoUpload(file);
+            stopCamera();
+          }
+        },
+        "image/jpeg",
+        0.82,
+      );
     }
   };
 
@@ -692,7 +734,7 @@ const downloadReport = async () => {
         formattedDate,
         formattedTime,
         "", // remarks
-        cameraPhotoUrl
+        cameraPhotoUrl,
       );
 
       console.log("response of submit", response);
@@ -710,7 +752,6 @@ const downloadReport = async () => {
       if (isEditing) {
         await setIsEdited(deviceId); // Call the new API function
       }
-
     } catch (error) {
       console.error(error);
     }
@@ -730,7 +771,7 @@ const downloadReport = async () => {
         hour12: false,
       });
       const responsee = await axios.get(
-        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=AIzaSyBNBVfpAQqikexY-8J0QDyBR4bWKiKe`
+        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=AIzaSyBNBVfpAQqikexY-8J0QDyBR4bWKiKe`,
       );
 
       const statename = responsee.data.plus_code.compound_code
@@ -750,7 +791,7 @@ const downloadReport = async () => {
         statename,
         formatted_address,
         formatted_address1,
-        formatted_address2
+        formatted_address2,
       );
     } catch (error) {
       console.error("Error tracking data:", error);
@@ -790,7 +831,7 @@ const downloadReport = async () => {
     }
   };
 
- const camera = async () => {
+  const camera = async () => {
     try {
       const mobile = localStorage.getItem("mobile");
       const result = await getCamera(mobile);
@@ -799,7 +840,7 @@ const downloadReport = async () => {
 
       // Initial sort when data is fetched
       const sortedData = [...result.data].sort((a, b) =>
-        a.deviceId.localeCompare(b.deviceId)
+        a.deviceId.localeCompare(b.deviceId),
       );
 
       setCameraa(sortedData);
@@ -865,18 +906,18 @@ const downloadReport = async () => {
 
   const [suggestions, setSuggestions] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-   const autosuggestRef = useRef(null);
+  const autosuggestRef = useRef(null);
 
-   const handleInputChange = async (event, { newValue, method }) => {
+  const handleInputChange = async (event, { newValue, method }) => {
     setDeviceId(newValue);
 
-    if (method === 'type') {
-      const numericValue = newValue.replace(/\D/g, '');
+    if (method === "type") {
+      const numericValue = newValue.replace(/\D/g, "");
 
       if (numericValue.length === 6) {
         setIsLoading(true);
         try {
-          const phase = localStorage.getItem('phase');
+          const phase = localStorage.getItem("phase");
           const response = await getFullDid(numericValue, phase);
           const results = response.streamnames || [];
           if (results.length === 0) {
@@ -885,7 +926,7 @@ const downloadReport = async () => {
             setSuggestions(results);
           }
         } catch (error) {
-          console.error('Error fetching suggestions:', error);
+          console.error("Error fetching suggestions:", error);
           setSuggestions([]);
         } finally {
           setIsLoading(false);
@@ -896,14 +937,17 @@ const downloadReport = async () => {
     }
   };
 
-  const handleSuggestionSelected = (event, { suggestion, suggestionValue, suggestionIndex, sectionIndex, method }) => {
+  const handleSuggestionSelected = (
+    event,
+    { suggestion, suggestionValue, suggestionIndex, sectionIndex, method },
+  ) => {
     if (suggestion && suggestion.isNoResult) {
-        return;
+      return;
     }
     setDeviceId(suggestionValue);
     setSuggestions([]); // Clear suggestions after selection
     if (autosuggestRef.current) {
-        autosuggestRef.current.input.blur();
+      autosuggestRef.current.input.blur();
     }
   };
 
@@ -917,7 +961,14 @@ const downloadReport = async () => {
   const renderSuggestion = (suggestion) => {
     if (suggestion && suggestion.isNoResult) {
       return (
-        <div style={{ padding: '10px', color: 'gray', fontStyle: 'italic', fontSize: '14px' }}>
+        <div
+          style={{
+            padding: "10px",
+            color: "gray",
+            fontStyle: "italic",
+            fontSize: "14px",
+          }}
+        >
           No devices found with this ID
         </div>
       );
@@ -926,22 +977,22 @@ const downloadReport = async () => {
   };
 
   const inputProps = {
-    placeholder: 'Enter Device ID',
+    placeholder: "Enter Device ID",
     value: deviceId,
     onChange: handleInputChange,
     style: {
-      width: '240px',
-      height: '35px',
-      padding: '10px 14px',
-      borderRadius: '8px',
-      background: '#fff',
-      boxShadow: 'inset 0 1px 2.4px rgba(0, 0, 0, 0.25)',
-      color: 'black',
+      width: "240px",
+      height: "35px",
+      padding: "10px 14px",
+      borderRadius: "8px",
+      background: "#fff",
+      boxShadow: "inset 0 1px 2.4px rgba(0, 0, 0, 0.25)",
+      color: "black",
       fontFamily: "'Wix Madefor Text'",
-      fontSize: '12px',
-      fontStyle: 'normal',
+      fontSize: "12px",
+      fontStyle: "normal",
       fontWeight: 400,
-      lineHeight: 'normal',
+      lineHeight: "normal",
     },
   };
 
@@ -999,6 +1050,18 @@ const downloadReport = async () => {
 .pulse-border {
   animation: pulse-border 2s infinite;
 }
+
+@keyframes continuous-marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.marquee-animation {
+  display: flex;
+  width: max-content;
+  animation: continuous-marquee 20s linear infinite;
+  will-change: transform;
+}
 `;
 
   // Pagination functions
@@ -1044,20 +1107,114 @@ const downloadReport = async () => {
   return (
     <div className="main-wrapper">
       <style>{customCSS}</style>
+
+      {/* KYC Notification Banner */}
+      <Flex
+        w={{ base: "94%", md: "98%" }}
+        mx="auto"
+        mt={4}
+        bg="#E6F1FB"
+        border="1px solid"
+        borderColor="#647bb8ff"
+        borderRadius="md"
+        color="#042C53"
+        overflow="hidden"
+        boxShadow="sm"
+        position="relative"
+        zIndex={10}
+        mb={{ base: 4, md: 6 }}
+        align="stretch"
+      >
+        <Box flex="1" overflow="hidden" whiteSpace="nowrap" py={2.5} px={2.5}>
+          <Box className="marquee-animation">
+            {/* First block */}
+            <Flex align="center" gap={3} pr={20}>
+              <FaExclamationTriangle color="#D97706" size={16} />
+              <Text fontWeight="600" fontSize="14px" letterSpacing="0.3px">
+                স্মরণ করিয়ে দেওয়া হচ্ছে: আপনার নির্বাচনী দায়িত্ব পালনের জন্য
+                কেওয়াইসি (KYC) যাচাইকরণ আবশ্যক। যদি আপনার কেওয়াইসি (KYC)
+                প্রক্রিয়াধীন থাকে, তবে অনুগ্রহ করে অগ্রাধিকার ভিত্তিতে তা
+                সম্পন্ন করুন।
+              </Text>
+              <FaExclamationTriangle color="#D97706" size={16} />
+            </Flex>
+            {/* Duplicate block required for seamless continuous loop */}
+            <Flex align="center" gap={3} pr={20}>
+              <FaExclamationTriangle color="#D97706" size={16} />
+              <Text fontWeight="600" fontSize="14px" letterSpacing="0.3px">
+                স্মরণ করিয়ে দেওয়া হচ্ছে: আপনার নির্বাচনী দায়িত্ব পালনের জন্য
+                কেওয়াইসি (KYC) যাচাইকরণ আবশ্যক। যদি আপনার কেওয়াইসি (KYC)
+                প্রক্রিয়াধীন থাকে, তবে অনুগ্রহ করে অগ্রাধিকার ভিত্তিতে তা
+                সম্পন্ন করুন।
+              </Text>
+              <FaExclamationTriangle color="#D97706" size={16} />
+            </Flex>
+          </Box>
+        </Box>
+
+        {/* Static CTA Button pinned to the right */}
+        <Box
+          as={Link}
+          to="/kyc"
+          bg="#E6F1FB"
+          color="black"
+          px={{ base: 4, md: 6 }}
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
+          gap={2}
+          fontWeight="bold"
+          fontSize="13px"
+          _hover={{ bg: "#063B70", textDecoration: "none" }}
+          transition="background 0.2s"
+          flexShrink={0}
+          borderLeft="1px solid"
+          borderColor="#647bb8ff"
+          textDecoration="none"
+        >
+          <Text whiteSpace="nowrap">Click Here</Text>
+          <FaArrowRight size={12} />
+        </Box>
+      </Flex>
+
+      <Box
+        position="fixed"
+        bottom={{ base: "90px", md: "20px" }}
+        right="20px"
+        zIndex={1000}
+        className="chat-option-container"
+      >
+        <TawkToWidget />
+      </Box>
+
       <ToastContainer />
-      <div style={{ position: "fixed", bottom: "calc(20px + env(safe-area-inset-bottom))", right: "20px", zIndex: 1000 }}>
+      <div
+        style={{
+          position: "fixed",
+          bottom: "calc(20px + env(safe-area-inset-bottom))",
+          right: "20px",
+          zIndex: 1000,
+        }}
+      >
         <TawkToWidget />
       </div>
 
       <Box className="animate-fade-in">
         {!location ? (
           <VStack minH="60vh" justify="center" spacing={4}>
-            <Box p={8} bg="white" borderRadius="2xl" boxShadow="xl" textAlign="center">
+            <Box
+              p={8}
+              bg="white"
+              borderRadius="2xl"
+              boxShadow="xl"
+              textAlign="center"
+            >
               <Text fontSize="lg" fontWeight="600" color="red.500">
                 Location Access Required
               </Text>
               <Text color="gray.600" mt={2}>
-                To access the election installer portal, please enable GPS/Location services.
+                To access the election installer portal, please enable
+                GPS/Location services.
               </Text>
             </Box>
           </VStack>
@@ -1066,9 +1223,19 @@ const downloadReport = async () => {
             <header className="page-header">
               <div className="title-group">
                 <HStack spacing={3} mb={1}>
-                  <Heading as="h1" size="xl">Election Installer</Heading>
+                  <Heading as="h1" size="xl">
+                    Election Installer
+                  </Heading>
                   <div className="header-status-badge">
-                    <Box w="6px" h="6px" borderRadius="full" bg="primary.500" mr={2} className="blink-warning" style={{ animationDuration: '1s' }} />
+                    <Box
+                      w="6px"
+                      h="6px"
+                      borderRadius="full"
+                      bg="primary.500"
+                      mr={2}
+                      className="blink-warning"
+                      style={{ animationDuration: "1s" }}
+                    />
                     Secure Live
                   </div>
                 </HStack>
@@ -1076,7 +1243,11 @@ const downloadReport = async () => {
                   Professional camera management & real-time monitoring system
                 </Text>
               </div>
-              <Stack direction={{ base: "column", sm: "row" }} spacing={4} w={{ base: "full", sm: "auto" }}>
+              <Stack
+                direction={{ base: "column", sm: "row" }}
+                spacing={4}
+                w={{ base: "full", sm: "auto" }}
+              >
                 {!showAdditionalInputs && (
                   <>
                     {cameraa.length > 0 && (
@@ -1109,15 +1280,24 @@ const downloadReport = async () => {
                 <Box className="search-section" mb={8}>
                   <Box position="relative">
                     <InputGroup size="lg">
-                      <InputLeftElement pointerEvents="none" height="100%" pl={2}>
+                      <InputLeftElement
+                        pointerEvents="none"
+                        height="100%"
+                        pl={2}
+                      >
                         <FaSearch color="var(--gray-400)" />
                       </InputLeftElement>
                       <Input
                         className="custom-input input-with-icon"
                         value={searchDeviceId}
                         onChange={handleSearchChange}
-                        onFocus={() => searchDeviceId && setShowSuggestions(searchSuggestions.length > 0)}
-                        onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                        onFocus={() =>
+                          searchDeviceId &&
+                          setShowSuggestions(searchSuggestions.length > 0)
+                        }
+                        onBlur={() =>
+                          setTimeout(() => setShowSuggestions(false), 200)
+                        }
                         placeholder="Filter by Device ID..."
                         fontSize="md"
                         _placeholder={{ color: "gray.400" }}
@@ -1144,7 +1324,7 @@ const downloadReport = async () => {
                         )}
                       </InputRightElement>
                     </InputGroup>
-                    
+
                     {/* Autocomplete Suggestions Dropdown */}
                     {showSuggestions && searchSuggestions.length > 0 && (
                       <Box
@@ -1170,7 +1350,11 @@ const downloadReport = async () => {
                               py={3}
                               cursor="pointer"
                               transition="all 0.2s"
-                              borderBottom={index < searchSuggestions.length - 1 ? "1px solid" : "none"}
+                              borderBottom={
+                                index < searchSuggestions.length - 1
+                                  ? "1px solid"
+                                  : "none"
+                              }
                               borderColor="gray.100"
                               _hover={{
                                 bg: "blue.50",
@@ -1195,7 +1379,13 @@ const downloadReport = async () => {
 
                 {/* Device List Section */}
                 <div className="glass-card list-section">
-                  <Flex justify="space-between" align="center" mb={6} flexWrap="wrap" gap={4}>
+                  <Flex
+                    justify="space-between"
+                    align="center"
+                    mb={6}
+                    flexWrap="wrap"
+                    gap={4}
+                  >
                     <VStack align="flex-start" spacing={1}>
                       <Heading size="md" color="blue.900">
                         Installation Directory
@@ -1203,7 +1393,11 @@ const downloadReport = async () => {
                       <Text fontSize="sm" color="gray.600">
                         {searchDeviceId ? (
                           <>
-                            Found <Text as="span" fontWeight="700" color="blue.600">{totalFilteredCameras}</Text> matching cameras
+                            Found{" "}
+                            <Text as="span" fontWeight="700" color="blue.600">
+                              {totalFilteredCameras}
+                            </Text>{" "}
+                            matching cameras
                           </>
                         ) : (
                           <>{cameraa.length} total active devices</>
@@ -1220,228 +1414,321 @@ const downloadReport = async () => {
                         isRound
                         bg="white"
                         transition="all 0.4s ease"
-                        _hover={{ 
+                        _hover={{
                           transform: "rotate(180deg)",
                           bg: "gray.100",
-                          boxShadow: "md"
+                          boxShadow: "md",
                         }}
                       />
                     </HStack>
                   </Flex>
 
-                <Box display={{ base: "none", md: "block" }} className="table-container">
-                  <Table variant="simple" className="premium-table">
-                    <Thead>
-                      <Tr>
-                        <Th>District</Th>
-                        <Th>PS No.</Th>
-                        <Th>Device ID</Th>
-                        <Th>Assembly Name</Th>
-                        <Th>Location</Th>
-                        <Th>Photo</Th>
-                        <Th textAlign="right">Actions</Th>
-                      </Tr>
-                    </Thead>
-                    <Tbody>
-                      {camerasOnPage.map((camera) => (
-                        <Tr key={camera.deviceId}>
-                          <Td data-label="District">{camera.district}</Td>
-                          <Td data-label="PS No."><b>{camera.psNo}</b></Td>
-                          <Td data-label="Device ID">{camera.deviceId}</Td>
-                          <Td data-label="Assembly Name">{camera.assemblyName}</Td>
-                          <Td data-label="Location">{camera.location}</Td>
-                          <Td data-label="Photo">
-                            {camera.cameraPhoto ? (
-                              <Button 
-                                size="xs" 
-                                leftIcon={<FiCamera />} 
-                                colorScheme="green" 
-                                variant="outline" 
-                                onClick={() => handleViewPhoto(camera.cameraPhoto, camera.deviceId)}
-                                borderRadius="full"
-                              >
-                                View Photo
-                              </Button>
-                            ) : (
-                              <Badge colorScheme="gray" variant="subtle" borderRadius="full" fontSize="10px">
-                                No Photo
-                              </Badge>
-                            )}
-                          </Td>
-                          <Td data-label="Actions" textAlign={{ base: "left", md: "right" }}>
-                            <HStack justify={{ base: "flex-start", md: "flex-end" }} spacing={2}>
-                              <IconButton
-                                size="sm"
-                                icon={<MdVisibility color="#3182ce" />}
-                                onClick={() => handleViewCamera(camera)}
-                                aria-label="View Feed"
-                                variant="ghost"
-                                _hover={{ bg: "blue.50" }}
-                              />
-                              <IconButton
-                                size="sm"
-                                colorScheme="red"
-                                variant="ghost"
-                                icon={<MdDelete color="#e53e3e" />}
-                                onClick={() => openDeleteModal(camera.deviceId)}
-                                aria-label="Delete"
-                                _hover={{ bg: "red.50" }}
-                              />
-                            </HStack>
-                          </Td>
-                        </Tr>
-                      ))}
-                      {filteredCameras.length === 0 && (
+                  <Box
+                    display={{ base: "none", md: "block" }}
+                    className="table-container"
+                  >
+                    <Table variant="simple" className="premium-table">
+                      <Thead>
                         <Tr>
-                          <Td colSpan={6} textAlign="center" py={10}>
-                            <VStack spacing={2}>
-                              <Text fontWeight="600">No cameras found</Text>
-                              <Button size="sm" onClick={handleAddNewDeviceClick}>Add your first device</Button>
-                            </VStack>
-                          </Td>
+                          <Th>District</Th>
+                          <Th>PS No.</Th>
+                          <Th>Device ID</Th>
+                          <Th>Assembly Name</Th>
+                          <Th>Location</Th>
+                          <Th>Photo</Th>
+                          <Th textAlign="right">Actions</Th>
                         </Tr>
-                      )}
-                    </Tbody>
-                  </Table>
-                </Box>
+                      </Thead>
+                      <Tbody>
+                        {camerasOnPage.map((camera) => (
+                          <Tr key={camera.deviceId}>
+                            <Td data-label="District">{camera.district}</Td>
+                            <Td data-label="PS No.">
+                              <b>{camera.psNo}</b>
+                            </Td>
+                            <Td data-label="Device ID">{camera.deviceId}</Td>
+                            <Td data-label="Assembly Name">
+                              {camera.assemblyName}
+                            </Td>
+                            <Td data-label="Location">{camera.location}</Td>
+                            <Td data-label="Photo">
+                              {camera.cameraPhoto ? (
+                                <Button
+                                  size="xs"
+                                  leftIcon={<FiCamera />}
+                                  colorScheme="green"
+                                  variant="outline"
+                                  onClick={() =>
+                                    handleViewPhoto(
+                                      camera.cameraPhoto,
+                                      camera.deviceId,
+                                    )
+                                  }
+                                  borderRadius="full"
+                                >
+                                  View Photo
+                                </Button>
+                              ) : (
+                                <Badge
+                                  colorScheme="gray"
+                                  variant="subtle"
+                                  borderRadius="full"
+                                  fontSize="10px"
+                                >
+                                  No Photo
+                                </Badge>
+                              )}
+                            </Td>
+                            <Td
+                              data-label="Actions"
+                              textAlign={{ base: "left", md: "right" }}
+                            >
+                              <HStack
+                                justify={{ base: "flex-start", md: "flex-end" }}
+                                spacing={2}
+                              >
+                                <IconButton
+                                  size="sm"
+                                  icon={<MdVisibility color="#3182ce" />}
+                                  onClick={() => handleViewCamera(camera)}
+                                  aria-label="View Feed"
+                                  variant="ghost"
+                                  _hover={{ bg: "blue.50" }}
+                                />
+                                <IconButton
+                                  size="sm"
+                                  colorScheme="red"
+                                  variant="ghost"
+                                  icon={<MdDelete color="#e53e3e" />}
+                                  onClick={() =>
+                                    openDeleteModal(camera.deviceId)
+                                  }
+                                  aria-label="Delete"
+                                  _hover={{ bg: "red.50" }}
+                                />
+                              </HStack>
+                            </Td>
+                          </Tr>
+                        ))}
+                        {filteredCameras.length === 0 && (
+                          <Tr>
+                            <Td colSpan={6} textAlign="center" py={10}>
+                              <VStack spacing={2}>
+                                <Text fontWeight="600">No cameras found</Text>
+                                <Button
+                                  size="sm"
+                                  onClick={handleAddNewDeviceClick}
+                                >
+                                  Add your first device
+                                </Button>
+                              </VStack>
+                            </Td>
+                          </Tr>
+                        )}
+                      </Tbody>
+                    </Table>
+                  </Box>
 
-                {/* Mobile Card View */}
-                <Box display={{ base: "block", md: "none" }}>
-                  {camerasOnPage.map((camera) => (
-                    <Box 
-                      key={camera.deviceId} 
-                      mb={4} 
-                      p={4} 
-                      bg="white" 
-                      rounded="xl" 
-                      shadow="sm" 
-                      border="1px solid" 
-                      borderColor="gray.200"
-                    >
-                      <Flex justify="space-between" align="center" onClick={() => handleToggleExpand(camera.deviceId)}>
-                        <Text fontWeight="bold" fontSize="md" color="blue.800">
-                          {camera.deviceId}
-                        </Text>
-                         <IconButton
-                            icon={expandedCameraId === camera.deviceId ? <LuChevronUp /> : <LuChevronDown />}
+                  {/* Mobile Card View */}
+                  <Box display={{ base: "block", md: "none" }}>
+                    {camerasOnPage.map((camera) => (
+                      <Box
+                        key={camera.deviceId}
+                        mb={4}
+                        p={4}
+                        bg="white"
+                        rounded="xl"
+                        shadow="sm"
+                        border="1px solid"
+                        borderColor="gray.200"
+                      >
+                        <Flex
+                          justify="space-between"
+                          align="center"
+                          onClick={() => handleToggleExpand(camera.deviceId)}
+                        >
+                          <Text
+                            fontWeight="bold"
+                            fontSize="md"
+                            color="blue.800"
+                          >
+                            {camera.deviceId}
+                          </Text>
+                          <IconButton
+                            icon={
+                              expandedCameraId === camera.deviceId ? (
+                                <LuChevronUp />
+                              ) : (
+                                <LuChevronDown />
+                              )
+                            }
                             variant="ghost"
                             size="sm"
                             aria-label="Toggle details"
                             isRound
                           />
-                      </Flex>
+                        </Flex>
 
-                      <Collapse in={expandedCameraId === camera.deviceId} animateOpacity>
-                        <VStack align="stretch" spacing={3} mt={3}>
-                          <Divider borderColor="gray.100" />
-                          
-                          <HStack justify="space-between">
-                            <Text fontSize="sm" color="gray.500">District</Text>
-                            <Text fontSize="sm" fontWeight="medium">{camera.district}</Text>
-                          </HStack>
-                          
-                          <HStack justify="space-between">
-                            <Text fontSize="sm" color="gray.500">PS No</Text>
-                            <Text fontSize="sm" fontWeight="semibold">{camera.psNo}</Text>
-                          </HStack>
+                        <Collapse
+                          in={expandedCameraId === camera.deviceId}
+                          animateOpacity
+                        >
+                          <VStack align="stretch" spacing={3} mt={3}>
+                            <Divider borderColor="gray.100" />
 
-                          <HStack justify="space-between">
-                            <Text fontSize="sm" color="gray.500">Assembly</Text>
-                            <Text fontSize="sm" fontWeight="medium">{camera.assemblyName}</Text>
-                          </HStack>
-
-                          <HStack justify="space-between">
-                            <Text fontSize="sm" color="gray.500">Location</Text>
-                            <Text fontSize="sm" textAlign="right" maxW="60%">{camera.location}</Text>
-                          </HStack>
-                          <Box pt={2}>
-                            <Text fontSize="xs" fontWeight="bold" color="gray.400" mb={2} textTransform="uppercase">Actions</Text>
-                            <HStack spacing={2}>
-                              <Button 
-                                size="sm" 
-                                leftIcon={<MdVisibility color="#3182ce" />} 
-                                onClick={(e) => { e.stopPropagation(); handleViewCamera(camera); }} 
-                                colorScheme="blue" 
-                                variant="outline" 
-                                flex={1}
-                                _hover={{ bg: "blue.50" }}
-                              >
-                                View
-                              </Button>
-                              {camera.cameraPhoto && (
-                                <Button 
-                                  size="sm" 
-                                  leftIcon={<FiCamera color="#38A169" />} 
-                                  onClick={(e) => { e.stopPropagation(); handleViewPhoto(camera.cameraPhoto, camera.deviceId); }} 
-                                  colorScheme="green" 
-                                  variant="outline" 
-                                  flex={1}
-                                  _hover={{ bg: "green.50" }}
-                                >
-                                  Photo
-                                </Button>
-                              )}
-                              <Button 
-                                size="sm" 
-                                leftIcon={<MdDelete color="#e53e3e" />} 
-                                onClick={(e) => { e.stopPropagation(); openDeleteModal(camera.deviceId); }} 
-                                colorScheme="red" 
-                                variant="outline" 
-                                flex={1}
-                                _hover={{ bg: "red.50" }}
-                              >
-                                Delete
-                              </Button>
+                            <HStack justify="space-between">
+                              <Text fontSize="sm" color="gray.500">
+                                District
+                              </Text>
+                              <Text fontSize="sm" fontWeight="medium">
+                                {camera.district}
+                              </Text>
                             </HStack>
-                          </Box>
-                        </VStack>
-                      </Collapse>
-                    </Box>
-                  ))}
-                  
-                  {filteredCameras.length === 0 && (
-                     <Box textAlign="center" py={10}>
+
+                            <HStack justify="space-between">
+                              <Text fontSize="sm" color="gray.500">
+                                PS No
+                              </Text>
+                              <Text fontSize="sm" fontWeight="semibold">
+                                {camera.psNo}
+                              </Text>
+                            </HStack>
+
+                            <HStack justify="space-between">
+                              <Text fontSize="sm" color="gray.500">
+                                Assembly
+                              </Text>
+                              <Text fontSize="sm" fontWeight="medium">
+                                {camera.assemblyName}
+                              </Text>
+                            </HStack>
+
+                            <HStack justify="space-between">
+                              <Text fontSize="sm" color="gray.500">
+                                Location
+                              </Text>
+                              <Text fontSize="sm" textAlign="right" maxW="60%">
+                                {camera.location}
+                              </Text>
+                            </HStack>
+                            <Box pt={2}>
+                              <Text
+                                fontSize="xs"
+                                fontWeight="bold"
+                                color="gray.400"
+                                mb={2}
+                                textTransform="uppercase"
+                              >
+                                Actions
+                              </Text>
+                              <HStack spacing={2}>
+                                <Button
+                                  size="sm"
+                                  leftIcon={<MdVisibility color="#3182ce" />}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleViewCamera(camera);
+                                  }}
+                                  colorScheme="blue"
+                                  variant="outline"
+                                  flex={1}
+                                  _hover={{ bg: "blue.50" }}
+                                >
+                                  View
+                                </Button>
+                                {camera.cameraPhoto && (
+                                  <Button
+                                    size="sm"
+                                    leftIcon={<FiCamera color="#38A169" />}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleViewPhoto(
+                                        camera.cameraPhoto,
+                                        camera.deviceId,
+                                      );
+                                    }}
+                                    colorScheme="green"
+                                    variant="outline"
+                                    flex={1}
+                                    _hover={{ bg: "green.50" }}
+                                  >
+                                    Photo
+                                  </Button>
+                                )}
+                                <Button
+                                  size="sm"
+                                  leftIcon={<MdDelete color="#e53e3e" />}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    openDeleteModal(camera.deviceId);
+                                  }}
+                                  colorScheme="red"
+                                  variant="outline"
+                                  flex={1}
+                                  _hover={{ bg: "red.50" }}
+                                >
+                                  Delete
+                                </Button>
+                              </HStack>
+                            </Box>
+                          </VStack>
+                        </Collapse>
+                      </Box>
+                    ))}
+
+                    {filteredCameras.length === 0 && (
+                      <Box textAlign="center" py={10}>
                         <VStack spacing={2}>
                           <Text fontWeight="600">No cameras found</Text>
-                          <Button size="sm" onClick={handleAddNewDeviceClick}>Add your first device</Button>
+                          <Button size="sm" onClick={handleAddNewDeviceClick}>
+                            Add your first device
+                          </Button>
                         </VStack>
                       </Box>
-                  )}
-                </Box>
+                    )}
+                  </Box>
 
-                <Flex justify="center" mt={8}>
-                  <Stack direction={{ base: "column", sm: "row" }} spacing={4} align="center">
-                    <Button
-                      className="btn-secondary"
-                      size="sm"
-                      onClick={() => handleClick(currentPage - 1)}
-                      isDisabled={currentPage === 1}
-                      w={{ base: "full", sm: "auto" }}
+                  <Flex justify="center" mt={8}>
+                    <Stack
+                      direction={{ base: "column", sm: "row" }}
+                      spacing={4}
+                      align="center"
                     >
-                      Previous
-                    </Button>
-                    <VStack spacing={0}>
-                      <Text fontSize="sm" fontWeight="700" color="gray.600">
-                        Page {currentPage} of {totalFilteredPages || 1}
-                      </Text>
-                      {searchDeviceId && (
-                        <Text fontSize="xs" color="gray.500">
-                          {totalFilteredCameras} result{totalFilteredCameras !== 1 ? 's' : ''} found
+                      <Button
+                        className="btn-secondary"
+                        size="sm"
+                        onClick={() => handleClick(currentPage - 1)}
+                        isDisabled={currentPage === 1}
+                        w={{ base: "full", sm: "auto" }}
+                      >
+                        Previous
+                      </Button>
+                      <VStack spacing={0}>
+                        <Text fontSize="sm" fontWeight="700" color="gray.600">
+                          Page {currentPage} of {totalFilteredPages || 1}
                         </Text>
-                      )}
-                    </VStack>
-                    <Button
-                      className="btn-secondary"
-                      size="sm"
-                      onClick={() => handleClick(currentPage + 1)}
-                      isDisabled={currentPage === totalFilteredPages || totalFilteredPages === 0}
-                      w={{ base: "full", sm: "auto" }}
-                    >
-                      Next
-                    </Button>
-                  </Stack>
-                </Flex>
-              </div>
+                        {searchDeviceId && (
+                          <Text fontSize="xs" color="gray.500">
+                            {totalFilteredCameras} result
+                            {totalFilteredCameras !== 1 ? "s" : ""} found
+                          </Text>
+                        )}
+                      </VStack>
+                      <Button
+                        className="btn-secondary"
+                        size="sm"
+                        onClick={() => handleClick(currentPage + 1)}
+                        isDisabled={
+                          currentPage === totalFilteredPages ||
+                          totalFilteredPages === 0
+                        }
+                        w={{ base: "full", sm: "auto" }}
+                      >
+                        Next
+                      </Button>
+                    </Stack>
+                  </Flex>
+                </div>
               </>
             ) : (
               /* Add New / Detail View */
@@ -1449,8 +1736,10 @@ const downloadReport = async () => {
                 <div className="glass-card">
                   <VStack spacing={6} align="stretch">
                     <Flex justify="space-between" align="center">
-                      <Heading size="md" color="blue.900">Device Configuration</Heading>
-                       <Button
+                      <Heading size="md" color="blue.900">
+                        Device Configuration
+                      </Heading>
+                      <Button
                         size="sm"
                         variant="outline"
                         leftIcon={<FaArrowLeft />}
@@ -1461,7 +1750,11 @@ const downloadReport = async () => {
                         color="blue.600"
                         bg="blue.50"
                         borderColor="blue.200"
-                        _hover={{ bg: "blue.100", borderColor: "blue.300", transform: "translateY(-1px)" }}
+                        _hover={{
+                          bg: "blue.100",
+                          borderColor: "blue.300",
+                          transform: "translateY(-1px)",
+                        }}
                         _active={{ bg: "blue.200" }}
                         onClick={handleBackClick}
                         transition="all 0.2s"
@@ -1474,23 +1767,46 @@ const downloadReport = async () => {
                     {!hasClickedCameraDidInfo && (
                       <VStack spacing={6} py={4}>
                         {isMobileDevice && (
-                          <Box w="full" p={4} bg="blue.50" borderRadius="xl" border="1px dashed" borderColor="blue.200">
+                          <Box
+                            w="full"
+                            p={4}
+                            bg="blue.50"
+                            borderRadius="xl"
+                            border="1px dashed"
+                            borderColor="blue.200"
+                          >
                             <VStack spacing={3}>
-                              <QRCodeScanner onScanSuccess={handleScanSuccess} />
-                              <Text fontSize="xs" color="blue.600" fontWeight="700">SCAN QR CODE</Text>
+                              <QRCodeScanner
+                                onScanSuccess={handleScanSuccess}
+                              />
+                              <Text
+                                fontSize="xs"
+                                color="blue.600"
+                                fontWeight="700"
+                              >
+                                SCAN QR CODE
+                              </Text>
                             </VStack>
                           </Box>
                         )}
 
                         <Box w="full">
-                          <Text className="custom-label">Input Device ID Manually</Text>
+                          <Text className="custom-label">
+                            Input Device ID Manually
+                          </Text>
                           <Autosuggest
                             ref={autosuggestRef}
                             suggestions={suggestions}
-                            onSuggestionsFetchRequested={async ({ value, reason }) => {
-                              if (reason === 'input-changed') {
-                                const phase = localStorage.getItem('phase');
-                                const response = await searchDevices(value, phase);
+                            onSuggestionsFetchRequested={async ({
+                              value,
+                              reason,
+                            }) => {
+                              if (reason === "input-changed") {
+                                const phase = localStorage.getItem("phase");
+                                const response = await searchDevices(
+                                  value,
+                                  phase,
+                                );
                                 if (response && response.success) {
                                   const results = response.streamnames || [];
                                   if (results.length === 0) {
@@ -1501,12 +1817,14 @@ const downloadReport = async () => {
                                 }
                               }
                             }}
-                            onSuggestionsClearRequested={() => setSuggestions([])}
+                            onSuggestionsClearRequested={() =>
+                              setSuggestions([])
+                            }
                             getSuggestionValue={getSuggestionValue}
                             renderSuggestion={renderSuggestion}
                             inputProps={{
                               ...inputProps,
-                              className: 'custom-input'
+                              className: "custom-input",
                             }}
                             onSuggestionSelected={handleSuggestionSelected}
                           />
@@ -1528,11 +1846,17 @@ const downloadReport = async () => {
                 </div>
 
                 {hasClickedCameraDidInfo && (
-                  <VStack spacing={6} align="stretch" className="animate-fade-in">
+                  <VStack
+                    spacing={6}
+                    align="stretch"
+                    className="animate-fade-in"
+                  >
                     {/* Live Preview Section */}
                     {flvUrl && (
                       <div>
-                        <Heading className="section-title">Live Installation Feed</Heading>
+                        <Heading className="section-title">
+                          Live Installation Feed
+                        </Heading>
                         <div className="video-wrapper">
                           <ReactPlayer
                             url={flvUrl}
@@ -1547,99 +1871,323 @@ const downloadReport = async () => {
 
                     <VStack spacing={{ base: 4, md: 8 }} align="stretch">
                       {/* Technical Analysis */}
-                      <div className="glass-card" style={{ padding: 'clamp(1rem, 3vw, 2rem)' }}>
-                        <Heading className="section-title" textAlign={{ base: "center", md: "left" }}>AI Technical Status Analysis</Heading>
+                      <div
+                        className="glass-card"
+                        style={{ padding: "clamp(1rem, 3vw, 2rem)" }}
+                      >
+                        <Heading
+                          className="section-title"
+                          textAlign={{ base: "center", md: "left" }}
+                        >
+                          AI Technical Status Analysis
+                        </Heading>
                         {isFetchingCameraDetails ? (
                           <VStack py={{ base: 6, md: 10 }} spacing={4}>
                             <div className="loading-spinner"></div>
-                            <Text fontWeight="600" color="blue.600" fontSize={{ base: "sm", md: "md" }}>Analyzing Stream Quality...</Text>
+                            <Text
+                              fontWeight="600"
+                              color="blue.600"
+                              fontSize={{ base: "sm", md: "md" }}
+                            >
+                              Analyzing Stream Quality...
+                            </Text>
                           </VStack>
                         ) : cameraStatus ? (
                           <VStack spacing={{ base: 3, md: 5 }} align="stretch">
                             {/* Camera Angle */}
-                            <Box p={{ base: 3, md: 4 }} bg={cameraAngleAcceptable ? "green.50" : "red.50"} borderRadius="xl" border="2px solid" borderColor={cameraAngleAcceptable ? "green.200" : "red.200"}>
+                            <Box
+                              p={{ base: 3, md: 4 }}
+                              bg={cameraAngleAcceptable ? "green.50" : "red.50"}
+                              borderRadius="xl"
+                              border="2px solid"
+                              borderColor={
+                                cameraAngleAcceptable ? "green.200" : "red.200"
+                              }
+                            >
                               <HStack justify="space-between" align="center">
                                 <VStack align="start" spacing={0}>
-                                  <Text fontSize="xs" color="gray.600" fontWeight="700" textTransform="uppercase">Camera Angle</Text>
-                                  <Text fontWeight="800" fontSize={{ base: "xl", md: "2xl" }} color={cameraAngleAcceptable ? "green.700" : "red.700"}>
+                                  <Text
+                                    fontSize="xs"
+                                    color="gray.600"
+                                    fontWeight="700"
+                                    textTransform="uppercase"
+                                  >
+                                    Camera Angle
+                                  </Text>
+                                  <Text
+                                    fontWeight="800"
+                                    fontSize={{ base: "xl", md: "2xl" }}
+                                    color={
+                                      cameraAngleAcceptable
+                                        ? "green.700"
+                                        : "red.700"
+                                    }
+                                  >
                                     {Math.abs(cameraStatus.camera_angle)}°
                                   </Text>
                                 </VStack>
                                 <Box>
                                   {cameraAngleAcceptable ? (
-                                    <Box w={{ base: "32px", md: "40px" }} h={{ base: "32px", md: "40px" }} borderRadius="full" bg="green.500" display="flex" alignItems="center" justifyContent="center">
-                                      <Text color="white" fontSize={{ base: "xl", md: "2xl" }}>✓</Text>
+                                    <Box
+                                      w={{ base: "32px", md: "40px" }}
+                                      h={{ base: "32px", md: "40px" }}
+                                      borderRadius="full"
+                                      bg="green.500"
+                                      display="flex"
+                                      alignItems="center"
+                                      justifyContent="center"
+                                    >
+                                      <Text
+                                        color="white"
+                                        fontSize={{ base: "xl", md: "2xl" }}
+                                      >
+                                        ✓
+                                      </Text>
                                     </Box>
                                   ) : (
-                                    <Box w={{ base: "32px", md: "40px" }} h={{ base: "32px", md: "40px" }} borderRadius="full" bg="orange.500" display="flex" alignItems="center" justifyContent="center" className="blink-warning">
-                                      <FaExclamationTriangle color="white" size={16} />
+                                    <Box
+                                      w={{ base: "32px", md: "40px" }}
+                                      h={{ base: "32px", md: "40px" }}
+                                      borderRadius="full"
+                                      bg="orange.500"
+                                      display="flex"
+                                      alignItems="center"
+                                      justifyContent="center"
+                                      className="blink-warning"
+                                    >
+                                      <FaExclamationTriangle
+                                        color="white"
+                                        size={16}
+                                      />
                                     </Box>
                                   )}
                                 </Box>
                               </HStack>
                             </Box>
-                            
+
                             {/* Other Parameters Grid */}
-                            <Grid templateColumns={{ base: "repeat(2, 1fr)", sm: "repeat(2, 1fr)" }} gap={{ base: 2, md: 4 }}>
+                            <Grid
+                              templateColumns={{
+                                base: "repeat(2, 1fr)",
+                                sm: "repeat(2, 1fr)",
+                              }}
+                              gap={{ base: 2, md: 4 }}
+                            >
                               {/* Blur */}
-                              <Box p={{ base: 2, md: 4 }} bg="white" border="2px solid" borderColor="gray.100" borderRadius="lg" shadow="sm">
+                              <Box
+                                p={{ base: 2, md: 4 }}
+                                bg="white"
+                                border="2px solid"
+                                borderColor="gray.100"
+                                borderRadius="lg"
+                                shadow="sm"
+                              >
                                 <HStack justify="space-between" mb={1}>
-                                  <Text fontSize={{ base: "9px", md: "xs" }} color="gray.600" fontWeight="700" textTransform="uppercase">Blur</Text>
+                                  <Text
+                                    fontSize={{ base: "9px", md: "xs" }}
+                                    color="gray.600"
+                                    fontWeight="700"
+                                    textTransform="uppercase"
+                                  >
+                                    Blur
+                                  </Text>
                                   {!blurChecked ? (
-                                    <Box w={{ base: "18px", md: "24px" }} h={{ base: "18px", md: "24px" }} borderRadius="full" bg="green.500" display="flex" alignItems="center" justifyContent="center">
-                                      <Text color="white" fontSize={{ base: "xs", md: "sm" }}>✓</Text>
+                                    <Box
+                                      w={{ base: "18px", md: "24px" }}
+                                      h={{ base: "18px", md: "24px" }}
+                                      borderRadius="full"
+                                      bg="green.500"
+                                      display="flex"
+                                      alignItems="center"
+                                      justifyContent="center"
+                                    >
+                                      <Text
+                                        color="white"
+                                        fontSize={{ base: "xs", md: "sm" }}
+                                      >
+                                        ✓
+                                      </Text>
                                     </Box>
                                   ) : (
-                                    <Box w={{ base: "18px", md: "24px" }} h={{ base: "18px", md: "24px" }} borderRadius="full" bg="orange.500" display="flex" alignItems="center" justifyContent="center" className="blink-warning">
-                                      <FaExclamationTriangle color="white" size={10} />
+                                    <Box
+                                      w={{ base: "18px", md: "24px" }}
+                                      h={{ base: "18px", md: "24px" }}
+                                      borderRadius="full"
+                                      bg="orange.500"
+                                      display="flex"
+                                      alignItems="center"
+                                      justifyContent="center"
+                                      className="blink-warning"
+                                    >
+                                      <FaExclamationTriangle
+                                        color="white"
+                                        size={10}
+                                      />
                                     </Box>
                                   )}
                                 </HStack>
                               </Box>
 
                               {/* Blackview */}
-                              <Box p={{ base: 2, md: 4 }} bg="white" border="2px solid" borderColor="gray.100" borderRadius="lg" shadow="sm">
+                              <Box
+                                p={{ base: 2, md: 4 }}
+                                bg="white"
+                                border="2px solid"
+                                borderColor="gray.100"
+                                borderRadius="lg"
+                                shadow="sm"
+                              >
                                 <HStack justify="space-between" mb={1}>
-                                  <Text fontSize={{ base: "9px", md: "xs" }} color="gray.600" fontWeight="700" textTransform="uppercase">Blackview</Text>
+                                  <Text
+                                    fontSize={{ base: "9px", md: "xs" }}
+                                    color="gray.600"
+                                    fontWeight="700"
+                                    textTransform="uppercase"
+                                  >
+                                    Blackview
+                                  </Text>
                                   {!blackviewChecked ? (
-                                    <Box w={{ base: "18px", md: "24px" }} h={{ base: "18px", md: "24px" }} borderRadius="full" bg="green.500" display="flex" alignItems="center" justifyContent="center">
-                                      <Text color="white" fontSize={{ base: "xs", md: "sm" }}>✓</Text>
+                                    <Box
+                                      w={{ base: "18px", md: "24px" }}
+                                      h={{ base: "18px", md: "24px" }}
+                                      borderRadius="full"
+                                      bg="green.500"
+                                      display="flex"
+                                      alignItems="center"
+                                      justifyContent="center"
+                                    >
+                                      <Text
+                                        color="white"
+                                        fontSize={{ base: "xs", md: "sm" }}
+                                      >
+                                        ✓
+                                      </Text>
                                     </Box>
                                   ) : (
-                                    <Box w={{ base: "18px", md: "24px" }} h={{ base: "18px", md: "24px" }} borderRadius="full" bg="orange.500" display="flex" alignItems="center" justifyContent="center" className="blink-warning">
-                                      <FaExclamationTriangle color="white" size={10} />
+                                    <Box
+                                      w={{ base: "18px", md: "24px" }}
+                                      h={{ base: "18px", md: "24px" }}
+                                      borderRadius="full"
+                                      bg="orange.500"
+                                      display="flex"
+                                      alignItems="center"
+                                      justifyContent="center"
+                                      className="blink-warning"
+                                    >
+                                      <FaExclamationTriangle
+                                        color="white"
+                                        size={10}
+                                      />
                                     </Box>
                                   )}
                                 </HStack>
                               </Box>
 
                               {/* Brightness */}
-                              <Box p={{ base: 2, md: 4 }} bg="white" border="2px solid" borderColor="gray.100" borderRadius="lg" shadow="sm">
+                              <Box
+                                p={{ base: 2, md: 4 }}
+                                bg="white"
+                                border="2px solid"
+                                borderColor="gray.100"
+                                borderRadius="lg"
+                                shadow="sm"
+                              >
                                 <HStack justify="space-between" mb={1}>
-                                  <Text fontSize={{ base: "9px", md: "xs" }} color="gray.600" fontWeight="700" textTransform="uppercase">Brightness</Text>
+                                  <Text
+                                    fontSize={{ base: "9px", md: "xs" }}
+                                    color="gray.600"
+                                    fontWeight="700"
+                                    textTransform="uppercase"
+                                  >
+                                    Brightness
+                                  </Text>
                                   {brightnessChecked ? (
-                                    <Box w={{ base: "18px", md: "24px" }} h={{ base: "18px", md: "24px" }} borderRadius="full" bg="green.500" display="flex" alignItems="center" justifyContent="center">
-                                      <Text color="white" fontSize={{ base: "xs", md: "sm" }}>✓</Text>
+                                    <Box
+                                      w={{ base: "18px", md: "24px" }}
+                                      h={{ base: "18px", md: "24px" }}
+                                      borderRadius="full"
+                                      bg="green.500"
+                                      display="flex"
+                                      alignItems="center"
+                                      justifyContent="center"
+                                    >
+                                      <Text
+                                        color="white"
+                                        fontSize={{ base: "xs", md: "sm" }}
+                                      >
+                                        ✓
+                                      </Text>
                                     </Box>
                                   ) : (
-                                    <Box w={{ base: "18px", md: "24px" }} h={{ base: "18px", md: "24px" }} borderRadius="full" bg="orange.500" display="flex" alignItems="center" justifyContent="center" className="blink-warning">
-                                      <FaExclamationTriangle color="white" size={10} />
+                                    <Box
+                                      w={{ base: "18px", md: "24px" }}
+                                      h={{ base: "18px", md: "24px" }}
+                                      borderRadius="full"
+                                      bg="orange.500"
+                                      display="flex"
+                                      alignItems="center"
+                                      justifyContent="center"
+                                      className="blink-warning"
+                                    >
+                                      <FaExclamationTriangle
+                                        color="white"
+                                        size={10}
+                                      />
                                     </Box>
                                   )}
                                 </HStack>
                               </Box>
 
                               {/* BlackAndWhite */}
-                              <Box p={{ base: 2, md: 4 }} bg="white" border="2px solid" borderColor="gray.100" borderRadius="lg" shadow="sm">
+                              <Box
+                                p={{ base: 2, md: 4 }}
+                                bg="white"
+                                border="2px solid"
+                                borderColor="gray.100"
+                                borderRadius="lg"
+                                shadow="sm"
+                              >
                                 <HStack justify="space-between" mb={1}>
-                                  <Text fontSize={{ base: "9px", md: "xs" }} color="gray.600" fontWeight="700" textTransform="uppercase">B&W</Text>
+                                  <Text
+                                    fontSize={{ base: "9px", md: "xs" }}
+                                    color="gray.600"
+                                    fontWeight="700"
+                                    textTransform="uppercase"
+                                  >
+                                    B&W
+                                  </Text>
                                   {!blackAndWhiteChecked ? (
-                                    <Box w={{ base: "18px", md: "24px" }} h={{ base: "18px", md: "24px" }} borderRadius="full" bg="green.500" display="flex" alignItems="center" justifyContent="center">
-                                      <Text color="white" fontSize={{ base: "xs", md: "sm" }}>✓</Text>
+                                    <Box
+                                      w={{ base: "18px", md: "24px" }}
+                                      h={{ base: "18px", md: "24px" }}
+                                      borderRadius="full"
+                                      bg="green.500"
+                                      display="flex"
+                                      alignItems="center"
+                                      justifyContent="center"
+                                    >
+                                      <Text
+                                        color="white"
+                                        fontSize={{ base: "xs", md: "sm" }}
+                                      >
+                                        ✓
+                                      </Text>
                                     </Box>
                                   ) : (
-                                    <Box w={{ base: "18px", md: "24px" }} h={{ base: "18px", md: "24px" }} borderRadius="full" bg="orange.500" display="flex" alignItems="center" justifyContent="center" className="blink-warning">
-                                      <FaExclamationTriangle color="white" size={10} />
+                                    <Box
+                                      w={{ base: "18px", md: "24px" }}
+                                      h={{ base: "18px", md: "24px" }}
+                                      borderRadius="full"
+                                      bg="orange.500"
+                                      display="flex"
+                                      alignItems="center"
+                                      justifyContent="center"
+                                      className="blink-warning"
+                                    >
+                                      <FaExclamationTriangle
+                                        color="white"
+                                        size={10}
+                                      />
                                     </Box>
                                   )}
                                 </HStack>
@@ -1647,90 +2195,177 @@ const downloadReport = async () => {
                             </Grid>
                           </VStack>
                         ) : (
-                          <VStack 
-                            py={{ base: 6, md: 10 }} 
-                            bg="blue.50" 
-                            borderRadius="xl" 
-                            border="2px solid" 
+                          <VStack
+                            py={{ base: 6, md: 10 }}
+                            bg="blue.50"
+                            borderRadius="xl"
+                            border="2px solid"
                             borderColor="blue.400"
                             boxShadow="lg"
                             className="pulse-border"
                           >
-                            <div className="loading-spinner" style={{ width: '24px', height: '24px', borderWidth: '3px', borderTopColor: '#3182ce' }}></div>
-                            <Text color="blue.900" fontWeight="800" fontSize={{ base: "md", md: "lg" }}>Fetching AI Status</Text>
-                            <Text fontSize="sm" color="blue.700" textAlign="center" px={4} fontWeight="500">We are retrieving the technical analysis parameters. Please wait...</Text>
+                            <div
+                              className="loading-spinner"
+                              style={{
+                                width: "24px",
+                                height: "24px",
+                                borderWidth: "3px",
+                                borderTopColor: "#3182ce",
+                              }}
+                            ></div>
+                            <Text
+                              color="blue.900"
+                              fontWeight="800"
+                              fontSize={{ base: "md", md: "lg" }}
+                            >
+                              Fetching AI Status
+                            </Text>
+                            <Text
+                              fontSize="sm"
+                              color="blue.700"
+                              textAlign="center"
+                              px={4}
+                              fontWeight="500"
+                            >
+                              We are retrieving the technical analysis
+                              parameters. Please wait...
+                            </Text>
                           </VStack>
                         )}
                       </div>
 
                       {/* Location Data Form - Professional SaaS Redesign */}
-                      <div className="glass-card site-details-card" style={{ padding: '24px' }}>
+                      <div
+                        className="glass-card site-details-card"
+                        style={{ padding: "24px" }}
+                      >
                         <Heading className="section-title">
                           Installation Site Details
                         </Heading>
-                        <VStack spacing={4} align="stretch" className="site-details-field-group">
+                        <VStack
+                          spacing={4}
+                          align="stretch"
+                          className="site-details-field-group"
+                        >
                           {/* State Field */}
-                          <div className="form-group" style={{ marginBottom: '0' }}>
+                          <div
+                            className="form-group"
+                            style={{ marginBottom: "0" }}
+                          >
                             <Text className="custom-label">State</Text>
                             <InputGroup>
                               <InputLeftElement pointerEvents="none">
                                 <FiGlobe className="site-details-input-icon" />
                               </InputLeftElement>
-                              <Input className="custom-input input-with-icon" value={state} isReadOnly size="md" />
+                              <Input
+                                className="custom-input input-with-icon"
+                                value={state}
+                                isReadOnly
+                                size="md"
+                              />
                             </InputGroup>
                           </div>
-                          
+
                           {/* District Field */}
-                          <div className="form-group" style={{ marginBottom: '0' }}>
+                          <div
+                            className="form-group"
+                            style={{ marginBottom: "0" }}
+                          >
                             <Text className="custom-label">District Name</Text>
                             <InputGroup>
                               <InputLeftElement pointerEvents="none">
                                 <FiMap className="site-details-input-icon" />
                               </InputLeftElement>
-                              <Input className="custom-input input-with-icon" value={district} onChange={(e) => setDistrict(e.target.value)} isReadOnly={!isEditing} size="md" />
+                              <Input
+                                className="custom-input input-with-icon"
+                                value={district}
+                                onChange={(e) => setDistrict(e.target.value)}
+                                isReadOnly={!isEditing}
+                                size="md"
+                              />
                             </InputGroup>
                           </div>
 
                           {/* Assembly Field */}
-                          <div className="form-group" style={{ marginBottom: '0' }}>
+                          <div
+                            className="form-group"
+                            style={{ marginBottom: "0" }}
+                          >
                             <Text className="custom-label">Assembly Name</Text>
                             <InputGroup>
                               <InputLeftElement pointerEvents="none">
                                 <FiHome className="site-details-input-icon" />
                               </InputLeftElement>
-                              <Input className="custom-input input-with-icon" value={assemblyName} onChange={(e) => setAssemblyName(e.target.value)} isReadOnly={!isEditing} size="md" />
+                              <Input
+                                className="custom-input input-with-icon"
+                                value={assemblyName}
+                                onChange={(e) =>
+                                  setAssemblyName(e.target.value)
+                                }
+                                isReadOnly={!isEditing}
+                                size="md"
+                              />
                             </InputGroup>
                           </div>
-                          
+
                           {/* PS No & Location Info - Using simple stack for mobile thumb comfort */}
-                          <div className="form-group" style={{ marginBottom: '0' }}>
+                          <div
+                            className="form-group"
+                            style={{ marginBottom: "0" }}
+                          >
                             <Text className="custom-label">PS No.</Text>
                             <InputGroup>
                               <InputLeftElement pointerEvents="none">
                                 <FiHash className="site-details-input-icon" />
                               </InputLeftElement>
-                              <Input className="custom-input input-with-icon" value={psNumber} onChange={(e) => setPsNumber(e.target.value)} isReadOnly={!isEditing} fontWeight="800" size="md" />
+                              <Input
+                                className="custom-input input-with-icon"
+                                value={psNumber}
+                                onChange={(e) => setPsNumber(e.target.value)}
+                                isReadOnly={!isEditing}
+                                fontWeight="800"
+                                size="md"
+                              />
                             </InputGroup>
                           </div>
 
                           {/* Location Info Field */}
-                          <div className="form-group" style={{ marginBottom: '0' }}>
+                          <div
+                            className="form-group"
+                            style={{ marginBottom: "0" }}
+                          >
                             <Text className="custom-label">Location Info</Text>
                             <InputGroup>
                               <InputLeftElement pointerEvents="none">
                                 <FiMapPin className="site-details-input-icon" />
                               </InputLeftElement>
-                              <Input className="custom-input input-with-icon" value={excelLocation} onChange={(e) => setExcelLocation(e.target.value)} isReadOnly={!isEditing} placeholder="e.g., Room 102, 1st Floor" size="md" />
+                              <Input
+                                className="custom-input input-with-icon"
+                                value={excelLocation}
+                                onChange={(e) =>
+                                  setExcelLocation(e.target.value)
+                                }
+                                isReadOnly={!isEditing}
+                                placeholder="e.g., Room 102, 1st Floor"
+                                size="md"
+                              />
                             </InputGroup>
                           </div>
 
-                          <div className="form-group" style={{ marginBottom: '0' }}>
-                            <Text className="custom-label">Camera Installation Photo</Text>
-                            <Box 
-                              border="2px dashed" 
-                              borderColor={cameraPhotoUrl ? "green.200" : "blue.200"} 
-                              borderRadius="xl" 
-                              p={4} 
+                          <div
+                            className="form-group"
+                            style={{ marginBottom: "0" }}
+                          >
+                            <Text className="custom-label">
+                              Camera Installation Photo
+                            </Text>
+                            <Box
+                              border="2px dashed"
+                              borderColor={
+                                cameraPhotoUrl ? "green.200" : "blue.200"
+                              }
+                              borderRadius="xl"
+                              p={4}
                               bg={cameraPhotoUrl ? "green.50" : "blue.50"}
                               textAlign="center"
                             >
@@ -1743,28 +2378,39 @@ const downloadReport = async () => {
                                     variant="solid"
                                     size="lg"
                                     borderRadius="full"
-                                    isLoading={isUploadingPhoto || isCameraModalOpen}
+                                    isLoading={
+                                      isUploadingPhoto || isCameraModalOpen
+                                    }
                                     onClick={openCamera}
                                   />
-                                  <Text fontSize="xs" fontWeight="700" color="blue.600" textTransform="uppercase">
-                                    {isUploadingPhoto ? "UPLOADING..." : "OPEN CAMERA TO CAPTURE"}
+                                  <Text
+                                    fontSize="xs"
+                                    fontWeight="700"
+                                    color="blue.600"
+                                    textTransform="uppercase"
+                                  >
+                                    {isUploadingPhoto
+                                      ? "UPLOADING..."
+                                      : "OPEN CAMERA TO CAPTURE"}
                                   </Text>
                                 </VStack>
                               ) : (
                                 <VStack spacing={2}>
-                                  <Image 
-                                    src={cameraPhotoUrl} 
-                                    alt="Installed Camera" 
-                                    borderRadius="lg" 
-                                    maxH="150px" 
-                                    objectFit="cover" 
+                                  <Image
+                                    src={cameraPhotoUrl}
+                                    alt="Installed Camera"
+                                    borderRadius="lg"
+                                    maxH="150px"
+                                    objectFit="cover"
                                   />
                                   <HStack>
-                                    <Badge colorScheme="green">Uploaded Successfully</Badge>
-                                    <Button 
-                                      size="xs" 
-                                      variant="ghost" 
-                                      colorScheme="red" 
+                                    <Badge colorScheme="green">
+                                      Uploaded Successfully
+                                    </Badge>
+                                    <Button
+                                      size="xs"
+                                      variant="ghost"
+                                      colorScheme="red"
                                       onClick={() => setCameraPhotoUrl("")}
                                     >
                                       Remove
@@ -1777,22 +2423,26 @@ const downloadReport = async () => {
                         </VStack>
                       </div>
 
-                      <Stack direction={{ base: "column", sm: "row" }} spacing={{ base: 3, md: 4 }} pt={{ base: 4, md: 6 }}>
+                      <Stack
+                        direction={{ base: "column", sm: "row" }}
+                        spacing={{ base: 3, md: 4 }}
+                        pt={{ base: 4, md: 6 }}
+                      >
                         <Button
                           className="btn-secondary"
                           w="full"
                           onClick={() => setIsEditing(!isEditing)}
                           leftIcon={isEditing ? <FiPlus /> : <FiEdit />}
                         >
-                          {isEditing ? 'Cancel Edit' : 'Edit Details'}
+                          {isEditing ? "Cancel Edit" : "Edit Details"}
                         </Button>
-                        <Button 
-                          colorScheme="blue" 
+                        <Button
+                          colorScheme="blue"
                           className="btn-premium"
-                          w="full" 
+                          w="full"
                           onClick={handleSubmit}
                         >
-                          {isEditing ? 'Save & Submit' : 'Submit Installation'}
+                          {isEditing ? "Save & Submit" : "Submit Installation"}
                         </Button>
                       </Stack>
                     </VStack>
@@ -1803,157 +2453,192 @@ const downloadReport = async () => {
           </>
         )}
 
+        {/* Shared Modals */}
+        <Modal
+          isOpen={isDeleteModalOpen}
+          onClose={closeDeleteModal}
+          isCentered
+          size="xs"
+        >
+          <ModalOverlay backdropFilter="blur(4px)" />
+          <ModalContent borderRadius="2xl" p={2}>
+            <ModalBody textAlign="center" pt={6} pb={2}>
+              <Center mb={4}>
+                <Box p={3} bg="red.50" borderRadius="full">
+                  <Image src={Trash} alt="Delete" boxSize="40px" />
+                </Box>
+              </Center>
+              <Heading size="sm" mb={2} color="gray.800">
+                Remove Device?
+              </Heading>
+              <Text fontSize="xs" color="gray.600">
+                Are you sure you want to delete <br />
+                <b>{cameraToDelete}</b>?
+              </Text>
+            </ModalBody>
+            <ModalFooter justifyContent="center" gap={3} pb={4}>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={closeDeleteModal}
+                flex={1}
+              >
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                colorScheme="red"
+                onClick={handleDeleteClickConfirmed}
+                flex={1}
+                borderRadius="lg"
+              >
+                Delete
+              </Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
 
-
-      {/* Shared Modals */}
-       <Modal isOpen={isDeleteModalOpen} onClose={closeDeleteModal} isCentered size="xs">
-        <ModalOverlay backdropFilter="blur(4px)" />
-        <ModalContent borderRadius="2xl" p={2}>
-          <ModalBody textAlign="center" pt={6} pb={2}>
-             <Center mb={4}>
-               <Box p={3} bg="red.50" borderRadius="full">
-                 <Image src={Trash} alt="Delete" boxSize="40px" />
-               </Box>
-             </Center>
-             <Heading size="sm" mb={2} color="gray.800">Remove Device?</Heading>
-             <Text fontSize="xs" color="gray.600">
-               Are you sure you want to delete <br/>
-               <b>{cameraToDelete}</b>?
-             </Text>
-          </ModalBody>
-          <ModalFooter justifyContent="center" gap={3} pb={4}>
-            <Button size="sm" variant="ghost" onClick={closeDeleteModal} flex={1}>
-              Cancel
-            </Button>
-            <Button 
-              size="sm" 
-              colorScheme="red" 
-              onClick={handleDeleteClickConfirmed} 
-              flex={1}
-              borderRadius="lg"
-            >
-              Delete
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
-
-      <Modal isOpen={showModal} onClose={handleCloseModal} size={{ base: "sm", md: "xl" }} isCentered>
-        <ModalOverlay backdropFilter="blur(8px)" />
-        <ModalContent borderRadius="2xl" overflow="hidden" maxW={{ base: "95vw", md: "800px" }} mx={{ base: 2, md: 0 }}>
-          <ModalHeader 
-            bg="green.200" 
-            color="white" 
-            display="flex" 
-            justifyContent="space-between" 
-            alignItems="center"
-            px={{ base: 4, md: 6 }}
-            py={{ base: 3, md: 4 }}
-            fontSize={{ base: "md", md: "lg" }}
+        <Modal
+          isOpen={showModal}
+          onClose={handleCloseModal}
+          size={{ base: "sm", md: "xl" }}
+          isCentered
+        >
+          <ModalOverlay backdropFilter="blur(8px)" />
+          <ModalContent
+            borderRadius="2xl"
+            overflow="hidden"
+            maxW={{ base: "95vw", md: "800px" }}
+            mx={{ base: 2, md: 0 }}
           >
-            <Text isTruncated maxW={{ base: "100%", md: "full" }}>
-              Live Feed: {selectedCamera?.deviceId}
-            </Text>
-            <ModalCloseButton color="white" position="static" m={0} />
-          </ModalHeader>
-          <ModalBody p={0} bg="black">
-            {selectedCamera && (
-              <div style={{ aspectRatio: '16/9', width: '100%' }}>
-                <ReactPlayer
-                  url={selectedCamera.flvUrl}
-                  playing={true}
-                  controls={true}
-                  width="100%"
-                  height="100%"
-                />
-              </div>
-            )}
-          </ModalBody>
-          <ModalFooter 
-            bg="gray.50" 
-            flexDirection="column" 
-            justifyContent="center" 
-            alignItems="center"
-            py={4}
-          >
-            {selectedCamera?.cameraPhoto && (
-              <VStack w="full" spacing={2} align="center">
-                <Text fontSize="sm" fontWeight="bold" color="gray.600">INSTALLATION PHOTO</Text>
-                <Image 
-                  src={selectedCamera.cameraPhoto} 
-                  alt="Installation Preview" 
-                  borderRadius="lg" 
-                  maxH="200px" 
-                  objectFit="contain" 
-                  fallbackSrc="https://via.placeholder.com/400x200?text=No+Photo+Available"
-                />
-              </VStack>
-            )}
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
-
-      {/* Camera Capture Modal */}
-      <Modal isOpen={isCameraModalOpen} onClose={stopCamera} isCentered size="md">
-        <ModalOverlay backdropFilter="blur(8px)" />
-        <ModalContent borderRadius="2xl" overflow="hidden">
-          <ModalHeader bg="blue.600" color="white" py={3}>
-            Capture Installation Photo
-          </ModalHeader>
-          <ModalCloseButton color="white" />
-          <ModalBody p={0} bg="black" position="relative">
-            <video
-              ref={videoRef}
-              autoPlay
-              playsInline
-              style={{ width: '100%', height: 'auto', display: 'block' }}
-            />
-            <canvas ref={canvasRef} style={{ display: 'none' }} />
-          </ModalBody>
-          <ModalFooter bg="white" justifyContent="center" py={4}>
-            <Button
-              colorScheme="blue"
-              size="lg"
-              borderRadius="full"
-              leftIcon={<FiCamera />}
-              onClick={capturePhoto}
-              px={8}
+            <ModalHeader
+              bg="green.200"
+              color="white"
+              display="flex"
+              justifyContent="space-between"
+              alignItems="center"
+              px={{ base: 4, md: 6 }}
+              py={{ base: 3, md: 4 }}
+              fontSize={{ base: "md", md: "lg" }}
             >
-              TAKE PHOTO
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+              <Text isTruncated maxW={{ base: "100%", md: "full" }}>
+                Live Feed: {selectedCamera?.deviceId}
+              </Text>
+              <ModalCloseButton color="white" position="static" m={0} />
+            </ModalHeader>
+            <ModalBody p={0} bg="black">
+              {selectedCamera && (
+                <div style={{ aspectRatio: "16/9", width: "100%" }}>
+                  <ReactPlayer
+                    url={selectedCamera.flvUrl}
+                    playing={true}
+                    controls={true}
+                    width="100%"
+                    height="100%"
+                  />
+                </div>
+              )}
+            </ModalBody>
+            <ModalFooter
+              bg="gray.50"
+              flexDirection="column"
+              justifyContent="center"
+              alignItems="center"
+              py={4}
+            >
+              {selectedCamera?.cameraPhoto && (
+                <VStack w="full" spacing={2} align="center">
+                  <Text fontSize="sm" fontWeight="bold" color="gray.600">
+                    INSTALLATION PHOTO
+                  </Text>
+                  <Image
+                    src={selectedCamera.cameraPhoto}
+                    alt="Installation Preview"
+                    borderRadius="lg"
+                    maxH="200px"
+                    objectFit="contain"
+                    fallbackSrc="https://via.placeholder.com/400x200?text=No+Photo+Available"
+                  />
+                </VStack>
+              )}
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
 
-      {/* Photo Viewer Modal */}
-      <Modal isOpen={isPhotoViewerOpen} onClose={() => setIsPhotoViewerOpen(false)} isCentered size="xl">
-        <ModalOverlay backdropFilter="blur(8px)" />
-        <ModalContent borderRadius="2xl" overflow="hidden">
-          <ModalHeader bg="green.500" color="white" py={3}>
-            Installation Photo: {currentPhotoView.deviceId}
-          </ModalHeader>
-          <ModalCloseButton color="white" />
-          <ModalBody p={4} bg="gray.50">
-            <Center>
-              <Image 
-                src={currentPhotoView.url} 
-                alt="Installation" 
-                borderRadius="xl" 
-                boxShadow="lg"
-                maxH="70vh"
-                width="auto"
+        {/* Camera Capture Modal */}
+        <Modal
+          isOpen={isCameraModalOpen}
+          onClose={stopCamera}
+          isCentered
+          size="md"
+        >
+          <ModalOverlay backdropFilter="blur(8px)" />
+          <ModalContent borderRadius="2xl" overflow="hidden">
+            <ModalHeader bg="blue.600" color="white" py={3}>
+              Capture Installation Photo
+            </ModalHeader>
+            <ModalCloseButton color="white" />
+            <ModalBody p={0} bg="black" position="relative">
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                style={{ width: "100%", height: "auto", display: "block" }}
               />
-            </Center>
-          </ModalBody>
-          <ModalFooter bg="white" justifyContent="center">
-            <Button colorScheme="green" onClick={() => setIsPhotoViewerOpen(false)}>
-              Close
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
-        </Box>
-      </div>
+              <canvas ref={canvasRef} style={{ display: "none" }} />
+            </ModalBody>
+            <ModalFooter bg="white" justifyContent="center" py={4}>
+              <Button
+                colorScheme="blue"
+                size="lg"
+                borderRadius="full"
+                leftIcon={<FiCamera />}
+                onClick={capturePhoto}
+                px={8}
+              >
+                TAKE PHOTO
+              </Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
+
+        {/* Photo Viewer Modal */}
+        <Modal
+          isOpen={isPhotoViewerOpen}
+          onClose={() => setIsPhotoViewerOpen(false)}
+          isCentered
+          size="xl"
+        >
+          <ModalOverlay backdropFilter="blur(8px)" />
+          <ModalContent borderRadius="2xl" overflow="hidden">
+            <ModalHeader bg="green.500" color="white" py={3}>
+              Installation Photo: {currentPhotoView.deviceId}
+            </ModalHeader>
+            <ModalCloseButton color="white" />
+            <ModalBody p={4} bg="gray.50">
+              <Center>
+                <Image
+                  src={currentPhotoView.url}
+                  alt="Installation"
+                  borderRadius="xl"
+                  boxShadow="lg"
+                  maxH="70vh"
+                  width="auto"
+                />
+              </Center>
+            </ModalBody>
+            <ModalFooter bg="white" justifyContent="center">
+              <Button
+                colorScheme="green"
+                onClick={() => setIsPhotoViewerOpen(false)}
+              >
+                Close
+              </Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
+      </Box>
+    </div>
   );
 };
 
