@@ -289,7 +289,7 @@ const Login = () => {
                 fontWeight="800"
                 letterSpacing="-0.5px"
               >
-                Election Installer Portal
+                Election Installer App
               </Heading>
               <Text color="gray.600" fontSize={{ base: "sm", md: "md" }}>
                 Securely access your account to proceed
