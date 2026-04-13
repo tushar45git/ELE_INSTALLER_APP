@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 
 const kycUserSchema = new mongoose.Schema({
   name: { type: String, default: null },
-  contactNumber: { type: String, required: true },
+  contactNumber: { type: String, required: true, unique: true },
   aadhaarNumber: { type: String, default: null },
   panNumber: { type: String, default: null },
   drivingLicenceNumber: { type: String, default: null },
