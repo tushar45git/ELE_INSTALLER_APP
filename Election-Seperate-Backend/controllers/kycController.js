@@ -57,7 +57,7 @@ exports.aadhaarSendOtp = async (req, res) => {
             "Content-Type": "application/json",
             Authorization: AADHAAR_TOKEN,
           },
-          timeout: 8000,
+          timeout: 25000,
         },
       );
     } catch (axiosErr) {
