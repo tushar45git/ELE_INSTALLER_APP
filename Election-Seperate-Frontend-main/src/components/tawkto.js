@@ -5,7 +5,7 @@ const TawkToWidget = () => {
     const s0 = document.getElementsByTagName('script')[0];
     const s1 = document.createElement('script');
     s1.async = true;
-    s1.src = 'https://embed.tawk.to/65f85f611ec1082f04d8a849/1hp9395p2';
+    s1.src = 'https://embed.tawk.to/69e5e63d917d361c322fbf5b/1jml0mobh';
     s1.charset = 'UTF-8';
     s1.setAttribute('crossorigin', '*');
     s0.parentNode.insertBefore(s1, s0);
