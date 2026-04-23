@@ -4,7 +4,7 @@ const phaseConfigs = {
   phase1: {
     user: "vmukti",
     password: "bhargav@123456",
-    server: "20.244.18.113",
+    server: "20.244.19.9",
     database: "wbph12026",
     port: 1433,
     options: {
