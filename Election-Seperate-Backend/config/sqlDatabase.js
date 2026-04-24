@@ -1,22 +1,6 @@
 const sql = require("mssql");
 
 const phaseConfigs = {
-  phase1: {
-    user: "vmukti",
-    password: "bhargav@123456",
-    server: "20.244.19.9",
-    database: "wbph12026",
-    port: 1433,
-    options: {
-      encrypt: false,
-      trustServerCertificate: true,
-    },
-    pool: {
-      max: 10,
-      min: 0,
-      idleTimeoutMillis: 30000,
-    },
-  },
   phase2: {
     user: "vmukti",
     password: "bhargav@123456",

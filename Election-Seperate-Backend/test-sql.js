@@ -1,7 +1,7 @@
 const { getSqlConnection } = require("./config/sqlDatabase");
 
 const testConnections = async () => {
-  const phases = ["phase1", "phase2"];
+  const phases = ["phase2"];
 
   for (const phase of phases) {
     process.stdout.write(`Testing ${phase}... `);

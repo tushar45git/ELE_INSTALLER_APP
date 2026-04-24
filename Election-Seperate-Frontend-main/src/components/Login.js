@@ -42,15 +42,6 @@ const Login = () => {
 
   const stateData = {
     "West Bengal": {
-      phase1: [
-        "BANKURA",
-        "BIRBHUM",
-        "JHARGRAM",
-        "PASCHIM BARDHAMAN",
-        "PASCHIM MEDINIPUR",
-        "PURBA MEDINIPUR",
-        "PURULIA",
-      ],
       phase2: ["HOOGHLY", "PURBA BARDHAMAN", "NADIA"],
     },
   };
