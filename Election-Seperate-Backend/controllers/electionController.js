@@ -54,10 +54,11 @@ const getSqlData = async (phase, deviceId) => {
   const pool = await getSqlConnection(phase);
 
   const query = `
-        SELECT top(1) streamname, prourl, servername, 'https://' + servername + '/live-record/' + streamname + '.flv' AS url2,b.district,b.acname AS assemblyName,
-b.PSNum AS psNo,b.location,b.cameralocationtype AS locationtype,s.deviceid AS deviceId, statename as state FROM streamlist s WITH (NOLOCK)INNER JOIN booth b WITH (NOLOCK)ON s.id = b.streamid 
-inner join state st  WITH (NOLOCK) on st.id=b.boothstateid 
-WHERE ISNULL(b.isdelete,'')=0  AND s.deviceid = @deviceId
+        SELECT top(1) s.streamname, s.prourl, s.servername, 'https://' + s.servername + '/live-record/' + s.streamname + '.flv' AS url2,b.district,b.acname AS assemblyName,
+b.PSNum AS psNo,b.location,b.cameralocationtype AS locationtype,s.deviceid AS deviceId, st.statename as state, b.id as boothId FROM streamlist s WITH (NOLOCK)
+LEFT JOIN booth b WITH (NOLOCK) ON s.id = b.streamid AND ISNULL(b.isdelete,'')=0
+LEFT JOIN state st WITH (NOLOCK) on st.id=b.boothstateid 
+WHERE s.deviceid = @deviceId
     `;
 
   const result = await pool.request().input("deviceId", deviceId).query(query);
@@ -73,17 +74,18 @@ WHERE ISNULL(b.isdelete,'')=0  AND s.deviceid = @deviceId
           url2: data.url2,
         }
       : null,
-    booth: data
-      ? {
-          district: data.district,
-          assemblyName: data.assemblyName,
-          psNo: data.psNo,
-          location: data.location,
-          locationtype: data.locationtype,
-          deviceId: data.deviceId,
-          state: data.state,
-        }
-      : null,
+    booth:
+      data && data.boothId
+        ? {
+            district: data.district,
+            assemblyName: data.assemblyName,
+            psNo: data.psNo,
+            location: data.location,
+            locationtype: data.locationtype,
+            deviceId: data.deviceId,
+            state: data.state,
+          }
+        : null,
   };
 };
 
@@ -541,18 +543,19 @@ exports.getCameraByDid = async (req, res, next) => {
     if (phase) {
       const sqlData = await getSqlData(phase, deviceId);
 
-      if (!sqlData.booth) {
+      if (!sqlData.stream) {
         return res.status(200).json({
           success: false,
           data: "Device Id not found in election (SQL)",
-          flvUrl: sqlData.stream,
+          flvUrl: null,
         });
       }
 
       return res.status(200).json({
         success: true,
-        data: sqlData.booth,
+        data: sqlData.booth || { message: "Booth details not found" },
         flvUrl: sqlData.stream,
+        boothFound: !!sqlData.booth,
       });
     }
 
@@ -577,6 +580,7 @@ exports.getCameraByDid = async (req, res, next) => {
       success: true,
       data: cameras,
       flvUrl: getFlv,
+      boothFound: true,
     });
   } catch (error) {
     res.status(500).json({
@@ -594,18 +598,19 @@ exports.getCameraByDidInfo = async (req, res, next) => {
     if (phase) {
       const sqlData = await getSqlData(phase, deviceId);
 
-      if (!sqlData.booth) {
+      if (!sqlData.stream) {
         return res.status(200).json({
           success: false,
           data: "Device Id not found in election (SQL)",
-          flvUrl: sqlData.stream,
+          flvUrl: null,
         });
       }
 
       return res.status(200).json({
         success: true,
-        data: sqlData.booth,
+        data: sqlData.booth || { message: "Booth details not found" },
         flvUrl: sqlData.stream,
+        boothFound: !!sqlData.booth,
       });
     }
 
@@ -626,6 +631,7 @@ exports.getCameraByDidInfo = async (req, res, next) => {
       success: true,
       data: cameras,
       flvUrl: getFlv,
+      boothFound: true,
     });
   } catch (error) {
     res.status(500).json({
@@ -646,7 +652,7 @@ exports.searchDevices = async (req, res, next) => {
     if (phase) {
       const pool = await getSqlConnection(phase);
       const sqlQuery =
-        "SELECT top(5) streamname FROM streamlist s WITH (NOLOCK) INNER JOIN booth b WITH (NOLOCK) ON s.id = b.streamid WHERE (streamname LIKE @query OR deviceid LIKE @query) AND ISNULL(b.isdelete,'')=0";
+        "SELECT top(5) streamname FROM streamlist s WITH (NOLOCK) LEFT JOIN booth b WITH (NOLOCK) ON s.id = b.streamid WHERE (streamname LIKE @query OR s.deviceid LIKE @query) AND (b.id IS NULL OR ISNULL(b.isdelete,'')=0)";
       const result = await pool
         .request()
         .input("query", `%${query}%`)

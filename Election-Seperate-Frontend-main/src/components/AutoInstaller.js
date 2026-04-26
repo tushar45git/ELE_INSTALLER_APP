@@ -130,6 +130,7 @@ const AutoInstaller = () => {
   const [tripura, setTripura] = useState(" ");
   const [isEditing, setIsEditing] = useState(false); // NEW: Editing state
   const [prourl, setProurl] = useState("");
+  const [boothFound, setBoothFound] = useState(true);
 
   // NEW STATE VARIABLES
   const [cameraStatus, setCameraStatus] = useState(null);
@@ -233,6 +234,7 @@ const AutoInstaller = () => {
     setFlvUrl(""); // Reset video URL
     setCameraStatus(null); // Reset camera status
     setHasClickedCameraDidInfo(false); // Reset this state when adding new device
+    setBoothFound(true); // Reset booth found state
     clearInterval(cameraStatusInterval.current);
     clearInterval(toastInterval.current);
   };
@@ -345,6 +347,13 @@ const AutoInstaller = () => {
       }
 
       setFlvUrl(response.flvUrl.url2);
+      setBoothFound(response.boothFound !== false);
+
+      if (response.boothFound === false) {
+        toast.warn(
+          "Booth details not found for this camera. You need to map this camera for Submit Installation",
+        );
+      }
 
       if (response.data.state === "PUNJAB") {
         toast.error("State is PUNJAB. Refreshing the page...");
@@ -2437,12 +2446,17 @@ const AutoInstaller = () => {
                           {isEditing ? "Cancel Edit" : "Edit Details"}
                         </Button>
                         <Button
-                          colorScheme="blue"
-                          className="btn-premium"
+                          colorScheme={!boothFound ? "gray" : "blue"}
+                          className={!boothFound ? "" : "btn-premium"}
                           w="full"
                           onClick={handleSubmit}
+                          isDisabled={!boothFound}
                         >
-                          {isEditing ? "Save & Submit" : "Submit Installation"}
+                          {!boothFound
+                            ? "Booth Not Found"
+                            : isEditing
+                            ? "Save & Submit"
+                            : "Submit Installation"}
                         </Button>
                       </Stack>
                     </VStack>
