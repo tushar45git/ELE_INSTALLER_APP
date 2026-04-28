@@ -1866,14 +1866,44 @@ const AutoInstaller = () => {
                         <Heading className="section-title">
                           Live Installation Feed
                         </Heading>
-                        <div className="video-wrapper">
-                          <ReactPlayer
-                            url={flvUrl}
-                            playing={true}
-                            controls={true}
-                            width="100%"
-                            height="100%"
-                          />
+                        <div style={{ position: "relative" }}>
+                          <div className="video-wrapper">
+                            <ReactPlayer
+                              url={flvUrl}
+                              playing={true}
+                              controls={true}
+                              width="100%"
+                              height="100%"
+                            />
+                          </div>
+                          {!boothFound && (
+                            <Box
+                              position="absolute"
+                              top="50%"
+                              left="50%"
+                              transform="translate(-50%, -50%)"
+                              pointerEvents="none"
+                            >
+                              <Box
+                                bg="red.600"
+                                px={6}
+                                py={3}
+                                borderRadius="md"
+                                boxShadow="0 0 15px rgba(255, 0, 0, 0.6)"
+                              >
+                                <Text
+                                  color="white"
+                                  fontWeight="900"
+                                  fontSize={{ base: "2xl", md: "4xl" }}
+                                  letterSpacing="widest"
+                                  textTransform="uppercase"
+                                  textAlign="center"
+                                >
+                                  UNMAPPED
+                                </Text>
+                              </Box>
+                            </Box>
+                          )}
                         </div>
                       </div>
                     )}
