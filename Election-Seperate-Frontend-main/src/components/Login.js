@@ -42,7 +42,7 @@ const Login = () => {
 
   const stateData = {
     "West Bengal": {
-      phase2: ["HOOGHLY", "PURBA BARDHAMAN", "NADIA"],
+      phase2: ["BANKURA","BIRBHUM","JHARGRAM","PASCHIM BARDHAMAN","PASCHIM MEDINIPUR","PURBA MEDINIPUR","PURULIA","HOOGHLY", "PURBA BARDHAMAN", "NADIA"],
     },
   };
 
