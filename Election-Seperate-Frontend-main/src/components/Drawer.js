@@ -65,22 +65,22 @@ const DrawerButton = ({ drawerContent }) => {
 
   if (role === "admin") {
     menuItems.push(
-      { path: "/dashboard", label: "Dashboard", icon: MdDashboard },
-      { path: "/head", label: "District Manager", icon: MdAccountCircle },
+      // { path: "/dashboard", label: "Dashboard", icon: MdDashboard },
+      // { path: "/head", label: "District Manager", icon: MdAccountCircle },
       { path: "/installer", label: "Installer", icon: MdBuild },
       { path: "/autoinstaller", label: "Auto Installer", icon: MdBuild },
-      { path: "/eleuser", label: "User Analytics", icon: MdBuild },
-      { path: "/attendance", label: "Attendance", icon: MdAccountCircle },
-      { path: "/kyc", label: "KYC Verification", icon: MdVerifiedUser },
-      { path: "/admin/kyc", label: "KYC Approvals", icon: MdVerifiedUser },
+      // { path: "/eleuser", label: "User Analytics", icon: MdBuild },
+      // { path: "/attendance", label: "Attendance", icon: MdAccountCircle },
+      // { path: "/kyc", label: "KYC Verification", icon: MdVerifiedUser },
+      // { path: "/admin/kyc", label: "KYC Approvals", icon: MdVerifiedUser },
     );
   } else if (role === "district") {
     menuItems.push(
-      { path: "/head", label: "District Manager", icon: MdAccountCircle },
+      // { path: "/head", label: "District Manager", icon: MdAccountCircle },
       { path: "/installer", label: "Installer", icon: MdBuild },
       { path: "/autoinstaller", label: "Auto Installer", icon: MdBuild },
-      { path: "/attendance", label: "Attendance", icon: MdAccountCircle },
-      { path: "/kyc", label: "KYC Verification", icon: MdVerifiedUser },
+      // { path: "/attendance", label: "Attendance", icon: MdAccountCircle },
+      // { path: "/kyc", label: "KYC Verification", icon: MdVerifiedUser },
     );
   } else if (
     role === "installer" ||
@@ -89,21 +89,21 @@ const DrawerButton = ({ drawerContent }) => {
   ) {
     menuItems.push(
       { path: "/autoinstaller", label: "Auto Installer", icon: MdBuild },
-      { path: "/attendance", label: "Attendance", icon: MdAccountCircle },
-      { path: "/kyc", label: "KYC Verification", icon: MdVerifiedUser },
+      // { path: "/attendance", label: "Attendance", icon: MdAccountCircle },
+      // { path: "/kyc", label: "KYC Verification", icon: MdVerifiedUser },
     );
   } else if (role === "checkpost") {
     menuItems.push(
       { path: "/attendance", label: "Attendance", icon: MdAccountCircle },
-      { path: "/attendance", label: "Attendance", icon: MdAccountCircle },
-      { path: "/kyc", label: "KYC Verification", icon: MdVerifiedUser },
+      // { path: "/attendance", label: "Attendance", icon: MdAccountCircle },
+      // { path: "/kyc", label: "KYC Verification", icon: MdVerifiedUser },
     );
   } else {
     // Fallback for other roles
     menuItems.push(
       { path: "/autoinstaller", label: "Auto Installer", icon: MdBuild },
-      { path: "/attendance", label: "Attendance", icon: MdAccountCircle },
-      { path: "/kyc", label: "KYC Verification", icon: MdVerifiedUser },
+      // { path: "/attendance", label: "Attendance", icon: MdAccountCircle },
+      // { path: "/kyc", label: "KYC Verification", icon: MdVerifiedUser },
     );
   }
 
