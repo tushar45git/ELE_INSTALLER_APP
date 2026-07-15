@@ -277,9 +277,6 @@ exports.createCamera = async (req, res, next) => {
     let phase = req.body.phase;
     console.log("deviceId:", deviceId, "phase:", phase); // For debugging
 
-    // Search for existing camera
-    const existingCamera = await EleCamera.findOne({ deviceId: deviceId });
-
     let flvUrl = "";
     let locationtype = "";
     if (phase) {
@@ -303,54 +300,55 @@ exports.createCamera = async (req, res, next) => {
       flvUrl = getFlv.url2;
     }
 
-    if (!existingCamera) {
-      // Camera doesn't exist, create a new one
-      let newCamera = await EleCamera.create({
-        ...req.body,
-        flvUrl: flvUrl,
-        locationtype: locationtype,
-      });
-      await Cameradetails.create({
-        ...req.body,
-        flvUrl: flvUrl,
-        locationtype: locationtype,
-      });
-      res.status(200).json({
-        success: true,
-        data: newCamera,
-      });
+    const payload = { ...req.body, flvUrl: flvUrl, locationtype: locationtype };
+    const submitDate = req.body.date; // date string sent by the client
 
-      let hist = { ...newCamera.toObject() };
-      delete hist._id;
-      hist.actionType = "installed camera";
-      hist.personName = req.body.personName;
-      hist.personMobile = req.body.personMobile;
-      let CreateHistory = await Elehistory.create(hist);
+    // ── election-cameras collection: one entry PER DATE ──────────────────────
+    // A re-submit on the same date updates that day's entry; a new date inserts
+    // a fresh historical entry (so we no longer overwrite the previous date).
+    const existingForDate = await EleCamera.findOne({
+      deviceId: deviceId,
+      date: submitDate,
+    });
+
+    let electionCamera;
+    let isNewEntry;
+    if (existingForDate) {
+      electionCamera = await EleCamera.findOneAndUpdate(
+        { deviceId: deviceId, date: submitDate },
+        { $set: payload },
+        { new: true },
+      );
+      isNewEntry = false;
     } else {
-      // Camera exists, update its values
-      const updatedCamera = await EleCamera.findOneAndUpdate(
-        { deviceId: deviceId },
-        { $set: { ...req.body, flvUrl: flvUrl, locationtype: locationtype } },
-        { new: true }, // To return the updated document
-      );
-      await Cameradetails.findOneAndUpdate(
-        { deviceId: deviceId },
-        { $set: { ...req.body, flvUrl: flvUrl, locationtype: locationtype } },
-        { upsert: true },
-      );
+      electionCamera = await EleCamera.create(payload);
+      isNewEntry = true;
+    }
 
-      let hist = { ...updatedCamera.toObject() };
+    // ── installation directory (Cameradetails): ONE UNIQUE entry per device+user
+    // Upsert so the same user's repeated submissions never create duplicates.
+    await Cameradetails.findOneAndUpdate(
+      { deviceId: deviceId, personMobile: req.body.personMobile },
+      { $set: payload },
+      { upsert: true, new: true },
+    );
+
+    // ── history: always append a record of this submission ───────────────────
+    try {
+      const hist = { ...electionCamera.toObject() };
       delete hist._id;
-      hist.actionType = "updated installed camera";
+      hist.actionType = isNewEntry ? "installed camera" : "updated installed camera";
       hist.personName = req.body.personName;
       hist.personMobile = req.body.personMobile;
-      let CreateHistory = await Elehistory.create(hist);
-
-      res.status(200).json({
-        success: true,
-        data: updatedCamera,
-      });
+      await Elehistory.create(hist);
+    } catch (histErr) {
+      console.error("Elehistory create failed:", histErr.message);
     }
+
+    res.status(200).json({
+      success: true,
+      data: electionCamera,
+    });
   } catch (error) {
     console.error("Error:", error); // For debugging
     res.status(500).json({

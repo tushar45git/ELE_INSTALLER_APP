@@ -149,11 +149,19 @@ app.get("/", (req, res) => {
 const electionRoutes = require("./routes/electionRoute");
 const attendanceRoutes = require("./routes/attendanceRoute");
 const kycRoutes = require("./routes/kycRoute");
+const cameraMappingRoutes = require("./routes/cameraMappingRoute");
+const errorMiddleware = require("./middleware/error");
 
 // Mount all routes
 app.use("/election", electionRoutes);
 app.use("/election/api/attendance", attendanceRoutes);
 app.use("/election/api/kyc", kycRoutes);
+app.use("/election/api/camera-mapping", cameraMappingRoutes);
+
+// Global error handler (maps ErrorHander / thrown errors to JSON responses).
+// Mounted after routes so it catches errors forwarded via next(err).
+app.use(errorMiddleware);
+
 // Start the server
 app.listen(port, () => {
   console.log(`Server is running at http://localhost:${port}`);

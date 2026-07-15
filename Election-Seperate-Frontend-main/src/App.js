@@ -36,6 +36,7 @@ import EleUserDetails from "./components/EleUserDetails";
 import BiharUsers from "./components/BiharUsers";
 import KycVerification from "./components/KycVerification";
 import AdminKycPanel from "./components/AdminKycPanel";
+import CameraMapping from "./components/cameraMapping/CameraMapping";
 
 const ProtectedRoute = ({ children }) => {
   const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
@@ -187,6 +188,14 @@ function AppContent() {
             element={
               <ProtectedRoute>
                 <AdminKycPanel />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/camera-mapping"
+            element={
+              <ProtectedRoute>
+                <CameraMapping />
               </ProtectedRoute>
             }
           />

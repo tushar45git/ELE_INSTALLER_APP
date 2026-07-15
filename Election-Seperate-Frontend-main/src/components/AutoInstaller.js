@@ -89,6 +89,11 @@ import {
   setIsEdited,
   uploadCameraPhoto,
 } from "../actions/userActions"; // Import the new action
+import {
+  getCameraMappingByStream,
+  swapCameraByLocation,
+} from "../actions/cameraMappingActions";
+import CameraMappingFormModal from "./cameraMapping/CameraMappingFormModal";
 import { MdDelete, MdEdit, MdVisibility } from "react-icons/md";
 import withAuth from "./withAuth";
 // import { ReactFlvPlayer } from 'react-flv-player';
@@ -131,6 +136,13 @@ const AutoInstaller = () => {
   const [isEditing, setIsEditing] = useState(false); // NEW: Editing state
   const [prourl, setProurl] = useState("");
   const [boothFound, setBoothFound] = useState(true);
+
+  // SQL Camera Mapping (booth table) integration
+  const [sqlCamera, setSqlCamera] = useState(null); // { id, streamname, deviceid }
+  const [sqlMapping, setSqlMapping] = useState(null); // booth row or null (unmapped)
+  const [isMappingModalOpen, setIsMappingModalOpen] = useState(false);
+  const [locSwapInfo, setLocSwapInfo] = useState(null); // { message, currentBoothId, targetId }
+  const [isSwapping, setIsSwapping] = useState(false);
 
   // NEW STATE VARIABLES
   const [cameraStatus, setCameraStatus] = useState(null);
@@ -375,6 +387,22 @@ const AutoInstaller = () => {
       setPsNumber(fetchedPsNumber);
       setDistrict(fetchedDistrict);
       setExcelLocation(fetchedExcelLocation);
+
+      // Resolve the SQL (booth) mapping for this camera to decide
+      // whether the user gets "Edit Mapping" (mapped) or "Add Mapping".
+      try {
+        const sqlRes = await getCameraMappingByStream(deviceId);
+        if (sqlRes.success !== false) {
+          setSqlCamera(sqlRes.camera || null);
+          setSqlMapping(sqlRes.mapping || null);
+        } else {
+          setSqlCamera(null);
+          setSqlMapping(null);
+        }
+      } catch (e) {
+        setSqlCamera(null);
+        setSqlMapping(null);
+      }
 
       sendUrlToExternalApi(response.flvUrl.url2);
       startCameraStatusPolling(deviceId);
@@ -2400,10 +2428,18 @@ const AutoInstaller = () => {
                         <Button
                           className="btn-secondary"
                           w="full"
-                          onClick={() => setIsEditing(!isEditing)}
-                          leftIcon={isEditing ? <FiPlus /> : <FiEdit />}
+                          onClick={() => {
+                            if (!sqlMapping && !sqlCamera) {
+                              toast.warn(
+                                "This camera is not in the stream list, so it cannot be mapped.",
+                              );
+                              return;
+                            }
+                            setIsMappingModalOpen(true);
+                          }}
+                          leftIcon={sqlMapping ? <FiEdit /> : <FiPlus />}
                         >
-                          {isEditing ? "Cancel Edit" : "Edit Details"}
+                          {sqlMapping ? "Edit Mapping" : "Add Mapping"}
                         </Button>
                         <Button
                           colorScheme={!boothFound ? "gray" : "blue"}
@@ -2426,6 +2462,124 @@ const AutoInstaller = () => {
             )}
           </>
         )}
+
+        {/* Camera Mapping (SQL booth) — Add / Edit, camera locked to this device */}
+        <CameraMappingFormModal
+          isOpen={isMappingModalOpen}
+          onClose={() => setIsMappingModalOpen(false)}
+          lockCamera
+          detectLocationSwap
+          onLocationConflict={(info) => {
+            // Target slot already has a camera -> confirm a swap.
+            setIsMappingModalOpen(false);
+            setLocSwapInfo(info);
+          }}
+          initialData={
+            sqlMapping
+              ? sqlMapping
+              : {
+                  // Add mode: prefill from the current lookup (no `id` => create)
+                  streamid: sqlCamera?.id,
+                  streamname: sqlCamera?.streamname,
+                  district,
+                  accode: "",
+                  acname: assemblyName,
+                  PSNum: psNumber,
+                  location: excelLocation,
+                  cameralocationtype: "Inside",
+                }
+          }
+          onSaved={async (saved) => {
+            setIsMappingModalOpen(false);
+            if (saved) {
+              setDistrict(saved.district ?? district);
+              setAssemblyName(saved.acname ?? assemblyName);
+              setPsNumber(saved.psNum ?? psNumber);
+              setExcelLocation(saved.location ?? excelLocation);
+            }
+            // A SQL mapping now exists -> allow the existing Submit Installation.
+            setBoothFound(true);
+            try {
+              const sqlRes = await getCameraMappingByStream(deviceId);
+              if (sqlRes.success !== false) {
+                setSqlCamera(sqlRes.camera || null);
+                setSqlMapping(sqlRes.mapping || null);
+              }
+            } catch (e) {
+              /* keep prior snapshot on refresh failure */
+            }
+            toast.success(
+              "Camera mapping saved to SQL. You can now Submit Installation.",
+            );
+          }}
+        />
+
+        {/* Location Swap confirmation (AutoInstaller) */}
+        <Modal
+          isOpen={!!locSwapInfo}
+          onClose={() => !isSwapping && setLocSwapInfo(null)}
+          isCentered
+        >
+          <ModalOverlay />
+          <ModalContent>
+            <ModalHeader>Swap Camera</ModalHeader>
+            <ModalCloseButton />
+            <ModalBody>
+              <Text mb={3}>{locSwapInfo?.message}</Text>
+              <Text fontWeight="600">
+                Swapping places this camera at that location and moves the
+                camera already there to this camera's current slot.
+              </Text>
+            </ModalBody>
+            <ModalFooter gap={3}>
+              <Button
+                variant="ghost"
+                onClick={() => setLocSwapInfo(null)}
+                isDisabled={isSwapping}
+              >
+                Cancel
+              </Button>
+              <Button
+                colorScheme="orange"
+                isLoading={isSwapping}
+                onClick={async () => {
+                  if (!locSwapInfo) return;
+                  setIsSwapping(true);
+                  const res = await swapCameraByLocation({
+                    currentBoothId: locSwapInfo.currentBoothId,
+                    targetBoothId: locSwapInfo.targetId,
+                  });
+                  setIsSwapping(false);
+                  if (res.success === false || res.status === false) {
+                    toast.error(res.message || "Swap failed");
+                    return;
+                  }
+                  toast.success(res.message || "Cameras swapped successfully");
+                  setLocSwapInfo(null);
+                  setBoothFound(true);
+                  // Refresh the SQL mapping snapshot for the scanned camera.
+                  try {
+                    const sqlRes = await getCameraMappingByStream(deviceId);
+                    if (sqlRes.success !== false) {
+                      setSqlCamera(sqlRes.camera || null);
+                      setSqlMapping(sqlRes.mapping || null);
+                      if (sqlRes.mapping) {
+                        setDistrict(sqlRes.mapping.district ?? district);
+                        setAssemblyName(sqlRes.mapping.acname ?? assemblyName);
+                        setPsNumber(sqlRes.mapping.PSNum ?? psNumber);
+                        setExcelLocation(sqlRes.mapping.location ?? excelLocation);
+                      }
+                    }
+                  } catch (e) {
+                    /* keep prior snapshot on refresh failure */
+                  }
+                }}
+              >
+                Swap
+              </Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
 
         {/* Shared Modals */}
         <Modal

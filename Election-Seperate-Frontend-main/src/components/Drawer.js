@@ -69,7 +69,7 @@ const DrawerButton = ({ drawerContent }) => {
       // { path: "/head", label: "District Manager", icon: MdAccountCircle },
       { path: "/installer", label: "Installer", icon: MdBuild },
       { path: "/autoinstaller", label: "Auto Installer", icon: MdBuild },
-      // { path: "/eleuser", label: "User Analytics", icon: MdBuild },
+      { path: "/camera-mapping", label: "Map Camera", icon: MdBuild },
       // { path: "/attendance", label: "Attendance", icon: MdAccountCircle },
       // { path: "/kyc", label: "KYC Verification", icon: MdVerifiedUser },
       // { path: "/admin/kyc", label: "KYC Approvals", icon: MdVerifiedUser },
@@ -79,6 +79,7 @@ const DrawerButton = ({ drawerContent }) => {
       // { path: "/head", label: "District Manager", icon: MdAccountCircle },
       { path: "/installer", label: "Installer", icon: MdBuild },
       { path: "/autoinstaller", label: "Auto Installer", icon: MdBuild },
+       { path: "/camera-mapping", label: "Map Camera", icon: MdBuild },
       // { path: "/attendance", label: "Attendance", icon: MdAccountCircle },
       // { path: "/kyc", label: "KYC Verification", icon: MdVerifiedUser },
     );
@@ -89,6 +90,7 @@ const DrawerButton = ({ drawerContent }) => {
   ) {
     menuItems.push(
       { path: "/autoinstaller", label: "Auto Installer", icon: MdBuild },
+       { path: "/camera-mapping", label: "Map Camera", icon: MdBuild },
       // { path: "/attendance", label: "Attendance", icon: MdAccountCircle },
       // { path: "/kyc", label: "KYC Verification", icon: MdVerifiedUser },
     );
@@ -102,6 +104,7 @@ const DrawerButton = ({ drawerContent }) => {
     // Fallback for other roles
     menuItems.push(
       { path: "/autoinstaller", label: "Auto Installer", icon: MdBuild },
+       { path: "/camera-mapping", label: "Map Camera", icon: MdBuild },
       // { path: "/attendance", label: "Attendance", icon: MdAccountCircle },
       // { path: "/kyc", label: "KYC Verification", icon: MdVerifiedUser },
     );
