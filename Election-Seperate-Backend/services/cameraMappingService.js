@@ -164,6 +164,22 @@ async function getFormSuggestions(query) {
   return { districts, assemblies, psNumbers };
 }
 
+/**
+ * Canonical location for an (assembly, PS number) pair. Lets the form auto-fill
+ * the Location field so cameras at the same booth stay consistent (Req 3).
+ */
+async function getLocationForPs(query) {
+  const acname = (query.acname || "").trim();
+  const psNum = (query.psNum || "").trim();
+  if (!acname || !psNum) return { location: null };
+  const makeRequest = await getReadFactory();
+  const location = await boothRepository.getLocationForSlot(makeRequest, {
+    acname,
+    psNum,
+  });
+  return { location };
+}
+
 async function searchCameras(query) {
   const makeRequest = await getReadFactory();
   return streamlistRepository.search(makeRequest, {
@@ -212,6 +228,27 @@ async function create(input, ctx) {
   const streamName = await streamlistRepository.getStreamName(read, streamId);
   const getist = getISTString();
   const mapping = toMapping(input);
+
+  // Req 2: if a booth already occupies this exact slot (assembly + PS number +
+  // location + camera location type), update THAT booth's camera instead of
+  // inserting a new entry. Delegates to update() so the camera-change is fully
+  // audited (history UPDATE + ChangeCamera close-old/open-new).
+  const slotBooth = await boothRepository.findByLocationSlot(read, {
+    acname: mapping.acname,
+    psNum: mapping.psNum,
+    location: mapping.location,
+    cameraLocationType: mapping.cameraLocationType,
+    excludeId: 0,
+  });
+  if (slotBooth) {
+    const res = await update(slotBooth.id, input, ctx);
+    if (res.status === false) return res; // pass through any business block
+    return {
+      ...res,
+      message: "Camera updated at existing location",
+      boothId: slotBooth.id,
+    };
+  }
 
   const boothId = await withTransaction(async (makeRequest) => {
     const operatorId = await operatorService.resolveOperatorId(
@@ -710,6 +747,7 @@ module.exports = {
   getHistory,
   getFilterMeta,
   getFormSuggestions,
+  getLocationForPs,
   searchCameras,
   create,
   update,

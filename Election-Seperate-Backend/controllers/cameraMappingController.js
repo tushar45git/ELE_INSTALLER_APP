@@ -69,6 +69,11 @@ exports.getFormSuggestions = wrap(async (req, res) => {
   res.status(200).json({ success: true, ...data });
 });
 
+exports.getLocationForPs = wrap(async (req, res) => {
+  const data = await service.getLocationForPs(req.query);
+  res.status(200).json({ success: true, ...data });
+});
+
 exports.searchCameras = wrap(async (req, res) => {
   const data = await service.searchCameras(req.query);
   res.status(200).json({ success: true, data });

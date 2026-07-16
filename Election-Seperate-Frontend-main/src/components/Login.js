@@ -167,6 +167,7 @@ const Login = () => {
         localStorage.setItem("token", response.token);
         localStorage.setItem("role", response.role);
         localStorage.setItem("phase", response.phase || phase); //added the phase to local storage
+        localStorage.setItem("state", selectedState); // persist selected state (e.g. Bihar)
 
         toast({
           title: "Success",

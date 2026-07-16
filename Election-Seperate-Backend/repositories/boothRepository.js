@@ -99,15 +99,22 @@ async function findByStreamId(makeRequest, streamId) {
 }
 
 /**
- * Find another non-deleted booth occupying the same location slot
- * (assembly name + PS number + camera location type), excluding the booth
- * being edited. Backs the AutoInstaller location-swap prompt.
+ * Find another non-deleted booth occupying the same location slot, excluding a
+ * given booth id. The slot is (assembly name + PS number + camera location
+ * type); when `location` is provided it is also matched (used by the create
+ * "update camera at occupied slot" flow). Backs the location-swap prompt (edit)
+ * and the slot-upsert (add).
  */
-async function findByLocationSlot(makeRequest, { acname, psNum, cameraLocationType, excludeId }) {
+async function findByLocationSlot(
+  makeRequest,
+  { acname, psNum, cameraLocationType, location, excludeId = 0 },
+) {
+  const matchLocation = location !== undefined && location !== null;
   const result = await makeRequest()
     .input("acname", sql.VarChar(100), acname)
     .input("psnum", sql.NVarChar(50), psNum)
     .input("cameralocationtype", sql.NVarChar(100), cameraLocationType)
+    .input("location", sql.NVarChar(sql.MAX), matchLocation ? location : "")
     .input("excludeid", sql.Int, excludeId)
     .query(`
       SELECT TOP 1 b.id, b.streamid, s.streamname, b.district, b.accode,
@@ -118,8 +125,30 @@ async function findByLocationSlot(makeRequest, { acname, psNum, cameraLocationTy
       WHERE ISNULL(b.isdelete, 0) = 0 AND b.id <> @excludeid
         AND b.acname = @acname AND b.PSNum = @psnum
         AND b.cameralocationtype = @cameralocationtype
+        ${matchLocation ? "AND b.location = @location" : ""}
       ORDER BY b.id DESC`);
   return result.recordset[0] ?? null;
+}
+
+/**
+ * Canonical location for an (assembly, PS number) pair — used to auto-fill the
+ * Location field so it stays consistent across cameras at the same booth.
+ * Matches the PS number ignoring the Outside "-O" suffix.
+ */
+async function getLocationForSlot(makeRequest, { acname, psNum }) {
+  const base = String(psNum ?? "").replace(/-O$/i, "");
+  const result = await makeRequest()
+    .input("acname", sql.VarChar(100), acname)
+    .input("psbase", sql.NVarChar(50), base)
+    .query(`
+      SELECT TOP 1 location, COUNT(*) AS cnt
+      FROM booth WITH (NOLOCK)
+      WHERE ISNULL(isdelete, 0) = 0 AND acname = @acname
+        AND REPLACE(PSNum, '-O', '') = @psbase
+        AND location IS NOT NULL AND location <> ''
+      GROUP BY location
+      ORDER BY cnt DESC`);
+  return result.recordset[0]?.location ?? null;
 }
 
 /**
@@ -292,6 +321,7 @@ module.exports = {
   findById,
   findByStreamId,
   findByLocationSlot,
+  getLocationForSlot,
   findOldSnapshot,
   list,
   insert,

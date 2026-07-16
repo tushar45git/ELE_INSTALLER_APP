@@ -26,6 +26,9 @@ import {
   Center,
   Text,
   VStack,
+  SimpleGrid,
+  Divider,
+  useBreakpointValue,
   useDisclosure,
   useToast,
   AlertDialog,
@@ -78,6 +81,8 @@ const COLUMNS = [
 
 export default function CameraMapping() {
   const toast = useToast();
+  // Phones/small tablets get a card layout; large screens get the full table.
+  const useCards = useBreakpointValue({ base: true, lg: false });
 
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -262,36 +267,68 @@ export default function CameraMapping() {
       <Icon as={sortOrder === "asc" ? MdArrowUpward : MdArrowDownward} ml={1} boxSize={3.5} />
     ) : null;
 
+  // Label/value pair used inside the mobile cards.
+  const CardField = ({ label, value }) => (
+    <Box minW={0}>
+      <Text fontSize="xs" color="gray.400" textTransform="uppercase" letterSpacing="wide">
+        {label}
+      </Text>
+      <Box fontWeight="500" isTruncated>{value === "" || value == null ? "—" : value}</Box>
+    </Box>
+  );
+
+  const rowActions = (r) => (
+    <Menu>
+      <MenuButton as={IconButton} icon={<MdMoreVert />} variant="ghost" size="sm" aria-label="Actions" />
+      <MenuList>
+        <MenuItem icon={<MdEdit />} onClick={() => openEdit(r)}>Edit</MenuItem>
+        <MenuItem icon={<MdHistory />} onClick={() => openHistory(r)}>View History</MenuItem>
+        <MenuItem icon={<MdDelete />} color="red.500" onClick={() => openDelete(r)}>Delete</MenuItem>
+      </MenuList>
+    </Menu>
+  );
+
+  const typeBadge = (t) => (
+    <Badge colorScheme={t === "Outside" ? "orange" : "green"}>{t}</Badge>
+  );
+
   return (
     <Box p={{ base: 3, md: 6 }} bg="gray.50" _dark={{ bg: "gray.900" }} minH="100vh">
       {/* Header */}
-      <Flex justify="space-between" align="center" mb={5} wrap="wrap" gap={3}>
+      <Flex
+        direction={{ base: "column", md: "row" }}
+        justify="space-between"
+        align={{ base: "stretch", md: "center" }}
+        mb={5}
+        gap={3}
+      >
         <Box>
-          <Heading size="lg" bgGradient="linear(to-r, blue.500, cyan.500)" bgClip="text">
+          <Heading size={{ base: "md", md: "lg" }} bgGradient="linear(to-r, blue.500, cyan.500)" bgClip="text">
             Camera Mapping
           </Heading>
           <Text color="gray.500" fontSize="sm">
             Search a camera to view and manage its booth mapping
           </Text>
         </Box>
-        <HStack>
+        <HStack spacing={3} w={{ base: "100%", md: "auto" }}>
           <Button leftIcon={<MdFileDownload />} variant="outline" colorScheme="green"
-            onClick={exportToExcel} isDisabled={!hasQuery}>
+            onClick={exportToExcel} isDisabled={!hasQuery} flex={{ base: 1, md: "none" }}>
             Export
           </Button>
-          <Button leftIcon={<MdAdd />} colorScheme="blue" onClick={openAdd}>
+          <Button leftIcon={<MdAdd />} colorScheme="blue" onClick={openAdd}
+            flex={{ base: 1, md: "none" }}>
             Add Mapping
           </Button>
         </HStack>
       </Flex>
 
       {/* Toolbar — single search bar only */}
-      <Box bg="white" _dark={{ bg: "gray.800" }} p={4} borderRadius="xl" boxShadow="sm" mb={4}>
+      <Box bg="white" _dark={{ bg: "gray.800" }} p={{ base: 3, md: 4 }} borderRadius="xl" boxShadow="sm" mb={4}>
         <Flex gap={3} wrap="wrap" align="center">
-          <InputGroup maxW="420px">
+          <InputGroup flex={{ base: "1 1 100%", md: "0 1 420px" }}>
             <InputLeftElement pointerEvents="none"><MdSearch color="gray" /></InputLeftElement>
             <Input
-              placeholder="Search camera by name, location, operator, district…"
+              placeholder="Search camera by name, location, operator…"
               value={searchInput}
               onChange={(e) => onSearchChange(e.target.value)}
               autoFocus
@@ -307,92 +344,147 @@ export default function CameraMapping() {
               onClick={fetchData} isDisabled={!hasQuery} />
           </Tooltip>
         </Flex>
+
+        {/* Sort controls (cards can't sort by header tap) — mobile only */}
+        {useCards && hasQuery && (
+          <Flex gap={2} mt={3} align="center">
+            <Text fontSize="sm" color="gray.500" flexShrink={0}>Sort by</Text>
+            <Select
+              size="sm"
+              value={sortBy}
+              onChange={(e) => { setSortBy(e.target.value); setPage(1); }}
+            >
+              {COLUMNS.map((c) => (
+                <option key={c.key} value={c.key}>{c.label}</option>
+              ))}
+            </Select>
+            <Tooltip label={sortOrder === "asc" ? "Ascending" : "Descending"}>
+              <IconButton
+                aria-label="Toggle sort order"
+                size="sm"
+                variant="outline"
+                icon={sortOrder === "asc" ? <MdArrowUpward /> : <MdArrowDownward />}
+                onClick={() => { setSortOrder((o) => (o === "asc" ? "desc" : "asc")); setPage(1); }}
+              />
+            </Tooltip>
+          </Flex>
+        )}
       </Box>
 
       {/* Results */}
       <Box bg="white" _dark={{ bg: "gray.800" }} borderRadius="xl" boxShadow="sm" overflow="hidden">
         {!hasQuery && !loading ? (
           // Idle prompt — no full list is ever shown up front.
-          <Center py={20}>
-            <VStack spacing={3} color="gray.400">
-              <Icon as={MdVideocam} boxSize={12} />
-              <Text fontSize="lg" fontWeight="600">Search for a camera to begin</Text>
+          <Center py={{ base: 12, md: 20 }} px={4}>
+            <VStack spacing={3} color="gray.400" textAlign="center">
+              <Icon as={MdVideocam} boxSize={{ base: 10, md: 12 }} />
+              <Text fontSize={{ base: "md", md: "lg" }} fontWeight="600">Search for a camera to begin</Text>
               <Text fontSize="sm">
                 Start typing a camera name, location or operator above to view its mapping and actions.
               </Text>
             </VStack>
           </Center>
+        ) : loading ? (
+          <Center py={12}><Spinner size="lg" /></Center>
+        ) : rows.length === 0 ? (
+          <Center py={12} px={4}>
+            <Text color="gray.500" textAlign="center">No cameras match “{search}”.</Text>
+          </Center>
         ) : (
           <>
-            <TableContainer>
-              <Table size="sm">
-                <Thead bg="gray.100" _dark={{ bg: "gray.700" }}>
-                  <Tr>
-                    {COLUMNS.map((c) => (
-                      <Th key={c.key} cursor="pointer" onClick={() => toggleSort(c.key)} userSelect="none" whiteSpace="nowrap">
-                        <Flex align="center">{c.label}<SortIcon colKey={c.key} /></Flex>
-                      </Th>
-                    ))}
-                    <Th textAlign="center">Actions</Th>
-                  </Tr>
-                </Thead>
-                <Tbody>
-                  {loading ? (
-                    <Tr><Td colSpan={COLUMNS.length + 1}><Center py={10}><Spinner size="lg" /></Center></Td></Tr>
-                  ) : rows.length === 0 ? (
-                    <Tr><Td colSpan={COLUMNS.length + 1}><Center py={10}><Text color="gray.500">No cameras match “{search}”.</Text></Center></Td></Tr>
-                  ) : (
-                    rows.map((r) => (
+            {useCards ? (
+              /* ── Mobile: card list ── */
+              <VStack spacing={3} align="stretch" p={3}>
+                {rows.map((r) => (
+                  <Box
+                    key={r.id}
+                    borderWidth="1px"
+                    borderColor="gray.200"
+                    _dark={{ borderColor: "gray.700" }}
+                    borderRadius="lg"
+                    p={4}
+                  >
+                    <Flex justify="space-between" align="flex-start" gap={2}>
+                      <Box minW={0}>
+                        <Text fontWeight="700" isTruncated>{r.streamname}</Text>
+                        <Text fontSize="sm" color="gray.500" isTruncated>
+                          {r.district} · {r.acname}
+                        </Text>
+                      </Box>
+                      {rowActions(r)}
+                    </Flex>
+                    <Divider my={3} />
+                    <SimpleGrid columns={2} spacingX={4} spacingY={3}>
+                      <CardField label="PS Number" value={r.PSNum} />
+                      <CardField label="Camera Type" value={typeBadge(r.cameralocationtype)} />
+                      <CardField label="Location" value={r.location} />
+                      <CardField label="Operator" value={r.operatorName} />
+                      <CardField label="Updated By" value={r.updatedBy} />
+                      <CardField
+                        label="Updated"
+                        value={r.updatedDate ? new Date(r.updatedDate).toLocaleDateString() : ""}
+                      />
+                    </SimpleGrid>
+                  </Box>
+                ))}
+              </VStack>
+            ) : (
+              /* ── Desktop: full table ── */
+              <TableContainer>
+                <Table size="sm">
+                  <Thead bg="gray.100" _dark={{ bg: "gray.700" }}>
+                    <Tr>
+                      {COLUMNS.map((c) => (
+                        <Th key={c.key} cursor="pointer" onClick={() => toggleSort(c.key)} userSelect="none" whiteSpace="nowrap">
+                          <Flex align="center">{c.label}<SortIcon colKey={c.key} /></Flex>
+                        </Th>
+                      ))}
+                      <Th textAlign="center">Actions</Th>
+                    </Tr>
+                  </Thead>
+                  <Tbody>
+                    {rows.map((r) => (
                       <Tr key={r.id} _hover={{ bg: "gray.50", _dark: { bg: "gray.700" } }}>
                         <Td fontWeight="600">{r.streamname}</Td>
                         <Td>{r.district}</Td>
                         <Td>{r.acname}</Td>
                         <Td>{r.PSNum}</Td>
                         <Td>{r.location}</Td>
-                        <Td>
-                          <Badge colorScheme={r.cameralocationtype === "Outside" ? "orange" : "green"}>
-                            {r.cameralocationtype}
-                          </Badge>
-                        </Td>
+                        <Td>{typeBadge(r.cameralocationtype)}</Td>
                         <Td>{r.operatorName}</Td>
                         <Td>{r.updatedBy}</Td>
                         <Td whiteSpace="nowrap">{r.updatedDate ? new Date(r.updatedDate).toLocaleDateString() : ""}</Td>
-                        <Td textAlign="center">
-                          <Menu>
-                            <MenuButton as={IconButton} icon={<MdMoreVert />} variant="ghost" size="sm" aria-label="Actions" />
-                            <MenuList>
-                              <MenuItem icon={<MdEdit />} onClick={() => openEdit(r)}>Edit</MenuItem>
-                              <MenuItem icon={<MdHistory />} onClick={() => openHistory(r)}>View History</MenuItem>
-                              <MenuItem icon={<MdDelete />} color="red.500" onClick={() => openDelete(r)}>Delete</MenuItem>
-                            </MenuList>
-                          </Menu>
-                        </Td>
+                        <Td textAlign="center">{rowActions(r)}</Td>
                       </Tr>
-                    ))
-                  )}
-                </Tbody>
-              </Table>
-            </TableContainer>
-
-            {/* Pagination (only meaningful with results) */}
-            {rows.length > 0 && (
-              <Flex justify="space-between" align="center" p={4} wrap="wrap" gap={3}>
-                <HStack>
-                  <Text fontSize="sm" color="gray.500">Rows per page</Text>
-                  <Select size="sm" w="80px" value={limit} onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }}>
-                    {PAGE_SIZES.map((s) => <option key={s} value={s}>{s}</option>)}
-                  </Select>
-                  <Text fontSize="sm" color="gray.500">{pagination.total} result(s)</Text>
-                </HStack>
-                <HStack>
-                  <Text fontSize="sm" color="gray.500">
-                    Page {pagination.page} of {pagination.totalPages || 1}
-                  </Text>
-                  <Button size="sm" onClick={() => setPage((p) => Math.max(1, p - 1))} isDisabled={pagination.page <= 1}>Prev</Button>
-                  <Button size="sm" onClick={() => setPage((p) => p + 1)} isDisabled={pagination.page >= pagination.totalPages}>Next</Button>
-                </HStack>
-              </Flex>
+                    ))}
+                  </Tbody>
+                </Table>
+              </TableContainer>
             )}
+
+            {/* Pagination */}
+            <Flex
+              direction={{ base: "column", sm: "row" }}
+              justify="space-between"
+              align={{ base: "stretch", sm: "center" }}
+              p={4}
+              gap={3}
+            >
+              <HStack justify={{ base: "space-between", sm: "flex-start" }}>
+                <Text fontSize="sm" color="gray.500">Rows per page</Text>
+                <Select size="sm" w="80px" value={limit} onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }}>
+                  {PAGE_SIZES.map((s) => <option key={s} value={s}>{s}</option>)}
+                </Select>
+                <Text fontSize="sm" color="gray.500" whiteSpace="nowrap">{pagination.total} result(s)</Text>
+              </HStack>
+              <HStack justify={{ base: "space-between", sm: "flex-end" }}>
+                <Text fontSize="sm" color="gray.500" whiteSpace="nowrap">
+                  Page {pagination.page} of {pagination.totalPages || 1}
+                </Text>
+                <Button size="sm" onClick={() => setPage((p) => Math.max(1, p - 1))} isDisabled={pagination.page <= 1}>Prev</Button>
+                <Button size="sm" onClick={() => setPage((p) => p + 1)} isDisabled={pagination.page >= pagination.totalPages}>Next</Button>
+              </HStack>
+            </Flex>
           </>
         )}
       </Box>

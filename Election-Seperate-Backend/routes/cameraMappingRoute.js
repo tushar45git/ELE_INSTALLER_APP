@@ -13,6 +13,7 @@ const controller = require("../controllers/cameraMappingController");
 router.get("/meta/filters", controller.getFilterMeta); // districts + assemblies
 router.get("/meta/cameras", controller.searchCameras); // camera autocomplete
 router.get("/meta/suggestions", controller.getFormSuggestions); // form field autocomplete
+router.get("/meta/location", controller.getLocationForPs); // auto-fill location for (assembly, PS)
 router.get("/by-stream", controller.getByStream); // resolve device id -> mapping
 
 // Swap (resolves a DupDID conflict on the Map Camera page)

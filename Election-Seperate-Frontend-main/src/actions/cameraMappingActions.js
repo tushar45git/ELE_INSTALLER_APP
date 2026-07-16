@@ -86,6 +86,18 @@ export const getFormSuggestions = async (district = "", acname = "") => {
   }
 };
 
+/** Canonical location for an (assembly, PS number) pair (auto-fills Location). */
+export const getLocationForPs = async (acname, psNum) => {
+  try {
+    const { data } = await api.get("/meta/location", {
+      params: { acname, psNum },
+    });
+    return data;
+  } catch (error) {
+    return fail(error);
+  }
+};
+
 export const searchCameras = async (term = "", limit = 25) => {
   try {
     const { data } = await api.get("/meta/cameras", { params: { term, limit } });

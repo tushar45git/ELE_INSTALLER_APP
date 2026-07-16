@@ -9,7 +9,7 @@
 
 module.exports = {
   // ── Audit / page identifiers (exactly as the SP wrote them) ────────────────
-  PAGE_NAME: "BoothMaster.aspx",
+  PAGE_NAME: "Esp App",
   FROM_ADD: "Add Booth",
   FROM_EDIT: "Edit Booth",
   FROM_DELETE: "Delete Booth",

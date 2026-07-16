@@ -40,7 +40,12 @@ export default function HistoryModal({ isOpen, onClose, booth }) {
   }, [isOpen, booth]);
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="5xl" scrollBehavior="inside">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      size={{ base: "full", md: "5xl" }}
+      scrollBehavior="inside"
+    >
       <ModalOverlay />
       <ModalContent>
         <ModalHeader>

@@ -28,6 +28,7 @@ import {
   updateCameraMapping,
   searchCameras,
   getFormSuggestions,
+  getLocationForPs,
 } from "../../actions/cameraMappingActions";
 
 const CAMERA_LOCATION_TYPES = ["Inside", "Outside"];
@@ -86,6 +87,7 @@ export default function CameraMappingFormModal({
     psNumbers: [],
   });
   const suggestDebounce = useRef(null);
+  const locationDebounce = useRef(null);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -134,6 +136,33 @@ export default function CameraMappingFormModal({
     }, 250);
     return () => clearTimeout(suggestDebounce.current);
   }, [isOpen, form.district, form.acname]);
+
+  // Req 3: auto-fill Location for the chosen (assembly, PS number) so the
+  // location stays consistent with the rest of that booth and avoids conflicts.
+  useEffect(() => {
+    if (!isOpen) return;
+    const acname = form.acname?.trim();
+    const psNum = form.psNum?.trim();
+    if (!acname || !psNum) return;
+    if (locationDebounce.current) clearTimeout(locationDebounce.current);
+    locationDebounce.current = setTimeout(async () => {
+      const res = await getLocationForPs(acname, psNum);
+      if (res.success !== false && res.location) {
+        setForm((prev) =>
+          prev.location === res.location
+            ? prev
+            : { ...prev, location: res.location },
+        );
+      }
+    }, 350);
+    return () => clearTimeout(locationDebounce.current);
+  }, [isOpen, form.acname, form.psNum]);
+
+  // Clearing the PS number clears the auto-filled location too (no stale value).
+  const onPsNumChange = (value) => {
+    setField("psNum", value);
+    if (!value.trim()) setField("location", "");
+  };
 
   // Assembly code <-> name are paired in the DB; selecting one fills the other.
   const onAssemblyNameChange = (value) => {
@@ -246,7 +275,12 @@ export default function CameraMappingFormModal({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="3xl" scrollBehavior="inside">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      size={{ base: "full", md: "3xl" }}
+      scrollBehavior="inside"
+    >
       <ModalOverlay />
       <ModalContent>
         <ModalHeader>{isEdit ? "Edit Camera Mapping" : "Add Camera Mapping"}</ModalHeader>
@@ -362,7 +396,7 @@ export default function CameraMappingFormModal({
               <Input
                 list="cm-psnumbers"
                 value={form.psNum}
-                onChange={(e) => setField("psNum", e.target.value)}
+                onChange={(e) => onPsNumChange(e.target.value)}
               />
               <datalist id="cm-psnumbers">
                 {suggest.psNumbers.map((p) => (
@@ -418,11 +452,21 @@ export default function CameraMappingFormModal({
             </FormControl>
           </SimpleGrid>
         </ModalBody>
-        <ModalFooter gap={3}>
-          <Button variant="ghost" onClick={onClose} isDisabled={saving}>
+        <ModalFooter gap={3} flexDirection={{ base: "column-reverse", sm: "row" }}>
+          <Button
+            variant="ghost"
+            onClick={onClose}
+            isDisabled={saving}
+            w={{ base: "100%", sm: "auto" }}
+          >
             Cancel
           </Button>
-          <Button colorScheme="blue" onClick={handleSubmit} isLoading={saving}>
+          <Button
+            colorScheme="blue"
+            onClick={handleSubmit}
+            isLoading={saving}
+            w={{ base: "100%", sm: "auto" }}
+          >
             {isEdit ? "Update Mapping" : "Create Mapping"}
           </Button>
         </ModalFooter>

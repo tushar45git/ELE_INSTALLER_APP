@@ -129,7 +129,9 @@ const AutoInstaller = () => {
   const [deviceId, setDeviceId] = useState("");
   const [boothNo, setBoothNo] = useState("");
   const [excelLocation, setExcelLocation] = useState(" ");
-  const [state, setState] = useState(" ");
+  const [state, setState] = useState(
+    localStorage.getItem("state") || "Bihar",
+  );
   const [stateu, setStateu] = useState(" ");
   const [punjab, setPunjab] = useState(" ");
   const [tripura, setTripura] = useState(" ");
@@ -382,7 +384,8 @@ const AutoInstaller = () => {
       const fetchedDistrict = response.data.district;
       const fetchedExcelLocation = response.data.location;
 
-      setState(fetchedState);
+      // Default to the state chosen at login (e.g. Bihar) when the camera has none yet.
+      setState(fetchedState || localStorage.getItem("state") || "Bihar");
       setAssemblyName(fetchedAssemblyName);
       setPsNumber(fetchedPsNumber);
       setDistrict(fetchedDistrict);
@@ -776,7 +779,7 @@ const AutoInstaller = () => {
 
       console.log("response of submit", response);
       camera();
-      setState("");
+      setState(localStorage.getItem("state") || "Bihar");
       setDistrict("");
       setAssemblyName("");
       setCameraPhotoUrl("");
@@ -2231,7 +2234,8 @@ const AutoInstaller = () => {
                         )}
                       </div>
 
-                      {/* Location Data Form - Professional SaaS Redesign */}
+                      {/* Location Data Form — visible only once the camera is mapped (Req 1) */}
+                      {sqlMapping && (
                       <div
                         className="glass-card site-details-card"
                         style={{ padding: "24px" }}
@@ -2419,6 +2423,26 @@ const AutoInstaller = () => {
                           </div>
                         </VStack>
                       </div>
+                      )}
+
+                      {/* Unmapped: prompt to add mapping before any details show */}
+                      {!sqlMapping && (
+                        <div
+                          className="glass-card site-details-card"
+                          style={{ padding: "24px" }}
+                        >
+                          <VStack spacing={2} py={2} textAlign="center">
+                            <Heading className="section-title">
+                              Camera Not Mapped
+                            </Heading>
+                            <Text color="gray.500">
+                              This camera is not mapped yet. Add the mapping
+                              details to view the installation site details and
+                              submit the installation.
+                            </Text>
+                          </VStack>
+                        </div>
+                      )}
 
                       <Stack
                         direction={{ base: "column", sm: "row" }}
@@ -2441,19 +2465,21 @@ const AutoInstaller = () => {
                         >
                           {sqlMapping ? "Edit Mapping" : "Add Mapping"}
                         </Button>
-                        <Button
-                          colorScheme={!boothFound ? "gray" : "blue"}
-                          className={!boothFound ? "" : "btn-premium"}
-                          w="full"
-                          onClick={handleSubmit}
-                          isDisabled={!boothFound}
-                        >
-                          {!boothFound
-                            ? "Booth Not Found"
-                            : isEditing
-                            ? "Save & Submit"
-                            : "Submit Installation"}
-                        </Button>
+                        {sqlMapping && (
+                          <Button
+                            colorScheme={!boothFound ? "gray" : "blue"}
+                            className={!boothFound ? "" : "btn-premium"}
+                            w="full"
+                            onClick={handleSubmit}
+                            isDisabled={!boothFound}
+                          >
+                            {!boothFound
+                              ? "Booth Not Found"
+                              : isEditing
+                              ? "Save & Submit"
+                              : "Submit Installation"}
+                          </Button>
+                        )}
                       </Stack>
                     </VStack>
                   </VStack>
