@@ -21,8 +21,10 @@ import {
   InputGroup,
   InputRightElement,
   Spinner,
+  IconButton,
   useToast,
 } from "@chakra-ui/react";
+import { MdKeyboardArrowDown } from "react-icons/md";
 import {
   createCameraMapping,
   updateCameraMapping,
@@ -32,6 +34,110 @@ import {
 } from "../../actions/cameraMappingActions";
 
 const CAMERA_LOCATION_TYPES = ["Inside", "Outside"];
+
+/**
+ * A dropdown-combobox that works reliably in the mobile WebView (native
+ * <datalist> does not). Shows a filterable list of `options` on focus / typing
+ * yet still allows free-text entry for brand-new values.
+ *
+ * options: [{ value, label?, sub? }]
+ */
+function ComboField({ value, onChange, options, placeholder, isInvalid }) {
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef(null);
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    document.addEventListener("touchstart", handler);
+    return () => {
+      document.removeEventListener("mousedown", handler);
+      document.removeEventListener("touchstart", handler);
+    };
+  }, []);
+
+  const q = String(value || "").toLowerCase();
+  const filtered = options
+    .filter(
+      (o) =>
+        String(o.value).toLowerCase().includes(q) ||
+        String(o.label || "").toLowerCase().includes(q) ||
+        String(o.sub || "").toLowerCase().includes(q),
+    )
+    .slice(0, 50);
+
+  const pick = (o) => {
+    onChange(o.value);
+    setOpen(false);
+  };
+
+  return (
+    <Box position="relative" ref={wrapRef}>
+      <InputGroup>
+        <Input
+          value={value}
+          placeholder={placeholder}
+          isInvalid={isInvalid}
+          autoComplete="off"
+          onChange={(e) => {
+            onChange(e.target.value);
+            setOpen(true);
+          }}
+          onFocus={() => setOpen(true)}
+        />
+        <InputRightElement>
+          <IconButton
+            size="sm"
+            variant="ghost"
+            aria-label="Show options"
+            tabIndex={-1}
+            icon={<MdKeyboardArrowDown />}
+            onClick={() => setOpen((o) => !o)}
+          />
+        </InputRightElement>
+      </InputGroup>
+      {open && filtered.length > 0 && (
+        <List
+          position="absolute"
+          zIndex={30}
+          bg="white"
+          _dark={{ bg: "gray.700" }}
+          border="1px solid"
+          borderColor="gray.200"
+          borderRadius="md"
+          w="100%"
+          maxH="220px"
+          overflowY="auto"
+          boxShadow="lg"
+          mt={1}
+        >
+          {filtered.map((o) => (
+            <ListItem
+              key={`${o.value}-${o.label || ""}`}
+              px={3}
+              py={2}
+              cursor="pointer"
+              _hover={{ bg: "blue.50", _dark: { bg: "gray.600" } }}
+              onClick={() => pick(o)}
+            >
+              <Text fontWeight="500">{o.label || o.value}</Text>
+              {o.sub ? (
+                <Text fontSize="xs" color="gray.500">{o.sub}</Text>
+              ) : null}
+            </ListItem>
+          ))}
+        </List>
+      )}
+    </Box>
+  );
+}
+
+// Defaults pre-filled when ADDING a new mapping (editing keeps the record's values).
+const DEFAULT_ADD_DISTRICT = "PATNA";
+const DEFAULT_ADD_ACCODE = "182";
+const DEFAULT_ADD_ACNAME = "182-Bankipur";
 
 const EMPTY = {
   streamId: "",
@@ -91,27 +197,35 @@ export default function CameraMappingFormModal({
 
   useEffect(() => {
     if (!isOpen) return;
-    if (initialData) {
-      setForm({
-        streamId: initialData.streamid ?? "",
-        streamName: initialData.streamname ?? "",
-        district: initialData.district ?? "",
-        accode: initialData.accode ?? "",
-        acname: initialData.acname ?? "",
-        psNum: initialData.PSNum ?? "",
-        location: initialData.location ?? "",
-        cameraLocationType: initialData.cameralocationtype ?? "Inside",
-        operatorName: initialData.operatorName ?? "",
-        operatorNumber: initialData.operatorNumber ?? "",
-        operatorDesignation: initialData.operatorDesignation ?? "",
-        longitude: initialData.longitude ?? "",
-        latitude: initialData.latitude ?? "",
-      });
-      setCameraQuery(initialData.streamname ?? "");
-    } else {
-      setForm(EMPTY);
-      setCameraQuery("");
+    const base = initialData
+      ? {
+          streamId: initialData.streamid ?? "",
+          streamName: initialData.streamname ?? "",
+          district: initialData.district ?? "",
+          accode: initialData.accode ?? "",
+          acname: initialData.acname ?? "",
+          psNum: initialData.PSNum ?? "",
+          location: initialData.location ?? "",
+          cameraLocationType: initialData.cameralocationtype ?? "Inside",
+          operatorName: initialData.operatorName ?? "",
+          operatorNumber: initialData.operatorNumber ?? "",
+          operatorDesignation: initialData.operatorDesignation ?? "",
+          longitude: initialData.longitude ?? "",
+          latitude: initialData.latitude ?? "",
+        }
+      : { ...EMPTY };
+
+    // Adding a new mapping (no booth id) -> default District/Assembly.
+    if (!initialData?.id) {
+      if (!base.district) base.district = DEFAULT_ADD_DISTRICT;
+      if (!base.accode) {
+        base.accode = DEFAULT_ADD_ACCODE;
+        if (!base.acname) base.acname = DEFAULT_ADD_ACNAME;
+      }
     }
+
+    setForm(base);
+    setCameraQuery(initialData?.streamname ?? "");
     setErrors({});
     setShowOptions(false);
   }, [isOpen, initialData]);
@@ -278,11 +392,17 @@ export default function CameraMappingFormModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      size={{ base: "full", md: "3xl" }}
+      size={{ base: "sm", md: "3xl" }}
       scrollBehavior="inside"
+      isCentered
     >
       <ModalOverlay />
-      <ModalContent>
+      <ModalContent
+        mx={{ base: 4, md: 6 }}
+        my={{ base: 6, md: 8 }}
+        maxH={{ base: "85vh", md: "85vh" }}
+        borderRadius="xl"
+      >
         <ModalHeader>{isEdit ? "Edit Camera Mapping" : "Add Camera Mapping"}</ModalHeader>
         <ModalCloseButton />
         <ModalBody>
@@ -346,63 +466,54 @@ export default function CameraMappingFormModal({
 
             <FormControl isInvalid={!!errors.district} isRequired>
               <FormLabel>District</FormLabel>
-              <Input
-                list="cm-districts"
+              <ComboField
                 value={form.district}
-                onChange={(e) => setField("district", e.target.value)}
+                onChange={(v) => setField("district", v)}
+                options={suggest.districts.map((d) => ({ value: d }))}
+                placeholder="Select or type a district"
+                isInvalid={!!errors.district}
               />
-              <datalist id="cm-districts">
-                {suggest.districts.map((d) => (
-                  <option key={d} value={d} />
-                ))}
-              </datalist>
               <FormErrorMessage>{errors.district}</FormErrorMessage>
             </FormControl>
 
             <FormControl isInvalid={!!errors.accode} isRequired>
               <FormLabel>Assembly Code</FormLabel>
-              <Input
-                list="cm-accodes"
+              <ComboField
                 value={form.accode}
-                onChange={(e) => onAssemblyCodeChange(e.target.value)}
+                onChange={onAssemblyCodeChange}
+                options={suggest.assemblies.map((a) => ({
+                  value: String(a.accode),
+                  sub: a.acname,
+                }))}
+                placeholder="Select or type an assembly code"
+                isInvalid={!!errors.accode}
               />
-              <datalist id="cm-accodes">
-                {suggest.assemblies.map((a) => (
-                  <option key={`${a.accode}-${a.acname}`} value={a.accode}>
-                    {a.acname}
-                  </option>
-                ))}
-              </datalist>
               <FormErrorMessage>{errors.accode}</FormErrorMessage>
             </FormControl>
 
             <FormControl isInvalid={!!errors.acname} isRequired>
               <FormLabel>Assembly Name</FormLabel>
-              <Input
-                list="cm-acnames"
+              <ComboField
                 value={form.acname}
-                onChange={(e) => onAssemblyNameChange(e.target.value)}
+                onChange={onAssemblyNameChange}
+                options={suggest.assemblies.map((a) => ({
+                  value: a.acname,
+                  sub: `Code ${a.accode}`,
+                }))}
+                placeholder="Select or type an assembly name"
+                isInvalid={!!errors.acname}
               />
-              <datalist id="cm-acnames">
-                {suggest.assemblies.map((a) => (
-                  <option key={`${a.acname}-${a.accode}`} value={a.acname} />
-                ))}
-              </datalist>
               <FormErrorMessage>{errors.acname}</FormErrorMessage>
             </FormControl>
 
             <FormControl>
               <FormLabel>PS Number</FormLabel>
-              <Input
-                list="cm-psnumbers"
+              <ComboField
                 value={form.psNum}
-                onChange={(e) => onPsNumChange(e.target.value)}
+                onChange={onPsNumChange}
+                options={suggest.psNumbers.map((p) => ({ value: p }))}
+                placeholder="Select or type a PS number"
               />
-              <datalist id="cm-psnumbers">
-                {suggest.psNumbers.map((p) => (
-                  <option key={p} value={p} />
-                ))}
-              </datalist>
             </FormControl>
 
             <FormControl isInvalid={!!errors.location} isRequired>
@@ -424,32 +535,10 @@ export default function CameraMappingFormModal({
               <FormErrorMessage>{errors.cameraLocationType}</FormErrorMessage>
             </FormControl>
 
-            <FormControl>
-              <FormLabel>Operator Name</FormLabel>
-              <Input value={form.operatorName} onChange={(e) => setField("operatorName", e.target.value)} />
-            </FormControl>
-
-            <FormControl>
-              <FormLabel>Operator Number</FormLabel>
-              <Input value={form.operatorNumber} onChange={(e) => setField("operatorNumber", e.target.value)} />
-            </FormControl>
-
-            <FormControl>
-              <FormLabel>Operator Designation</FormLabel>
-              <Input value={form.operatorDesignation} onChange={(e) => setField("operatorDesignation", e.target.value)} />
-            </FormControl>
-
-            <FormControl isInvalid={!!errors.longitude}>
-              <FormLabel>Longitude</FormLabel>
-              <Input value={form.longitude} onChange={(e) => setField("longitude", e.target.value)} />
-              <FormErrorMessage>{errors.longitude}</FormErrorMessage>
-            </FormControl>
-
-            <FormControl isInvalid={!!errors.latitude}>
-              <FormLabel>Latitude</FormLabel>
-              <Input value={form.latitude} onChange={(e) => setField("latitude", e.target.value)} />
-              <FormErrorMessage>{errors.latitude}</FormErrorMessage>
-            </FormControl>
+            {/* Operator (name/number/designation) and Longitude/Latitude are
+                hidden from the form — the backend defaults them (operator ->
+                NA / 1234567890, lat/long -> 0). Re-add the FormControls here to
+                collect them again. */}
           </SimpleGrid>
         </ModalBody>
         <ModalFooter gap={3} flexDirection={{ base: "column-reverse", sm: "row" }}>

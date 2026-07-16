@@ -1730,7 +1730,7 @@ const AutoInstaller = () => {
                         transition="all 0.2s"
                         boxShadow="sm"
                       >
-                        Installation List
+                        Back
                       </Button>
                     </Flex>
 
