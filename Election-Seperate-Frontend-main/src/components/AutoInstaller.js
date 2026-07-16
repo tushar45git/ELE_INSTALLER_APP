@@ -1710,7 +1710,7 @@ const AutoInstaller = () => {
                         Device Configuration
                       </Heading>
                       <Button
-                        size="sm"
+                        size="md"
                         variant="outline"
                         leftIcon={<FaArrowLeft />}
                         borderRadius="full"

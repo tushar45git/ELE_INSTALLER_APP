@@ -552,6 +552,7 @@ export default function CameraMappingFormModal({
           </Button>
           <Button
             colorScheme="blue"
+            className="btn-premium"
             onClick={handleSubmit}
             isLoading={saving}
             w={{ base: "100%", sm: "auto" }}
