@@ -143,117 +143,11 @@
 [class*="chakra"] {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif !important;
 }
+/* Color/background/border forcing removed so Chakra color-mode + semantic
+   tokens govern every Chakra component. The Inter font is still applied via
+   the [class*="chakra"] rule above. AutoInstaller keeps its look through its
+   own custom classes (.glass-card, .custom-input, .premium-table, .btn-*). */
 
-/* Override Chakra UI Box backgrounds */
-.chakra-box {
-    background-color: transparent !important;
-}
-
-/* Override Chakra UI Text colors */
-.chakra-text {
-    color: var(--gray-700) !important;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif !important;
-}
-
-/* Override Chakra UI Heading colors and fonts */
-.chakra-heading {
-    color: var(--gray-900) !important;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif !important;
-    font-weight: 700 !important;
-}
-
-/* Override Chakra UI Input styling */
-.chakra-input {
-    border-color: var(--gray-200) !important;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif !important;
-}
-
-.chakra-input:hover {
-    border-color: var(--gray-300) !important;
-}
-
-.chakra-input:focus,
-.chakra-input[data-focus] {
-    border-color: var(--primary-500) !important;
-    box-shadow: 0 0 0 1px var(--primary-500) !important;
-}
-
-/* Override Chakra UI Input Group */
-.chakra-input__group {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif !important;
-}
-
-/* Override Chakra UI Stack spacing */
-.chakra-stack {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif !important;
-}
-
-/* Override Chakra UI Flex */
-.chakra-flex {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif !important;
-}
-
-/* Override Chakra UI VStack */
-.chakra-vstack {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif !important;
-}
-
-/* Override Chakra UI HStack */
-.chakra-hstack {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif !important;
-}
-
-/* Override Chakra UI Modal */
-.chakra-modal__content {
-    border-radius: var(--radius-xl) !important;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif !important;
-}
-
-.chakra-modal__header {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif !important;
-    font-weight: 700 !important;
-    color: var(--gray-900) !important;
-}
-
-.chakra-modal__body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif !important;
-    color: var(--gray-700) !important;
-}
-
-/* Override Chakra UI Table */
-.chakra-table {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif !important;
-}
-
-.chakra-table th {
-    color: var(--gray-700) !important;
-    font-weight: 600 !important;
-    background: linear-gradient(180deg, var(--gray-50) 0%, var(--gray-100) 100%) !important;
-    border-color: var(--gray-200) !important;
-}
-
-.chakra-table td {
-    color: var(--gray-700) !important;
-    border-color: var(--gray-200) !important;
-}
-
-.chakra-table tbody tr:hover {
-    background: var(--primary-50) !important;
-}
-
-/* Override Chakra UI Divider */
-.chakra-divider {
-    border-color: var(--gray-200) !important;
-}
-
-/* Override Chakra UI List */
-.chakra-list {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif !important;
-}
-
-.chakra-list__item {
-    color: var(--gray-700) !important;
-}
 
 /* Override Chakra UI Icon Button */
 .chakra-icon-button {
@@ -609,17 +503,11 @@ button[data-colorscheme="red"][data-variant="outline"]:hover {
     border-color: var(--error-600) !important;
 }
 
-/* Default buttons without colorScheme */
-button:not([data-colorscheme]):not(.btn-premium):not(.btn-secondary) {
-    background: white !important;
-    color: var(--gray-700) !important;
-    border: 1px solid var(--gray-200) !important;
-}
-
-button:not([data-colorscheme]):not(.btn-premium):not(.btn-secondary):hover {
-    background: var(--gray-50) !important;
-    border-color: var(--gray-300) !important;
-}
+/* NOTE: the previous "default button -> white !important" rule was removed.
+   It matched ALL plain Chakra buttons (Chakra doesn't emit data-colorscheme),
+   forcing them white in every theme — the washed-out button in dark mode.
+   Plain buttons now use Chakra's own themed styling; AutoInstaller's primary
+   buttons keep .btn-premium / .btn-secondary. */
 
 /* Form Components */
 .form-group {
@@ -1218,128 +1106,99 @@ button:not([data-colorscheme]):not(.btn-premium):not(.btn-secondary):hover {
     }
 }
 
+/* (Removed legacy inline-style color-prop overrides — Chakra theming governs colors now) */
+
 /* ==========================================================================
-   CHAKRA UI COLOR PROP OVERRIDES - Force Custom Colors
+   DARK MODE — enterprise charcoal theme (GitHub/Linear/Vercel inspired)
+   Driven by [data-theme="dark"] set on <html> from Chakra's color mode.
+   Inverts the neutral ramp (light surfaces -> dark, dark text -> light) and
+   overrides the few selectors that used hardcoded literals instead of vars.
    ========================================================================== */
+:root[data-theme="dark"] {
+    /* Inverted neutral ramp */
+    --gray-950: #f9fafb;
+    --gray-900: #f0f6fc; /* primary text -> near white */
+    --gray-800: #e6edf3;
+    --gray-700: #c9d1d9; /* body/label text -> light gray */
+    --gray-600: #b1bac4; /* secondary text */
+    --gray-500: #8b949e; /* muted text */
+    --gray-400: #6e7681;
+    --gray-300: #484f58;
+    --gray-200: #30363d; /* borders */
+    --gray-100: #21262d; /* elevated surface */
+    --gray-50:  #161b22; /* surface */
 
-/* Override Chakra UI blue color scheme with our indigo */
-[data-theme] [style*="blue.50"],
-[style*="blue.50"] {
-    color: var(--primary-50) !important;
+    /* Page + card backgrounds */
+    --bg-primary:   #0d1117;
+    --bg-secondary: #010409;
+    --bg-card:      #161b22;
+
+    /* Elegant, deeper shadows for dark elevation */
+    --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.4);
+    --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.5), 0 1px 2px 0 rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.55), 0 4px 6px -2px rgba(0, 0, 0, 0.4);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.6), 0 10px 10px -5px rgba(0, 0, 0, 0.45);
+    --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
 }
 
-[data-theme] [style*="blue.100"],
-[style*="blue.100"] {
-    color: var(--primary-100) !important;
+/* Selectors that hardcoded white / light literals (vars alone can't reach them) */
+:root[data-theme="dark"] .sticky-header {
+    background: rgba(22, 27, 34, 0.92);
+    border-bottom-color: var(--gray-200);
 }
-
-[data-theme] [style*="blue.200"],
-[style*="blue.200"] {
-    color: var(--primary-200) !important;
+:root[data-theme="dark"] .custom-input,
+:root[data-theme="dark"] .search-section .custom-input {
+    background: #0d1117 !important;
+    color: var(--gray-900);
+    border-color: var(--gray-200);
 }
-
-[data-theme] [style*="blue.300"],
-[style*="blue.300"] {
+:root[data-theme="dark"] .custom-input::placeholder {
+    color: var(--gray-500);
+}
+:root[data-theme="dark"] .custom-input[readonly] {
+    background: #010409;
+    color: var(--gray-600);
+}
+:root[data-theme="dark"] .custom-input:disabled {
+    background: #010409;
+    color: var(--gray-500);
+}
+:root[data-theme="dark"] .btn-secondary,
+:root[data-theme="dark"] button:not(.chakra-button):not(.btn-premium):not([class*="chakra"]) {
+    background: #21262d !important;
+    color: var(--gray-800);
+    border-color: var(--gray-200);
+}
+:root[data-theme="dark"] .btn-secondary:hover {
+    background: #2d333b !important;
+    color: var(--primary-300);
+}
+:root[data-theme="dark"] .floating-refresh-btn {
+    background: #161b22;
+    color: var(--primary-300);
+    border-color: var(--gray-200);
+}
+:root[data-theme="dark"] .header-status-badge {
+    background: rgba(99, 102, 241, 0.15);
+    color: var(--primary-300);
+    border-color: rgba(99, 102, 241, 0.35);
+}
+/* Section titles use --primary-800 (very dark indigo) — lift for contrast */
+:root[data-theme="dark"] .section-title,
+:root[data-theme="dark"] .site-details-title {
     color: var(--primary-300) !important;
 }
-
-[data-theme] [style*="blue.400"],
-[style*="blue.400"] {
-    color: var(--primary-400) !important;
+/* Table header gradient reads as light in dark; recolor */
+:root[data-theme="dark"] .premium-table th {
+    background: linear-gradient(180deg, #1c2128, #161b22);
+    color: var(--gray-700);
+    border-bottom-color: var(--gray-200);
 }
-
-[data-theme] [style*="blue.500"],
-[style*="blue.500"] {
-    color: var(--primary-500) !important;
+:root[data-theme="dark"] .premium-table tbody tr:hover {
+    background: rgba(99, 102, 241, 0.12);
 }
-
-[data-theme] [style*="blue.600"],
-[style*="blue.600"] {
-    color: var(--primary-600) !important;
-}
-
-[data-theme] [style*="blue.700"],
-[style*="blue.700"] {
-    color: var(--primary-700) !important;
-}
-
-[data-theme] [style*="blue.800"],
-[style*="blue.800"] {
-    color: var(--primary-800) !important;
-}
-
-[data-theme] [style*="blue.900"],
-[style*="blue.900"] {
-    color: var(--primary-900) !important;
-}
-
-/* Override specific Chakra color utilities */
-.css-[class*="blue"] {
-    color: var(--primary-600) !important;
-}
-
-/* Force our gray colors */
-[style*="gray.50"] {
-    color: var(--gray-50) !important;
-}
-
-[style*="gray.100"] {
-    color: var(--gray-100) !important;
-}
-
-[style*="gray.200"] {
-    color: var(--gray-200) !important;
-}
-
-[style*="gray.300"] {
-    color: var(--gray-300) !important;
-}
-
-[style*="gray.400"] {
-    color: var(--gray-400) !important;
-}
-
-[style*="gray.500"] {
-    color: var(--gray-500) !important;
-}
-
-[style*="gray.600"] {
-    color: var(--gray-600) !important;
-}
-
-[style*="gray.700"] {
-    color: var(--gray-700) !important;
-}
-
-[style*="gray.800"] {
-    color: var(--gray-800) !important;
-}
-
-[style*="gray.900"] {
-    color: var(--gray-900) !important;
-}
-
-/* Override Chakra UI's default blue backgrounds */
-[class*="bg-blue"] {
-    background-color: var(--primary-50) !important;
-}
-
-/* Override Chakra UI's default blue borders */
-[class*="border-blue"] {
-    border-color: var(--primary-400) !important;
-}
-
-/* Additional specific overrides for common Chakra patterns */
-.chakra-ui-light [data-theme],
-.chakra-ui-dark [data-theme] {
-    --chakra-colors-blue-50: var(--primary-50) !important;
-    --chakra-colors-blue-100: var(--primary-100) !important;
-    --chakra-colors-blue-200: var(--primary-200) !important;
-    --chakra-colors-blue-300: var(--primary-300) !important;
-    --chakra-colors-blue-400: var(--primary-400) !important;
-    --chakra-colors-blue-500: var(--primary-500) !important;
-    --chakra-colors-blue-600: var(--primary-600) !important;
-    --chakra-colors-blue-700: var(--primary-700) !important;
-    --chakra-colors-blue-800: var(--primary-800) !important;
-    --chakra-colors-blue-900: var(--primary-900) !important;
-}
+/* Soft status badges: darken the wash so light text sits on it */
+:root[data-theme="dark"] .badge-success { background: rgba(16,185,129,0.15); color: #6ee7b7; }
+:root[data-theme="dark"] .badge-error   { background: rgba(239,68,68,0.15);  color: #fca5a5; }
+:root[data-theme="dark"] .badge-warning { background: rgba(245,158,11,0.15); color: #fcd34d; }

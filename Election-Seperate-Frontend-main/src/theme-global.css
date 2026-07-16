@@ -1,0 +1,11 @@
+/* Global, always-loaded theme tweaks for third-party libraries whose colors
+   are fixed and don't follow Chakra's color mode. Driven by the same
+   [data-theme] attribute App.js mirrors from Chakra's color mode. */
+
+/* react-toastify: its default ("light") theme reads these CSS vars. Overriding
+   them under dark makes toasts match the dark UI without touching call sites. */
+:root[data-theme="dark"] {
+  --toastify-color-light: #1c2128;
+  --toastify-text-color-light: #e6edf3;
+  --toastify-color-progress-light: linear-gradient(90deg, #6366f1, #818cf8);
+}

@@ -19,14 +19,34 @@ import {
   ScaleFade,
   Divider,
   Select,
+  useColorModeValue,
 } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
 import { login, verifyOtp } from "../actions/userActions";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import logo from "./images/logo/Vmuktilogo.png";
+import ThemeToggle from "./ThemeToggle";
 
 const Login = () => {
+  // Theme-aware colors (light / dark)
+  const pageBg = useColorModeValue(
+    "linear(to-br, #f0f4f8, #d9e2ec)",
+    "linear(to-br, #0d1117, #010409)",
+  );
+  const cardBg = useColorModeValue("rgba(255,255,255,0.85)", "rgba(22,27,34,0.92)");
+  const cardBorder = useColorModeValue(
+    "1px solid rgba(255,255,255,0.4)",
+    "1px solid #30363d",
+  );
+  const blobColor = useColorModeValue("blue.100", "blue.900");
+  const blobColor2 = useColorModeValue("blue.200", "purple.900");
+  const headingColor = useColorModeValue("gray.800", "gray.100");
+  const subColor = useColorModeValue("gray.600", "gray.400");
+  const labelColor = useColorModeValue("gray.700", "gray.300");
+  const inputBg = useColorModeValue("white", "#0d1117");
+  const addonBg = useColorModeValue("gray.100", "#21262d");
+
   const [name, setName] = useState("");
   const [mobile, setMobile] = useState("");
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
@@ -223,13 +243,20 @@ const Login = () => {
       display="flex"
       alignItems="center"
       justifyContent="center"
-      bgGradient="linear(to-br, #f0f4f8, #d9e2ec)"
+      bgGradient={pageBg}
       position="relative"
       overflow="hidden"
       p={4}
       pt="max(1rem, env(safe-area-inset-top))"
       pb="max(1rem, env(safe-area-inset-bottom))"
     >
+      {/* Theme toggle */}
+      <ThemeToggle
+        position="absolute"
+        top="max(1rem, env(safe-area-inset-top))"
+        right={4}
+        zIndex={2}
+      />
       {/* Decorative Elements */}
       <Box
         position="absolute"
@@ -237,7 +264,7 @@ const Login = () => {
         right="-10%"
         w="400px"
         h="400px"
-        bg="blue.100"
+        bg={blobColor}
         filter="blur(100px)"
         borderRadius="full"
         opacity="0.6"
@@ -248,7 +275,7 @@ const Login = () => {
         left="-10%"
         w="400px"
         h="400px"
-        bg="blue.200"
+        bg={blobColor2}
         filter="blur(100px)"
         borderRadius="full"
         opacity="0.6"
@@ -258,12 +285,12 @@ const Login = () => {
         <ScaleFade initialScale={0.9} in={true}>
           <VStack
             spacing={{ base: 6, md: 8 }}
-            bg="rgba(255, 255, 255, 0.85)"
+            bg={cardBg}
             backdropFilter="blur(20px)"
             p={{ base: 6, sm: 8, md: 10 }}
             borderRadius={{ base: "2xl", md: "3xl" }}
             boxShadow="2xl"
-            border="1px solid rgba(255, 255, 255, 0.4)"
+            border={cardBorder}
             textAlign="center"
             w="full"
           >
@@ -277,13 +304,13 @@ const Login = () => {
               <Heading
                 as="h1"
                 size={{ base: "md", md: "lg" }}
-                color="gray.800"
+                color={headingColor}
                 fontWeight="800"
                 letterSpacing="-0.5px"
               >
                 Election Installer App
               </Heading>
-              <Text color="gray.600" fontSize={{ base: "sm", md: "md" }}>
+              <Text color={subColor} fontSize={{ base: "sm", md: "md" }}>
                 Securely access your account to proceed
               </Text>
             </VStack>
@@ -291,12 +318,12 @@ const Login = () => {
             {!otpSent ? (
               <VStack spacing={5} w="full">
                 <FormControl isRequired>
-                  <FormLabel fontWeight="700" color="gray.700" fontSize="sm">
+                  <FormLabel fontWeight="700" color={labelColor} fontSize="sm">
                     Full Name
                   </FormLabel>
                   <Input
                     placeholder="Enter your name"
-                    bg="white"
+                    bg={inputBg}
                     size="md"
                     borderRadius="xl"
                     boxShadow="sm"
@@ -310,14 +337,14 @@ const Login = () => {
                 </FormControl>
 
                 <FormControl isRequired>
-                  <FormLabel fontWeight="700" color="gray.700" fontSize="sm">
+                  <FormLabel fontWeight="700" color={labelColor} fontSize="sm">
                     Mobile Number
                   </FormLabel>
                   <InputGroup size="md">
                     <InputLeftAddon
                       borderLeftRadius="xl"
-                      bg="gray.100"
-                      color="gray.600"
+                      bg={addonBg}
+                      color={subColor}
                       fontWeight="600"
                     >
                       +91
@@ -325,7 +352,7 @@ const Login = () => {
                     <Input
                       type="tel"
                       placeholder="Enter mobile number"
-                      bg="white"
+                      bg={inputBg}
                       size="md"
                       borderRightRadius="xl"
                       boxShadow="sm"
@@ -340,12 +367,12 @@ const Login = () => {
                 </FormControl>
 
                 <FormControl isRequired>
-                  <FormLabel fontWeight="700" color="gray.700" fontSize="sm">
+                  <FormLabel fontWeight="700" color={labelColor} fontSize="sm">
                     Select State
                   </FormLabel>
                   <Select
                     placeholder="Choose State"
-                    bg="white"
+                    bg={inputBg}
                     size="md"
                     borderRadius="xl"
                     boxShadow="sm"
@@ -370,12 +397,12 @@ const Login = () => {
 
                 {selectedState && (
                   <FormControl isRequired>
-                    <FormLabel fontWeight="700" color="gray.700" fontSize="sm">
+                    <FormLabel fontWeight="700" color={labelColor} fontSize="sm">
                       Select District
                     </FormLabel>
                     <Select
                       placeholder="Choose District"
-                      bg="white"
+                      bg={inputBg}
                       size="md"
                       borderRadius="xl"
                       boxShadow="sm"
@@ -454,11 +481,11 @@ const Login = () => {
                     <Text
                       fontWeight="800"
                       fontSize={{ base: "lg", md: "xl" }}
-                      color="gray.800"
+                      color={headingColor}
                     >
                       Verify Identity
                     </Text>
-                    <Text color="gray.600" fontSize="sm">
+                    <Text color={subColor} fontSize="sm">
                       Enter the 6-digit code sent to
                     </Text>
                     <Text fontWeight="800" color="blue.600">
@@ -480,7 +507,7 @@ const Login = () => {
                         textAlign="center"
                         fontSize={{ base: "xl", md: "2xl" }}
                         fontWeight="800"
-                        bg="white"
+                        bg={inputBg}
                         borderRadius="lg"
                         border="2px solid"
                         borderColor="gray.200"
@@ -528,7 +555,7 @@ const Login = () => {
                   </Button>
 
                   <HStack justify="center" pt={2} flexWrap="wrap">
-                    <Text fontSize="sm" color="gray.600">
+                    <Text fontSize="sm" color={subColor}>
                       Didn't receive the code?
                     </Text>
                     <Button

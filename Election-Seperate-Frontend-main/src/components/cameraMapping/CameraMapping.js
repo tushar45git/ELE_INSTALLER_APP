@@ -293,7 +293,7 @@ export default function CameraMapping() {
   );
 
   return (
-    <Box p={{ base: 3, md: 6 }} bg="gray.50" _dark={{ bg: "gray.900" }} minH="100vh">
+    <Box p={{ base: 3, md: 6 }} bg="app-bg" minH="100vh">
       {/* Header */}
       <Flex
         direction={{ base: "column", md: "row" }}
@@ -323,7 +323,7 @@ export default function CameraMapping() {
       </Flex>
 
       {/* Toolbar — single search bar only */}
-      <Box bg="white" _dark={{ bg: "gray.800" }} p={{ base: 3, md: 4 }} borderRadius="xl" boxShadow="sm" mb={4}>
+      <Box bg="surface" p={{ base: 3, md: 4 }} borderRadius="xl" boxShadow="sm" mb={4}>
         <Flex gap={3} wrap="wrap" align="center">
           <InputGroup flex={{ base: "1 1 100%", md: "0 1 420px" }}>
             <InputLeftElement pointerEvents="none"><MdSearch color="gray" /></InputLeftElement>
@@ -372,7 +372,7 @@ export default function CameraMapping() {
       </Box>
 
       {/* Results */}
-      <Box bg="white" _dark={{ bg: "gray.800" }} borderRadius="xl" boxShadow="sm" overflow="hidden">
+      <Box bg="surface" borderRadius="xl" boxShadow="sm" overflow="hidden">
         {!hasQuery && !loading ? (
           // Idle prompt — no full list is ever shown up front.
           <Center py={{ base: 12, md: 20 }} px={4}>
@@ -399,8 +399,7 @@ export default function CameraMapping() {
                   <Box
                     key={r.id}
                     borderWidth="1px"
-                    borderColor="gray.200"
-                    _dark={{ borderColor: "gray.700" }}
+                    borderColor="border-subtle"
                     borderRadius="lg"
                     p={4}
                   >
@@ -432,7 +431,7 @@ export default function CameraMapping() {
               /* ── Desktop: full table ── */
               <TableContainer>
                 <Table size="sm">
-                  <Thead bg="gray.100" _dark={{ bg: "gray.700" }}>
+                  <Thead bg="surface-hover">
                     <Tr>
                       {COLUMNS.map((c) => (
                         <Th key={c.key} cursor="pointer" onClick={() => toggleSort(c.key)} userSelect="none" whiteSpace="nowrap">

@@ -15,6 +15,7 @@ import {
 import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import DrawerButton from "./Drawer";
+import ThemeToggle from "./ThemeToggle";
 import { MdAccountCircle } from "react-icons/md";
 import logo from "./images/logo/Vmuktilogo.png";
 import logo1 from "./images/logo/logo1.png";
@@ -81,11 +82,12 @@ const Header = () => {
             </Heading>
             {/* <Button onClick={handleSignOut} alignSelf="flex-end">Logout</Button> */}
             <Stack direction="row" alignItems="center">
+              <ThemeToggle />
               {/* <Menu>
                                 <MenuButton fontSize={fontSize} as={IconButton} aria-label="Profile" backgroundColor='#fff'><img width='80%' src={logo1} /></MenuButton>
                                 <MenuList>
                                     <MenuItem>
-                                    <Button  variant="outline"><img width='10%' src={logo1} />VMUKTI ELECTION APP</Button> 
+                                    <Button  variant="outline"><img width='10%' src={logo1} />VMUKTI ELECTION APP</Button>
                                     </MenuItem>
                                 </MenuList>
                             </Menu> */}
@@ -142,13 +144,15 @@ const Header = () => {
               &nbsp;
             </Heading>
             {/* <Button onClick={handleSignOut} alignSelf="flex-end">Logout</Button> */}
-            <Menu>
-              <MenuButton
-                as={IconButton}
-                icon={<MdAccountCircle />}
-                aria-label="Profile"
-                variant="outline"
-              />
+            <Stack direction="row" alignItems="center">
+              <ThemeToggle />
+              <Menu>
+                <MenuButton
+                  as={IconButton}
+                  icon={<MdAccountCircle />}
+                  aria-label="Profile"
+                  variant="outline"
+                />
               <MenuList>
                 {/* Display name and mobile */}
                 <MenuItem>
@@ -159,12 +163,13 @@ const Header = () => {
                   </Stack>
                 </MenuItem>
                 <MenuItem onClick={handleSignOut}>
-                  <Button background="white" variant="link" color="red">
+                  <Button variant="link" color="red">
                     Logout
                   </Button>
                 </MenuItem>
               </MenuList>
             </Menu>
+            </Stack>
             {/* {isLoggedIn && <Button onClick={handleSignOut} display='flex' alignItems='center'>Logout</Button>} */}
           </Stack>
         </div>

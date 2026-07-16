@@ -1,5 +1,5 @@
 // src/App.js
-import React from "react";
+import React, { useEffect } from "react";
 import {
   BrowserRouter as Router,
   Route,
@@ -7,7 +7,7 @@ import {
   useLocation,
   Navigate,
 } from "react-router-dom";
-import { Box, Container } from "@chakra-ui/react";
+import { Box, Container, useColorMode } from "@chakra-ui/react";
 
 // Import your other components here
 import Login from "./components/Login"; // Import your Rekha component
@@ -59,9 +59,16 @@ function App() {
 function AppContent() {
   const location = useLocation();
   const isLoginPage = location.pathname === "/";
+  const { colorMode } = useColorMode();
+
+  // Mirror Chakra's color mode onto <html data-theme> so the custom CSS layer
+  // (auto-installer.css dark overrides) reacts to the same toggle.
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", colorMode);
+  }, [colorMode]);
 
   return (
-    <Container maxW="100vw" p="0">
+    <Container maxW="100vw" p="0" bg="app-bg" minH="100vh">
       <Box pb="env(safe-area-inset-bottom)">
         {!isLoginPage && <Header />}
 

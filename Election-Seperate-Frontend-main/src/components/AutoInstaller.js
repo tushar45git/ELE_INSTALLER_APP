@@ -1174,7 +1174,7 @@ const AutoInstaller = () => {
           <VStack minH="60vh" justify="center" spacing={4}>
             <Box
               p={8}
-              bg="white"
+              bg="surface"
               borderRadius="2xl"
               boxShadow="xl"
               textAlign="center"
@@ -1182,7 +1182,7 @@ const AutoInstaller = () => {
               <Text fontSize="lg" fontWeight="600" color="red.500">
                 Location Access Required
               </Text>
-              <Text color="gray.600" mt={2}>
+              <Text color="text-secondary" mt={2}>
                 To access the election installer portal, please enable
                 GPS/Location services.
               </Text>
@@ -1209,7 +1209,7 @@ const AutoInstaller = () => {
                     Secure Live
                   </div>
                 </HStack>
-                <Text color="gray.500" fontSize="md" fontWeight="500">
+                <Text color="text-secondary" fontSize="md" fontWeight="500">
                   Professional camera management & real-time monitoring system
                 </Text>
               </div>
@@ -1288,7 +1288,7 @@ const AutoInstaller = () => {
                             }}
                             aria-label="Clear search"
                             variant="ghost"
-                            color="gray.400"
+                            color="text-muted"
                             _hover={{ bg: "red.50", color: "red.600" }}
                           />
                         )}
@@ -1304,11 +1304,11 @@ const AutoInstaller = () => {
                         right={0}
                         zIndex={10}
                         mt={2}
-                        bg="white"
+                        bg="surface"
                         borderRadius="lg"
                         boxShadow="xl"
                         border="1px solid"
-                        borderColor="gray.200"
+                        borderColor="border-subtle"
                         maxH="300px"
                         overflowY="auto"
                       >
@@ -1325,9 +1325,9 @@ const AutoInstaller = () => {
                                   ? "1px solid"
                                   : "none"
                               }
-                              borderColor="gray.100"
+                              borderColor="border-subtle"
                               _hover={{
-                                bg: "blue.50",
+                                bg: "accent-surface",
                                 color: "blue.700",
                               }}
                               onClick={() => handleSuggestionClick(suggestion)}
@@ -1357,14 +1357,14 @@ const AutoInstaller = () => {
                     gap={4}
                   >
                     <VStack align="flex-start" spacing={1}>
-                      <Heading size="md" color="blue.900">
+                      <Heading size="md" color="heading-accent">
                         Installation Directory
                       </Heading>
-                      <Text fontSize="sm" color="gray.600">
+                      <Text fontSize="sm" color="text-secondary">
                         {searchDeviceId ? (
                           <>
                             Found{" "}
-                            <Text as="span" fontWeight="700" color="blue.600">
+                            <Text as="span" fontWeight="700" color="accent-text">
                               {totalFilteredCameras}
                             </Text>{" "}
                             matching cameras
@@ -1382,7 +1382,7 @@ const AutoInstaller = () => {
                         aria-label="Refresh list"
                         className="btn-secondary"
                         isRound
-                        bg="white"
+                        bg="surface"
                         transition="all 0.4s ease"
                         _hover={{
                           transform: "rotate(180deg)",
@@ -1463,7 +1463,7 @@ const AutoInstaller = () => {
                                   onClick={() => handleViewCamera(camera)}
                                   aria-label="View Feed"
                                   variant="ghost"
-                                  _hover={{ bg: "blue.50" }}
+                                  _hover={{ bg: "accent-surface" }}
                                 />
                                 <IconButton
                                   size="sm"
@@ -1506,11 +1506,11 @@ const AutoInstaller = () => {
                         key={camera.deviceId}
                         mb={4}
                         p={4}
-                        bg="white"
+                        bg="surface"
                         rounded="xl"
                         shadow="sm"
                         border="1px solid"
-                        borderColor="gray.200"
+                        borderColor="border-subtle"
                       >
                         <Flex
                           justify="space-between"
@@ -1520,7 +1520,7 @@ const AutoInstaller = () => {
                           <Text
                             fontWeight="bold"
                             fontSize="md"
-                            color="blue.800"
+                            color="heading-accent"
                           >
                             {camera.deviceId}
                           </Text>
@@ -1544,10 +1544,10 @@ const AutoInstaller = () => {
                           animateOpacity
                         >
                           <VStack align="stretch" spacing={3} mt={3}>
-                            <Divider borderColor="gray.100" />
+                            <Divider borderColor="border-subtle" />
 
                             <HStack justify="space-between">
-                              <Text fontSize="sm" color="gray.500">
+                              <Text fontSize="sm" color="text-secondary">
                                 District
                               </Text>
                               <Text fontSize="sm" fontWeight="medium">
@@ -1556,7 +1556,7 @@ const AutoInstaller = () => {
                             </HStack>
 
                             <HStack justify="space-between">
-                              <Text fontSize="sm" color="gray.500">
+                              <Text fontSize="sm" color="text-secondary">
                                 PS No
                               </Text>
                               <Text fontSize="sm" fontWeight="semibold">
@@ -1565,7 +1565,7 @@ const AutoInstaller = () => {
                             </HStack>
 
                             <HStack justify="space-between">
-                              <Text fontSize="sm" color="gray.500">
+                              <Text fontSize="sm" color="text-secondary">
                                 Assembly
                               </Text>
                               <Text fontSize="sm" fontWeight="medium">
@@ -1574,7 +1574,7 @@ const AutoInstaller = () => {
                             </HStack>
 
                             <HStack justify="space-between">
-                              <Text fontSize="sm" color="gray.500">
+                              <Text fontSize="sm" color="text-secondary">
                                 Location
                               </Text>
                               <Text fontSize="sm" textAlign="right" maxW="60%">
@@ -1585,7 +1585,7 @@ const AutoInstaller = () => {
                               <Text
                                 fontSize="xs"
                                 fontWeight="bold"
-                                color="gray.400"
+                                color="text-muted"
                                 mb={2}
                                 textTransform="uppercase"
                               >
@@ -1602,7 +1602,7 @@ const AutoInstaller = () => {
                                   colorScheme="blue"
                                   variant="outline"
                                   flex={1}
-                                  _hover={{ bg: "blue.50" }}
+                                  _hover={{ bg: "accent-surface" }}
                                 >
                                   View
                                 </Button>
@@ -1674,11 +1674,11 @@ const AutoInstaller = () => {
                         Previous
                       </Button>
                       <VStack spacing={0}>
-                        <Text fontSize="sm" fontWeight="700" color="gray.600">
+                        <Text fontSize="sm" fontWeight="700" color="text-secondary">
                           Page {currentPage} of {totalFilteredPages || 1}
                         </Text>
                         {searchDeviceId && (
-                          <Text fontSize="xs" color="gray.500">
+                          <Text fontSize="xs" color="text-secondary">
                             {totalFilteredCameras} result
                             {totalFilteredCameras !== 1 ? "s" : ""} found
                           </Text>
@@ -1706,7 +1706,7 @@ const AutoInstaller = () => {
                 <div className="glass-card">
                   <VStack spacing={6} align="stretch">
                     <Flex justify="space-between" align="center">
-                      <Heading size="md" color="blue.900">
+                      <Heading size="md" color="heading-accent">
                         Device Configuration
                       </Heading>
                       <Button
@@ -1717,15 +1717,15 @@ const AutoInstaller = () => {
                         px={4}
                         fontSize="xs"
                         fontWeight="700"
-                        color="blue.600"
-                        bg="blue.50"
-                        borderColor="blue.200"
+                        color="accent-text"
+                        bg="accent-surface"
+                        borderColor="accent-border"
                         _hover={{
-                          bg: "blue.100",
+                          bg: "accent-surface-hover",
                           borderColor: "blue.300",
                           transform: "translateY(-1px)",
                         }}
-                        _active={{ bg: "blue.200" }}
+                        _active={{ bg: "accent-surface-hover" }}
                         onClick={handleBackClick}
                         transition="all 0.2s"
                         boxShadow="sm"
@@ -1740,10 +1740,10 @@ const AutoInstaller = () => {
                           <Box
                             w="full"
                             p={4}
-                            bg="blue.50"
+                            bg="accent-surface"
                             borderRadius="xl"
                             border="1px dashed"
-                            borderColor="blue.200"
+                            borderColor="accent-border"
                           >
                             <VStack spacing={3}>
                               <QRCodeScanner
@@ -1751,7 +1751,7 @@ const AutoInstaller = () => {
                               />
                               <Text
                                 fontSize="xs"
-                                color="blue.600"
+                                color="accent-text"
                                 fontWeight="700"
                               >
                                 SCAN QR CODE
@@ -1886,7 +1886,7 @@ const AutoInstaller = () => {
                             <div className="loading-spinner"></div>
                             <Text
                               fontWeight="600"
-                              color="blue.600"
+                              color="accent-text"
                               fontSize={{ base: "sm", md: "md" }}
                             >
                               Analyzing Stream Quality...
@@ -1908,7 +1908,7 @@ const AutoInstaller = () => {
                                 <VStack align="start" spacing={0}>
                                   <Text
                                     fontSize="xs"
-                                    color="gray.600"
+                                    color="text-secondary"
                                     fontWeight="700"
                                     textTransform="uppercase"
                                   >
@@ -1976,16 +1976,16 @@ const AutoInstaller = () => {
                               {/* Blur */}
                               <Box
                                 p={{ base: 2, md: 4 }}
-                                bg="white"
+                                bg="surface"
                                 border="2px solid"
-                                borderColor="gray.100"
+                                borderColor="border-subtle"
                                 borderRadius="lg"
                                 shadow="sm"
                               >
                                 <HStack justify="space-between" mb={1}>
                                   <Text
                                     fontSize={{ base: "9px", md: "xs" }}
-                                    color="gray.600"
+                                    color="text-secondary"
                                     fontWeight="700"
                                     textTransform="uppercase"
                                   >
@@ -2031,16 +2031,16 @@ const AutoInstaller = () => {
                               {/* Blackview */}
                               <Box
                                 p={{ base: 2, md: 4 }}
-                                bg="white"
+                                bg="surface"
                                 border="2px solid"
-                                borderColor="gray.100"
+                                borderColor="border-subtle"
                                 borderRadius="lg"
                                 shadow="sm"
                               >
                                 <HStack justify="space-between" mb={1}>
                                   <Text
                                     fontSize={{ base: "9px", md: "xs" }}
-                                    color="gray.600"
+                                    color="text-secondary"
                                     fontWeight="700"
                                     textTransform="uppercase"
                                   >
@@ -2086,16 +2086,16 @@ const AutoInstaller = () => {
                               {/* Brightness */}
                               <Box
                                 p={{ base: 2, md: 4 }}
-                                bg="white"
+                                bg="surface"
                                 border="2px solid"
-                                borderColor="gray.100"
+                                borderColor="border-subtle"
                                 borderRadius="lg"
                                 shadow="sm"
                               >
                                 <HStack justify="space-between" mb={1}>
                                   <Text
                                     fontSize={{ base: "9px", md: "xs" }}
-                                    color="gray.600"
+                                    color="text-secondary"
                                     fontWeight="700"
                                     textTransform="uppercase"
                                   >
@@ -2141,16 +2141,16 @@ const AutoInstaller = () => {
                               {/* BlackAndWhite */}
                               <Box
                                 p={{ base: 2, md: 4 }}
-                                bg="white"
+                                bg="surface"
                                 border="2px solid"
-                                borderColor="gray.100"
+                                borderColor="border-subtle"
                                 borderRadius="lg"
                                 shadow="sm"
                               >
                                 <HStack justify="space-between" mb={1}>
                                   <Text
                                     fontSize={{ base: "9px", md: "xs" }}
-                                    color="gray.600"
+                                    color="text-secondary"
                                     fontWeight="700"
                                     textTransform="uppercase"
                                   >
@@ -2197,7 +2197,7 @@ const AutoInstaller = () => {
                         ) : (
                           <VStack
                             py={{ base: 6, md: 10 }}
-                            bg="blue.50"
+                            bg="accent-surface"
                             borderRadius="xl"
                             border="2px solid"
                             borderColor="blue.400"
@@ -2214,7 +2214,7 @@ const AutoInstaller = () => {
                               }}
                             ></div>
                             <Text
-                              color="blue.900"
+                              color="heading-accent"
                               fontWeight="800"
                               fontSize={{ base: "md", md: "lg" }}
                             >
@@ -2222,7 +2222,7 @@ const AutoInstaller = () => {
                             </Text>
                             <Text
                               fontSize="sm"
-                              color="blue.700"
+                              color="accent-text"
                               textAlign="center"
                               px={4}
                               fontWeight="500"
@@ -2387,7 +2387,7 @@ const AutoInstaller = () => {
                                   <Text
                                     fontSize="xs"
                                     fontWeight="700"
-                                    color="blue.600"
+                                    color="accent-text"
                                     textTransform="uppercase"
                                   >
                                     {isUploadingPhoto
@@ -2435,7 +2435,7 @@ const AutoInstaller = () => {
                             <Heading className="section-title">
                               Camera Not Mapped
                             </Heading>
-                            <Text color="gray.500">
+                            <Text color="text-secondary">
                               This camera is not mapped yet. Add the mapping
                               details to view the installation site details and
                               submit the installation.
@@ -2622,10 +2622,10 @@ const AutoInstaller = () => {
                   <Image src={Trash} alt="Delete" boxSize="40px" />
                 </Box>
               </Center>
-              <Heading size="sm" mb={2} color="gray.800">
+              <Heading size="sm" mb={2} color="text-primary">
                 Remove Device?
               </Heading>
-              <Text fontSize="xs" color="gray.600">
+              <Text fontSize="xs" color="text-secondary">
                 Are you sure you want to delete <br />
                 <b>{cameraToDelete}</b>?
               </Text>
@@ -2694,7 +2694,7 @@ const AutoInstaller = () => {
               )}
             </ModalBody>
             <ModalFooter
-              bg="gray.50"
+              bg="surface-hover"
               flexDirection="column"
               justifyContent="center"
               alignItems="center"
@@ -2702,7 +2702,7 @@ const AutoInstaller = () => {
             >
               {selectedCamera?.cameraPhoto && (
                 <VStack w="full" spacing={2} align="center">
-                  <Text fontSize="sm" fontWeight="bold" color="gray.600">
+                  <Text fontSize="sm" fontWeight="bold" color="text-secondary">
                     INSTALLATION PHOTO
                   </Text>
                   <Image
@@ -2741,7 +2741,7 @@ const AutoInstaller = () => {
               />
               <canvas ref={canvasRef} style={{ display: "none" }} />
             </ModalBody>
-            <ModalFooter bg="white" justifyContent="center" py={4}>
+            <ModalFooter bg="surface" justifyContent="center" py={4}>
               <Button
                 colorScheme="blue"
                 size="lg"
@@ -2769,7 +2769,7 @@ const AutoInstaller = () => {
               Installation Photo: {currentPhotoView.deviceId}
             </ModalHeader>
             <ModalCloseButton color="white" />
-            <ModalBody p={4} bg="gray.50">
+            <ModalBody p={4} bg="surface-hover">
               <Center>
                 <Image
                   src={currentPhotoView.url}
@@ -2781,7 +2781,7 @@ const AutoInstaller = () => {
                 />
               </Center>
             </ModalBody>
-            <ModalFooter bg="white" justifyContent="center">
+            <ModalFooter bg="surface" justifyContent="center">
               <Button
                 colorScheme="green"
                 onClick={() => setIsPhotoViewerOpen(false)}

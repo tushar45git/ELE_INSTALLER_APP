@@ -102,8 +102,7 @@ function ComboField({ value, onChange, options, placeholder, isInvalid }) {
         <List
           position="absolute"
           zIndex={30}
-          bg="white"
-          _dark={{ bg: "gray.700" }}
+          bg="surface"
           border="1px solid"
           borderColor="gray.200"
           borderRadius="md"
@@ -433,10 +432,9 @@ export default function CameraMappingFormModal({
                   <List
                     position="absolute"
                     zIndex={20}
-                    bg="white"
-                    _dark={{ bg: "gray.700" }}
+                    bg="surface"
                     border="1px solid"
-                    borderColor="gray.200"
+                    borderColor="border-subtle"
                     borderRadius="md"
                     w="100%"
                     maxH="220px"

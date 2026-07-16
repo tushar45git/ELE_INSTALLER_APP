@@ -19,6 +19,7 @@ import {
   Icon,
   Text,
   VStack,
+  useColorModeValue,
 } from "@chakra-ui/react";
 import {
   MdAccountCircle,
@@ -57,6 +58,14 @@ const DrawerButton = ({ drawerContent }) => {
     md: "large",
     lg: "xx-large",
   });
+
+  // Theme-aware colors for the sidebar (light / dark)
+  const brandColor = useColorModeValue("blue.800", "blue.200");
+  const hoverBg = useColorModeValue("blue.50", "whiteAlpha.100");
+  const hoverColor = useColorModeValue("blue.600", "blue.200");
+  const activeBg = useColorModeValue("blue.100", "whiteAlpha.200");
+  const idleIconBg = useColorModeValue("gray.100", "whiteAlpha.200");
+  const activeTextColor = useColorModeValue("blue.700", "blue.200");
 
   // Define menu items based on the user's role
   let menuItems = [
@@ -137,7 +146,17 @@ const DrawerButton = ({ drawerContent }) => {
         </div>
       ) : (
         <div>
-          <Button onClick={toggleDrawer} zIndex="999">
+          <Button
+            onClick={toggleDrawer}
+            zIndex="999"
+            aria-label="Open menu"
+            bg="surface"
+            color="text-primary"
+            borderWidth="1px"
+            borderColor="border-subtle"
+            _hover={{ bg: "surface-hover" }}
+            _active={{ bg: "surface-hover" }}
+          >
             <MdTableRows />
           </Button>
           <Drawer placement="left" onClose={toggleDrawer} isOpen={isDrawerOpen}>
@@ -156,7 +175,7 @@ const DrawerButton = ({ drawerContent }) => {
                 alignItems="center"
                 gap={3}
                 borderBottomWidth="1px"
-                borderBottomColor="gray.100"
+                borderBottomColor="border-subtle"
                 py={6}
               >
                 <img
@@ -165,7 +184,7 @@ const DrawerButton = ({ drawerContent }) => {
                   src="./logo.png"
                   alt="Logo"
                 />
-                <Text fontWeight="800" fontSize="lg" color="blue.800">
+                <Text fontWeight="800" fontSize="lg" color={brandColor}>
                   VMUKTI - ELE
                 </Text>
               </DrawerHeader>
@@ -181,8 +200,8 @@ const DrawerButton = ({ drawerContent }) => {
                       alignItems="center"
                       cursor="pointer"
                       transition="all 0.2s"
-                      _hover={{ bg: "blue.50", color: "blue.600" }}
-                      _active={{ bg: "blue.100" }}
+                      _hover={{ bg: hoverBg, color: hoverColor }}
+                      _active={{ bg: activeBg }}
                       gap={4}
                     >
                       <Box
@@ -191,10 +210,12 @@ const DrawerButton = ({ drawerContent }) => {
                         bg={
                           location.pathname === item.path
                             ? "blue.600"
-                            : "gray.100"
+                            : idleIconBg
                         }
                         color={
-                          location.pathname === item.path ? "white" : "gray.600"
+                          location.pathname === item.path
+                            ? "white"
+                            : "text-secondary"
                         }
                       >
                         <Icon as={item.icon} boxSize={5} />
@@ -205,8 +226,8 @@ const DrawerButton = ({ drawerContent }) => {
                         }
                         color={
                           location.pathname === item.path
-                            ? "blue.700"
-                            : "gray.700"
+                            ? activeTextColor
+                            : "text-primary"
                         }
                         fontSize="md"
                       >
