@@ -11,7 +11,6 @@ import {
   InputGroup,
   InputLeftAddon,
   Text,
-  Stack,
   VStack,
   Image,
   useToast,
@@ -26,26 +25,36 @@ import { login, verifyOtp } from "../actions/userActions";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import logo from "./images/logo/Vmuktilogo.png";
+import lightBg from "./images/light-bg.jpg";
+import darkBg from "./images/dark-bg.jpg";
 import ThemeToggle from "./ThemeToggle";
 
 const Login = () => {
-  // Theme-aware colors (light / dark)
-  const pageBg = useColorModeValue(
-    "linear(to-br, #f0f4f8, #d9e2ec)",
-    "linear(to-br, #0d1117, #010409)",
+  // ── Theme-aware styling ────────────────────────────────────────────────
+  // Two purpose-made background images (light-bg / dark-bg) — a matched pair
+  // of the same artwork, one tuned for each mode — so we swap the whole image
+  // rather than overlaying a single photo. Both were sampled and are close to
+  // uniformly bright/dark everywhere (no hotspots), so only a light scrim is
+  // needed; light mode's card gets extra opacity/shadow instead, since a
+  // white card over an already near-white image needs its own definition to
+  // read as a distinct glass panel rather than blending into the backdrop.
+  const bgImageSrc = useColorModeValue(lightBg, darkBg);
+  const heroOverlay = useColorModeValue(
+    "linear-gradient(180deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.02) 45%, rgba(219,234,254,0.22) 100%)",
+    "linear-gradient(180deg, rgba(1,4,9,0.30) 0%, rgba(3,7,18,0.05) 45%, rgba(3,7,18,0.35) 100%)",
   );
-  const cardBg = useColorModeValue("rgba(255,255,255,0.85)", "rgba(22,27,34,0.92)");
+  const cardBg = useColorModeValue("rgba(255,255,255,0.96)", "rgba(13,17,23,0.88)");
   const cardBorder = useColorModeValue(
-    "1px solid rgba(255,255,255,0.4)",
-    "1px solid #30363d",
+    "1px solid rgba(255,255,255,0.9)",
+    "1px solid rgba(48,54,61,0.8)",
   );
-  const blobColor = useColorModeValue("blue.100", "blue.900");
-  const blobColor2 = useColorModeValue("blue.200", "purple.900");
-  const headingColor = useColorModeValue("gray.800", "gray.100");
-  const subColor = useColorModeValue("gray.600", "gray.400");
-  const labelColor = useColorModeValue("gray.700", "gray.300");
-  const inputBg = useColorModeValue("white", "#0d1117");
-  const addonBg = useColorModeValue("gray.100", "#21262d");
+  const cardShadow = useColorModeValue(
+    "0 25px 60px -12px rgba(30,64,175,0.22), 0 4px 20px -4px rgba(30,64,175,0.12)",
+    "0 25px 50px -12px rgba(0,0,0,0.65)",
+  );
+  const toggleBg = useColorModeValue("whiteAlpha.900", "whiteAlpha.100");
+  const toggleBorder = useColorModeValue("gray.200", "whiteAlpha.300");
+  const dangerColor = useColorModeValue("red.600", "red.300");
 
   const [name, setName] = useState("");
   const [mobile, setMobile] = useState("");
@@ -243,42 +252,29 @@ const Login = () => {
       display="flex"
       alignItems="center"
       justifyContent="center"
-      bgGradient={pageBg}
       position="relative"
       overflow="hidden"
+      bgImage={`url(${bgImageSrc})`}
+      bgSize="cover"
+      bgPosition="center"
+      bgRepeat="no-repeat"
       p={4}
       pt="max(1rem, env(safe-area-inset-top))"
       pb="max(1rem, env(safe-area-inset-bottom))"
     >
-      {/* Theme toggle */}
+      {/* Scrim so the card stays legible over the photo, tuned per theme */}
+      <Box position="absolute" inset={0} bgImage={heroOverlay} pointerEvents="none" />
+
+      {/* Theme toggle — frosted so it stays visible over the artwork in both modes */}
       <ThemeToggle
         position="absolute"
         top="max(1rem, env(safe-area-inset-top))"
         right={4}
         zIndex={2}
-      />
-      {/* Decorative Elements */}
-      <Box
-        position="absolute"
-        top="-10%"
-        right="-10%"
-        w="400px"
-        h="400px"
-        bg={blobColor}
-        filter="blur(100px)"
-        borderRadius="full"
-        opacity="0.6"
-      />
-      <Box
-        position="absolute"
-        bottom="-10%"
-        left="-10%"
-        w="400px"
-        h="400px"
-        bg={blobColor2}
-        filter="blur(100px)"
-        borderRadius="full"
-        opacity="0.6"
+        bg={toggleBg}
+        border="1px solid"
+        borderColor={toggleBorder}
+        backdropFilter="blur(12px)"
       />
 
       <Container maxW={{ base: "95%", sm: "450px" }} zIndex={1} px={0}>
@@ -289,7 +285,7 @@ const Login = () => {
             backdropFilter="blur(20px)"
             p={{ base: 6, sm: 8, md: 10 }}
             borderRadius={{ base: "2xl", md: "3xl" }}
-            boxShadow="2xl"
+            boxShadow={cardShadow}
             border={cardBorder}
             textAlign="center"
             w="full"
@@ -304,13 +300,13 @@ const Login = () => {
               <Heading
                 as="h1"
                 size={{ base: "md", md: "lg" }}
-                color={headingColor}
+                color="text-primary"
                 fontWeight="800"
                 letterSpacing="-0.5px"
               >
                 Election Installer App
               </Heading>
-              <Text color={subColor} fontSize={{ base: "sm", md: "md" }}>
+              <Text color="text-secondary" fontSize={{ base: "sm", md: "md" }}>
                 Securely access your account to proceed
               </Text>
             </VStack>
@@ -318,213 +314,128 @@ const Login = () => {
             {!otpSent ? (
               <VStack spacing={5} w="full">
                 <FormControl isRequired>
-                  <FormLabel fontWeight="700" color={labelColor} fontSize="sm">
-                    Full Name
-                  </FormLabel>
-                  <Input
-                    placeholder="Enter your name"
-                    bg={inputBg}
-                    size="md"
-                    borderRadius="xl"
-                    boxShadow="sm"
-                    _focus={{
-                      borderColor: "blue.400",
-                      boxShadow: "0 0 0 1px #3182ce",
-                    }}
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                  />
-                </FormControl>
-
-                <FormControl isRequired>
-                  <FormLabel fontWeight="700" color={labelColor} fontSize="sm">
-                    Mobile Number
-                  </FormLabel>
-                  <InputGroup size="md">
-                    <InputLeftAddon
-                      borderLeftRadius="xl"
-                      bg={addonBg}
-                      color={subColor}
-                      fontWeight="600"
-                    >
-                      +91
-                    </InputLeftAddon>
-                    <Input
-                      type="tel"
-                      placeholder="Enter mobile number"
-                      bg={inputBg}
-                      size="md"
-                      borderRightRadius="xl"
-                      boxShadow="sm"
-                      _focus={{
-                        borderColor: "blue.400",
-                        boxShadow: "0 0 0 1px #3182ce",
-                      }}
-                      value={mobile}
-                      onChange={handleMobileChange}
-                    />
-                  </InputGroup>
-                </FormControl>
-
-                <FormControl isRequired>
-                  <FormLabel fontWeight="700" color={labelColor} fontSize="sm">
-                    Select State
-                  </FormLabel>
-                  <Select
-                    placeholder="Choose State"
-                    bg={inputBg}
-                    size="md"
-                    borderRadius="xl"
-                    boxShadow="sm"
-                    _focus={{
-                      borderColor: "blue.400",
-                      boxShadow: "0 0 0 1px #3182ce",
-                    }}
-                    value={selectedState}
-                    onChange={(e) => {
-                      setSelectedState(e.target.value);
-                      setSelectedDistrict("");
-                      setPhase("");
-                    }}
-                  >
-                    {Object.keys(stateData).map((state) => (
-                      <option key={state} value={state}>
-                        {state}
-                      </option>
-                    ))}
-                  </Select>
-                </FormControl>
-
-                {selectedState && (
-                  <FormControl isRequired>
-                    <FormLabel fontWeight="700" color={labelColor} fontSize="sm">
-                      Select District
+                    <FormLabel fontWeight="700" color="text-primary" fontSize="sm">
+                      Full Name
                     </FormLabel>
-                    <Select
-                      placeholder="Choose District"
-                      bg={inputBg}
+                    <Input
+                      placeholder="Enter your name"
+                      bg="surface"
                       size="md"
                       borderRadius="xl"
+                      borderColor="border-subtle"
                       boxShadow="sm"
                       _focus={{
-                        borderColor: "blue.400",
-                        boxShadow: "0 0 0 1px #3182ce",
+                        borderColor: "brand-primary",
+                        boxShadow: "0 0 0 1px var(--chakra-colors-brand-primary)",
                       }}
-                      value={selectedDistrict}
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                    />
+                  </FormControl>
+
+                  <FormControl isRequired>
+                    <FormLabel fontWeight="700" color="text-primary" fontSize="sm">
+                      Mobile Number
+                    </FormLabel>
+                    <InputGroup size="md">
+                      <InputLeftAddon
+                        borderLeftRadius="xl"
+                        bg="surface-hover"
+                        color="text-secondary"
+                        borderColor="border-subtle"
+                        fontWeight="600"
+                      >
+                        +91
+                      </InputLeftAddon>
+                      <Input
+                        type="tel"
+                        placeholder="Enter mobile number"
+                        bg="surface"
+                        size="md"
+                        borderRightRadius="xl"
+                        borderColor="border-subtle"
+                        boxShadow="sm"
+                        _focus={{
+                          borderColor: "brand-primary",
+                          boxShadow: "0 0 0 1px var(--chakra-colors-brand-primary)",
+                        }}
+                        value={mobile}
+                        onChange={handleMobileChange}
+                      />
+                    </InputGroup>
+                  </FormControl>
+
+                  <FormControl isRequired>
+                    <FormLabel fontWeight="700" color="text-primary" fontSize="sm">
+                      Select State
+                    </FormLabel>
+                    <Select
+                      placeholder="Choose State"
+                      bg="surface"
+                      size="md"
+                      borderRadius="xl"
+                      borderColor="border-subtle"
+                      boxShadow="sm"
+                      _focus={{
+                        borderColor: "brand-primary",
+                        boxShadow: "0 0 0 1px var(--chakra-colors-brand-primary)",
+                      }}
+                      value={selectedState}
                       onChange={(e) => {
-                        const district = e.target.value;
-                        setSelectedDistrict(district);
-                        // Find the phase for the selected district
-                        const statePhases = stateData[selectedState];
-                        for (const p in statePhases) {
-                          if (statePhases[p].includes(district)) {
-                            setPhase(p);
-                            break;
-                          }
-                        }
+                        setSelectedState(e.target.value);
+                        setSelectedDistrict("");
+                        setPhase("");
                       }}
                     >
-                      {Object.entries(stateData[selectedState]).flatMap(
-                        ([p, districts]) =>
-                          districts.map((d) => (
-                            <option key={d} value={d}>
-                              {d}
-                            </option>
-                          )),
-                      )}
+                      {Object.keys(stateData).map((state) => (
+                        <option key={state} value={state}>
+                          {state}
+                        </option>
+                      ))}
                     </Select>
                   </FormControl>
-                )}
 
-                <Button
-                  w="full"
-                  className="btn-premium"
-                  sx={{
-                    backgroundColor: "#4f46e5 !important",
-                    color: "white !important",
-                    _hover: {
-                      backgroundColor: "#4338ca !important",
-                      transform: "translateY(-2px)",
-                      boxShadow: "xl",
-                    },
-                    _active: {
-                      backgroundColor: "#3730a3 !important",
-                      transform: "translateY(0)",
-                    },
-                  }}
-                  size="lg"
-                  height={{ base: "50px", md: "56px" }}
-                  borderRadius="xl"
-                  fontSize="md"
-                  fontWeight="bold"
-                  boxShadow="lg"
-                  top={5}
-                  onClick={handleSendOtp}
-                  isLoading={isLoading}
-                  isDisabled={
-                    !locationEnabled || !selectedState || !selectedDistrict
-                  }
-                >
-                  Get Verification Code
-                </Button>
-
-                {!locationEnabled && (
-                  <Text color="red.500" fontSize="xs" fontWeight="600">
-                    * Please enable location to continue
-                  </Text>
-                )}
-              </VStack>
-            ) : (
-              <Fade in={otpSent} style={{ width: "100%" }}>
-                <VStack spacing={6} w="full">
-                  <VStack spacing={1}>
-                    <Text
-                      fontWeight="800"
-                      fontSize={{ base: "lg", md: "xl" }}
-                      color={headingColor}
-                    >
-                      Verify Identity
-                    </Text>
-                    <Text color={subColor} fontSize="sm">
-                      Enter the 6-digit code sent to
-                    </Text>
-                    <Text fontWeight="800" color="blue.600">
-                      +91 - {mobile}
-                    </Text>
-                  </VStack>
-
-                  <HStack
-                    spacing={{ base: 1, sm: 2 }}
-                    justify="center"
-                    w="full"
-                  >
-                    {otp.map((digit, index) => (
-                      <Input
-                        key={index}
-                        ref={(el) => (inputRefs.current[index] = el)}
-                        w={{ base: "40px", sm: "45px", md: "50px" }}
-                        h={{ base: "50px", sm: "56px" }}
-                        textAlign="center"
-                        fontSize={{ base: "xl", md: "2xl" }}
-                        fontWeight="800"
-                        bg={inputBg}
-                        borderRadius="lg"
-                        border="2px solid"
-                        borderColor="gray.200"
+                  {selectedState && (
+                    <FormControl isRequired>
+                      <FormLabel fontWeight="700" color="text-primary" fontSize="sm">
+                        Select District
+                      </FormLabel>
+                      <Select
+                        placeholder="Choose District"
+                        bg="surface"
+                        size="md"
+                        borderRadius="xl"
+                        borderColor="border-subtle"
+                        boxShadow="sm"
                         _focus={{
-                          borderColor: "blue.400",
-                          bg: "blue.50",
-                          boxShadow: "none",
+                          borderColor: "brand-primary",
+                          boxShadow: "0 0 0 1px var(--chakra-colors-brand-primary)",
                         }}
-                        value={digit}
-                        onChange={(e) => handleOtpChange(index, e.target.value)}
-                        onKeyDown={(e) => handleKeyDown(index, e)}
-                        maxLength={1}
-                        type="tel"
-                        p={0}
-                      />
-                    ))}
-                  </HStack>
+                        value={selectedDistrict}
+                        onChange={(e) => {
+                          const district = e.target.value;
+                          setSelectedDistrict(district);
+                          // Find the phase for the selected district
+                          const statePhases = stateData[selectedState];
+                          for (const p in statePhases) {
+                            if (statePhases[p].includes(district)) {
+                              setPhase(p);
+                              break;
+                            }
+                          }
+                        }}
+                      >
+                        {Object.entries(stateData[selectedState]).flatMap(
+                          ([p, districts]) =>
+                            districts.map((d) => (
+                              <option key={d} value={d}>
+                                {d}
+                              </option>
+                            )),
+                        )}
+                      </Select>
+                    </FormControl>
+                  )}
 
                   <Button
                     w="full"
@@ -548,53 +459,144 @@ const Login = () => {
                     fontSize="md"
                     fontWeight="bold"
                     boxShadow="lg"
-                    onClick={handleSignIn}
+                    top={5}
+                    onClick={handleSendOtp}
                     isLoading={isLoading}
+                    isDisabled={
+                      !locationEnabled || !selectedState || !selectedDistrict
+                    }
                   >
-                    Verify & Sign In
+                    Get Verification Code
                   </Button>
 
-                  <HStack justify="center" pt={2} flexWrap="wrap">
-                    <Text fontSize="sm" color={subColor}>
-                      Didn't receive the code?
+                  {!locationEnabled && (
+                    <Text color={dangerColor} fontSize="xs" fontWeight="600">
+                      * Please enable location to continue
                     </Text>
-                    <Button
-                      variant="link"
-                      colorScheme="blue"
-                      fontSize="sm"
-                      isDisabled={resendDisabled}
-                      onClick={handleSendOtp}
-                      fontWeight="700"
-                    >
-                      {resendDisabled
-                        ? `Resend in ${resendTimer}s`
-                        : "Resend Now"}
-                    </Button>
-                  </HStack>
-
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    color="gray.500"
-                    onClick={() => setOtpSent(false)}
-                    _hover={{ bg: "transparent", color: "blue.500" }}
-                  >
-                    Back to Login
-                  </Button>
+                  )}
                 </VStack>
-              </Fade>
-            )}
+              ) : (
+                <Fade in={otpSent} style={{ width: "100%" }}>
+                  <VStack spacing={6} w="full">
+                    <VStack spacing={1}>
+                      <Text
+                        fontWeight="800"
+                        fontSize={{ base: "lg", md: "xl" }}
+                        color="text-primary"
+                      >
+                        Verify Identity
+                      </Text>
+                      <Text color="text-secondary" fontSize="sm">
+                        Enter the 6-digit code sent to
+                      </Text>
+                      <Text fontWeight="800" color="accent-text">
+                        +91 - {mobile}
+                      </Text>
+                    </VStack>
 
-            <VStack spacing={3} pt={4} w="full">
-              <Divider borderColor="gray.300" />
-              <Text fontSize="xs" color="gray.400" fontWeight="600">
-                &copy; {new Date().getFullYear()} VMukti Solutions. All rights
-                reserved.
-              </Text>
-            </VStack>
+                    <HStack
+                      spacing={{ base: 1, sm: 2 }}
+                      justify="center"
+                      w="full"
+                    >
+                      {otp.map((digit, index) => (
+                        <Input
+                          key={index}
+                          ref={(el) => (inputRefs.current[index] = el)}
+                          w={{ base: "40px", sm: "45px", md: "50px" }}
+                          h={{ base: "50px", sm: "56px" }}
+                          textAlign="center"
+                          fontSize={{ base: "xl", md: "2xl" }}
+                          fontWeight="800"
+                          bg="surface"
+                          borderRadius="lg"
+                          border="2px solid"
+                          borderColor="border-subtle"
+                          _focus={{
+                            borderColor: "brand-primary",
+                            bg: "accent-surface",
+                            boxShadow: "none",
+                          }}
+                          value={digit}
+                          onChange={(e) => handleOtpChange(index, e.target.value)}
+                          onKeyDown={(e) => handleKeyDown(index, e)}
+                          maxLength={1}
+                          type="tel"
+                          p={0}
+                        />
+                      ))}
+                    </HStack>
+
+                    <Button
+                      w="full"
+                      className="btn-premium"
+                      sx={{
+                        backgroundColor: "#4f46e5 !important",
+                        color: "white !important",
+                        _hover: {
+                          backgroundColor: "#4338ca !important",
+                          transform: "translateY(-2px)",
+                          boxShadow: "xl",
+                        },
+                        _active: {
+                          backgroundColor: "#3730a3 !important",
+                          transform: "translateY(0)",
+                        },
+                      }}
+                      size="lg"
+                      height={{ base: "50px", md: "56px" }}
+                      borderRadius="xl"
+                      fontSize="md"
+                      fontWeight="bold"
+                      boxShadow="lg"
+                      onClick={handleSignIn}
+                      isLoading={isLoading}
+                    >
+                      Verify & Sign In
+                    </Button>
+
+                    <HStack justify="center" pt={2} flexWrap="wrap">
+                      <Text fontSize="sm" color="text-secondary">
+                        Didn't receive the code?
+                      </Text>
+                      <Button
+                        variant="link"
+                        colorScheme="blue"
+                        fontSize="sm"
+                        isDisabled={resendDisabled}
+                        onClick={handleSendOtp}
+                        fontWeight="700"
+                      >
+                        {resendDisabled
+                          ? `Resend in ${resendTimer}s`
+                          : "Resend Now"}
+                      </Button>
+                    </HStack>
+
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      color="text-secondary"
+                      onClick={() => setOtpSent(false)}
+                      _hover={{ bg: "transparent", color: "accent-text" }}
+                    >
+                      Back to Login
+                    </Button>
+                  </VStack>
+                </Fade>
+              )}
+
+              <VStack spacing={3} pt={4} w="full">
+                <Divider borderColor="border-subtle" />
+                <Text fontSize="xs" color="text-muted" fontWeight="600">
+                  &copy; {new Date().getFullYear()} VMukti Solutions. All rights
+                  reserved.
+                </Text>
+              </VStack>
           </VStack>
         </ScaleFade>
       </Container>
+
       <ToastContainer position="top-right" />
     </Box>
   );
