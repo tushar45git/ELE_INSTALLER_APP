@@ -25,8 +25,8 @@ import { login, verifyOtp } from "../actions/userActions";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import logo from "./images/logo/Vmuktilogo.png";
-import lightBg from "./images/light-bg.jpg";
-import darkBg from "./images/dark-bg.jpg";
+import lightBg from "./images/light-bg.jpeg";
+import darkBg from "./images/dark-bg.jpeg";
 import ThemeToggle from "./ThemeToggle";
 
 const Login = () => {
