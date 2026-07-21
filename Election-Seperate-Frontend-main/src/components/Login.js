@@ -51,7 +51,7 @@ const Login = () => {
     "0 8px 32px rgba(15,23,42,0.18)",
     "0 8px 32px rgba(0,0,0,0.45)",
   );
-  const cardBlur = "blur(18px) saturate(150%)";
+  const cardBlur = "blur(1px) saturate(150%)";
   // Form fields sit one layer "more solid" than the card so they stay
   // readable, but are still translucent — same frosted-glass material.
   const fieldBg = useColorModeValue("rgba(255,255,255,0.50)", "rgba(255,255,255,0.06)");
