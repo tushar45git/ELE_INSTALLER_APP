@@ -20,6 +20,7 @@ import {
   Select,
   useColorModeValue,
 } from "@chakra-ui/react";
+import { FiArrowLeft } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import { login, verifyOtp } from "../actions/userActions";
 import { ToastContainer } from "react-toastify";
@@ -60,7 +61,10 @@ const Login = () => {
   const toggleBg = useColorModeValue("whiteAlpha.900", "whiteAlpha.100");
   const toggleBorder = useColorModeValue("gray.200", "whiteAlpha.300");
   const dangerColor = useColorModeValue("red.600", "red.300");
-  const copyrightColor = useColorModeValue("black", "white");
+  // Explicit black/white (not the muted "text-secondary" token) — needed for
+  // legibility against the transparent glass card, which shows a busy image
+  // behind it rather than a flat surface color.
+  const strongTextColor = useColorModeValue("black", "white");
 
   const [name, setName] = useState("");
   const [mobile, setMobile] = useState("");
@@ -312,7 +316,7 @@ const Login = () => {
               >
                 Election Installer App
               </Heading>
-              <Text color="text-secondary" fontSize={{ base: "sm", md: "md" }}>
+              <Text color={strongTextColor} fontSize={{ base: "sm", md: "md" }}>
                 Securely access your account to proceed
               </Text>
             </VStack>
@@ -492,7 +496,7 @@ const Login = () => {
                       >
                         Verify Identity
                       </Text>
-                      <Text color="text-secondary" fontSize="sm">
+                      <Text color={strongTextColor} fontSize="sm">
                         Enter the 6-digit code sent to
                       </Text>
                       <Text fontWeight="800" color="accent-text">
@@ -562,12 +566,12 @@ const Login = () => {
                     </Button>
 
                     <HStack justify="center" pt={2} flexWrap="wrap">
-                      <Text fontSize="sm" color="text-secondary">
+                      <Text fontSize="sm" color={strongTextColor}>
                         Didn't receive the code?
                       </Text>
                       <Button
                         variant="link"
-                        colorScheme="blue"
+                        color="accent-text"
                         fontSize="sm"
                         isDisabled={resendDisabled}
                         onClick={handleSendOtp}
@@ -582,7 +586,8 @@ const Login = () => {
                     <Button
                       variant="ghost"
                       size="sm"
-                      color="text-secondary"
+                      leftIcon={<FiArrowLeft />}
+                      color={strongTextColor}
                       onClick={() => setOtpSent(false)}
                       _hover={{ bg: "transparent", color: "accent-text" }}
                     >
@@ -594,7 +599,7 @@ const Login = () => {
 
               <VStack spacing={3} pt={4} w="full">
                 <Divider borderColor={fieldBorder} />
-                <Text fontSize="xs" color={copyrightColor} fontWeight="600">
+                <Text fontSize="xs" color={strongTextColor} fontWeight="600">
                   &copy; {new Date().getFullYear()} VMukti Solutions. All rights
                   reserved.
                 </Text>
