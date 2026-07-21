@@ -25,36 +25,42 @@ import { login, verifyOtp } from "../actions/userActions";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import logo from "./images/logo/Vmuktilogo.png";
-import lightBg from "./images/light-bg.jpeg";
-import darkBg from "./images/dark-bg.jpeg";
+import loginBg from "./images/newbg-bg.jpg";
 import ThemeToggle from "./ThemeToggle";
 
 const Login = () => {
   // ── Theme-aware styling ────────────────────────────────────────────────
-  // Two purpose-made background images (light-bg / dark-bg) — a matched pair
-  // of the same artwork, one tuned for each mode — so we swap the whole image
-  // rather than overlaying a single photo. Both were sampled and are close to
-  // uniformly bright/dark everywhere (no hotspots), so only a light scrim is
-  // needed; light mode's card gets extra opacity/shadow instead, since a
-  // white card over an already near-white image needs its own definition to
-  // read as a distinct glass panel rather than blending into the backdrop.
-  const bgImageSrc = useColorModeValue(lightBg, darkBg);
+  // Single background (newbg) used in both modes — only the glass card and
+  // scrim adapt. The image itself was sampled: it has a bright warm streak
+  // around 15-45% height (luminance up to ~170/255), so the scrim leans on
+  // darkening that band a bit more in dark mode — otherwise a translucent
+  // dark card sitting over that bright streak would wash out its own text.
+  const bgImageSrc = loginBg;
   const heroOverlay = useColorModeValue(
-    "linear-gradient(180deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.02) 45%, rgba(219,234,254,0.22) 100%)",
-    "linear-gradient(180deg, rgba(1,4,9,0.30) 0%, rgba(3,7,18,0.05) 45%, rgba(3,7,18,0.35) 100%)",
+    "linear-gradient(180deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.08) 40%, rgba(226,232,240,0.30) 100%)",
+    "linear-gradient(180deg, rgba(3,7,18,0.42) 0%, rgba(3,7,18,0.34) 40%, rgba(3,7,18,0.58) 100%)",
   );
-  const cardBg = useColorModeValue("rgba(255,255,255,0.96)", "rgba(13,17,23,0.88)");
+  // Glass card: much more see-through than a normal surface — the artwork
+  // should read clearly behind the text, not just tint it.
+  const cardBg = useColorModeValue("rgba(255,255,255,0.42)", "rgba(15,20,30,0.42)");
   const cardBorder = useColorModeValue(
-    "1px solid rgba(255,255,255,0.9)",
-    "1px solid rgba(48,54,61,0.8)",
+    "1px solid rgba(255,255,255,0.65)",
+    "1px solid rgba(255,255,255,0.15)",
   );
   const cardShadow = useColorModeValue(
-    "0 25px 60px -12px rgba(30,64,175,0.22), 0 4px 20px -4px rgba(30,64,175,0.12)",
-    "0 25px 50px -12px rgba(0,0,0,0.65)",
+    "0 8px 32px rgba(15,23,42,0.18)",
+    "0 8px 32px rgba(0,0,0,0.45)",
   );
+  const cardBlur = "blur(18px) saturate(150%)";
+  // Form fields sit one layer "more solid" than the card so they stay
+  // readable, but are still translucent — same frosted-glass material.
+  const fieldBg = useColorModeValue("rgba(255,255,255,0.50)", "rgba(255,255,255,0.06)");
+  const fieldBorder = useColorModeValue("rgba(255,255,255,0.75)", "rgba(255,255,255,0.16)");
+  const fieldAddonBg = useColorModeValue("rgba(255,255,255,0.32)", "rgba(255,255,255,0.04)");
   const toggleBg = useColorModeValue("whiteAlpha.900", "whiteAlpha.100");
   const toggleBorder = useColorModeValue("gray.200", "whiteAlpha.300");
   const dangerColor = useColorModeValue("red.600", "red.300");
+  const copyrightColor = useColorModeValue("black", "white");
 
   const [name, setName] = useState("");
   const [mobile, setMobile] = useState("");
@@ -282,7 +288,7 @@ const Login = () => {
           <VStack
             spacing={{ base: 6, md: 8 }}
             bg={cardBg}
-            backdropFilter="blur(20px)"
+            backdropFilter={cardBlur}
             p={{ base: 6, sm: 8, md: 10 }}
             borderRadius={{ base: "2xl", md: "3xl" }}
             boxShadow={cardShadow}
@@ -319,10 +325,10 @@ const Login = () => {
                     </FormLabel>
                     <Input
                       placeholder="Enter your name"
-                      bg="surface"
+                      bg={fieldBg}
                       size="md"
                       borderRadius="xl"
-                      borderColor="border-subtle"
+                      borderColor={fieldBorder}
                       boxShadow="sm"
                       _focus={{
                         borderColor: "brand-primary",
@@ -340,9 +346,9 @@ const Login = () => {
                     <InputGroup size="md">
                       <InputLeftAddon
                         borderLeftRadius="xl"
-                        bg="surface-hover"
+                        bg={fieldAddonBg}
                         color="text-secondary"
-                        borderColor="border-subtle"
+                        borderColor={fieldBorder}
                         fontWeight="600"
                       >
                         +91
@@ -350,10 +356,10 @@ const Login = () => {
                       <Input
                         type="tel"
                         placeholder="Enter mobile number"
-                        bg="surface"
+                        bg={fieldBg}
                         size="md"
                         borderRightRadius="xl"
-                        borderColor="border-subtle"
+                        borderColor={fieldBorder}
                         boxShadow="sm"
                         _focus={{
                           borderColor: "brand-primary",
@@ -371,10 +377,10 @@ const Login = () => {
                     </FormLabel>
                     <Select
                       placeholder="Choose State"
-                      bg="surface"
+                      bg={fieldBg}
                       size="md"
                       borderRadius="xl"
-                      borderColor="border-subtle"
+                      borderColor={fieldBorder}
                       boxShadow="sm"
                       _focus={{
                         borderColor: "brand-primary",
@@ -402,10 +408,10 @@ const Login = () => {
                       </FormLabel>
                       <Select
                         placeholder="Choose District"
-                        bg="surface"
+                        bg={fieldBg}
                         size="md"
                         borderRadius="xl"
-                        borderColor="border-subtle"
+                        borderColor={fieldBorder}
                         boxShadow="sm"
                         _focus={{
                           borderColor: "brand-primary",
@@ -508,10 +514,10 @@ const Login = () => {
                           textAlign="center"
                           fontSize={{ base: "xl", md: "2xl" }}
                           fontWeight="800"
-                          bg="surface"
+                          bg={fieldBg}
                           borderRadius="lg"
                           border="2px solid"
-                          borderColor="border-subtle"
+                          borderColor={fieldBorder}
                           _focus={{
                             borderColor: "brand-primary",
                             bg: "accent-surface",
@@ -587,8 +593,8 @@ const Login = () => {
               )}
 
               <VStack spacing={3} pt={4} w="full">
-                <Divider borderColor="border-subtle" />
-                <Text fontSize="xs" color="text-muted" fontWeight="600">
+                <Divider borderColor={fieldBorder} />
+                <Text fontSize="xs" color={copyrightColor} fontWeight="600">
                   &copy; {new Date().getFullYear()} VMukti Solutions. All rights
                   reserved.
                 </Text>
