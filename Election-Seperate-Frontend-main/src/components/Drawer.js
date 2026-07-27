@@ -99,7 +99,7 @@ const DrawerButton = ({ drawerContent }) => {
   ) {
     menuItems.push(
       { path: "/autoinstaller", label: "Auto Installer", icon: MdBuild },
-       { path: "/camera-mapping", label: "Map Camera", icon: MdBuild },
+      //  { path: "/camera-mapping", label: "Map Camera", icon: MdBuild },
       // { path: "/attendance", label: "Attendance", icon: MdAccountCircle },
       // { path: "/kyc", label: "KYC Verification", icon: MdVerifiedUser },
     );
@@ -113,7 +113,7 @@ const DrawerButton = ({ drawerContent }) => {
     // Fallback for other roles
     menuItems.push(
       { path: "/autoinstaller", label: "Auto Installer", icon: MdBuild },
-       { path: "/camera-mapping", label: "Map Camera", icon: MdBuild },
+      //  { path: "/camera-mapping", label: "Map Camera", icon: MdBuild },
       // { path: "/attendance", label: "Attendance", icon: MdAccountCircle },
       // { path: "/kyc", label: "KYC Verification", icon: MdVerifiedUser },
     );
