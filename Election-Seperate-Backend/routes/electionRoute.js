@@ -1,6 +1,6 @@
 const express = require('express');
 const adiancerouter = express.Router();
-const {isAuthenticatedUser, authorizeRoles, authorizeRolesElection} = require('../middleware/auth');
+const {isAuthenticatedUser, authorizeRoles} = require('../middleware/auth');
 const multer = require('multer');
 
 // Multer Config for memory storage
@@ -9,16 +9,21 @@ const upload = multer({ storage: storage });
 
 const { uploadCameraPhoto, searchDevices, setIsEdited,getCameraStatus,getCameraById, getLocation, updateCamera, signin, verifyOtp, createCamera, getCameraByDid, getCamerasbyAssignedBy, getCamerasbyNumber, assignCamera, addData, getAcdetails, updateAssemblyNames, updateDistrict, convertDistrictToUpperCase, getDistrictdetails, updateStr, getdetails, getsetting, setsetting, getStateData, getDashboardDetails, updateUser, getPsDetails, getPsLocation, getDistrictData, getAssemblyData, getCameraByLocation, attendance, getLatLongFsv, getFlvLatDid, getFullDid, getLatLongPolling, removeEleCamera, trackLiveLatLong, getElectionUser, getLatLongPhaseOne, getCameraByDidInfo, getElectionUserChart, getElectionCameraChart, rebootCamera, getRebootCamera, getAssemblyByNumber, getCamerasbyDid, getElectionUserPage, getBiharReport, getBiharReportUser, getSixDistrictDataBihar } = require('../controllers/electionController');
 
+// Public: no account exists yet at this point in the flow.
+adiancerouter.route('/login').post( signin );
+adiancerouter.route('/verify').post( verifyOtp );
+
+// Every route below requires a valid login (Authorization: Bearer <token>).
+adiancerouter.use(isAuthenticatedUser);
+
 adiancerouter.route('/cameras').get( getCameraById );
 adiancerouter.route('/getLocation').get( getLocation );
 adiancerouter.route('/camera/:id').put( updateCamera );
-adiancerouter.route('/login').post( signin );
-adiancerouter.route('/verify').post( verifyOtp );
 adiancerouter.route('/create').post( createCamera );
 adiancerouter.route('/getcamerabydid').get( getCameraByDid );
 adiancerouter.route('/searchDevices').get( searchDevices );
 adiancerouter.route('/upload-photo').post( upload.single('photo'), uploadCameraPhoto );
-adiancerouter.route('/getCamerasByAssignedBy').get(authorizeRolesElection('district'),getCamerasbyAssignedBy );
+adiancerouter.route('/getCamerasByAssignedBy').get(authorizeRoles('district'),getCamerasbyAssignedBy );
 adiancerouter.route('/getCamerasByNumber').get( getCamerasbyNumber );
 adiancerouter.route('/assignCamera').post( assignCamera );
 adiancerouter.route('/addData').post( addData );

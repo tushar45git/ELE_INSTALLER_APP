@@ -1,6 +1,7 @@
 import React from 'react';
 import { createRoot } from 'react-dom';
 import { ChakraProvider, ColorModeScript } from '@chakra-ui/react';
+import './utils/authInterceptor';
 import App from './App';
 import theme from './theme';
 import './theme-global.css';
