@@ -592,10 +592,7 @@ const AutoInstaller = () => {
 
       rtmpUrl = rtmpUrl.replace(".flv", "");
 
-      console.log("Transformed URL:", rtmpUrl);
-
       const postData = { rtmp: rtmpUrl };
-      console.log("My data is", postData);
 
       const response = await axios.post(
         "https://installerapp.vmukti.com:8443/analyze-camera",
