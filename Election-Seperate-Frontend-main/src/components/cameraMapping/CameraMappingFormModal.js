@@ -134,9 +134,9 @@ function ComboField({ value, onChange, options, placeholder, isInvalid }) {
 }
 
 // Defaults pre-filled when ADDING a new mapping (editing keeps the record's values).
-const DEFAULT_ADD_DISTRICT = "PATNA";
-const DEFAULT_ADD_ACCODE = "182";
-const DEFAULT_ADD_ACNAME = "182-Bankipur";
+const DEFAULT_ADD_DISTRICT = "PURBA MEDINIPUR";
+const DEFAULT_ADD_ACCODE = "210";
+const DEFAULT_ADD_ACNAME = "Nandigram-I";
 
 const EMPTY = {
   streamId: "",
@@ -319,7 +319,7 @@ export default function CameraMappingFormModal({
     if (!form.streamId) e.streamId = "Select a valid camera";
     if (!form.district.trim()) e.district = "District is required";
     if (!form.accode.trim()) e.accode = "Assembly Code is required";
-    if (!form.acname.trim()) e.acname = "Assembly Name is required";
+    if (!form.acname.trim()) e.acname = "Block Name is required";
     if (!form.location.trim()) e.location = "Location is required";
     if (!form.cameraLocationType) e.cameraLocationType = "Camera type is required";
     if (form.longitude !== "" && isNaN(Number(form.longitude)))
@@ -475,7 +475,7 @@ export default function CameraMappingFormModal({
             </FormControl>
 
             <FormControl isInvalid={!!errors.accode} isRequired>
-              <FormLabel>Assembly Code</FormLabel>
+              {/* <FormLabel>Assembly Code</FormLabel>
               <ComboField
                 value={form.accode}
                 onChange={onAssemblyCodeChange}
@@ -486,11 +486,11 @@ export default function CameraMappingFormModal({
                 placeholder="Select or type an assembly code"
                 isInvalid={!!errors.accode}
               />
-              <FormErrorMessage>{errors.accode}</FormErrorMessage>
+              <FormErrorMessage>{errors.accode}</FormErrorMessage> */}
             </FormControl>
 
             <FormControl isInvalid={!!errors.acname} isRequired>
-              <FormLabel>Assembly Name</FormLabel>
+              <FormLabel>Block Name</FormLabel>
               <ComboField
                 value={form.acname}
                 onChange={onAssemblyNameChange}
@@ -498,7 +498,7 @@ export default function CameraMappingFormModal({
                   value: a.acname,
                   sub: `Code ${a.accode}`,
                 }))}
-                placeholder="Select or type an assembly name"
+                placeholder="Select or type a block name"
                 isInvalid={!!errors.acname}
               />
               <FormErrorMessage>{errors.acname}</FormErrorMessage>

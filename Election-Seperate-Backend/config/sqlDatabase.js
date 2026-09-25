@@ -5,7 +5,7 @@ const phaseConfigs = {
     user: "vmukti",
     password: "bhargav@123456",
     server: "20.244.18.105",
-    database: "patna2026",
+    database: "Nandigram",
     port: 1433,
     options: {
       encrypt: false,

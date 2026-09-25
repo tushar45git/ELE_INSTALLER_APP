@@ -422,7 +422,7 @@ const AutoInstaller = () => {
       "Mobile Number": camera.personMobile,
       "Device ID": camera.deviceId,
       District: camera.district,
-      "Assembly Name": camera.assemblyName,
+      "Block Name": camera.assemblyName,
       "PS No.": camera.psNo,
       Location: camera.location,
       "Last Seen": `${camera.date || ""}  ${camera.time || ""}`.trim(),
@@ -1400,7 +1400,7 @@ const AutoInstaller = () => {
                           <Th>District</Th>
                           <Th>PS No.</Th>
                           <Th>Device ID</Th>
-                          <Th>Assembly Name</Th>
+                          <Th>Block Name</Th>
                           <Th>Location</Th>
                           <Th>Photo</Th>
                           <Th textAlign="right">Actions</Th>
@@ -1414,7 +1414,7 @@ const AutoInstaller = () => {
                               <b>{camera.psNo}</b>
                             </Td>
                             <Td data-label="Device ID">{camera.deviceId}</Td>
-                            <Td data-label="Assembly Name">
+                            <Td data-label="Block Name">
                               {camera.assemblyName}
                             </Td>
                             <Td data-label="Location">{camera.location}</Td>
@@ -2289,7 +2289,7 @@ const AutoInstaller = () => {
                             className="form-group"
                             style={{ marginBottom: "0" }}
                           >
-                            <Text className="custom-label">Assembly Name</Text>
+                            <Text className="custom-label">Block Name</Text>
                             <InputGroup>
                               <InputLeftElement pointerEvents="none">
                                 <FiHome className="site-details-input-icon" />

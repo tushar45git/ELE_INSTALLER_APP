@@ -240,7 +240,7 @@ async function update(makeRequest, id, d, getist) {
   await req.query(`
     UPDATE booth SET
       streamid = @streamid, operatorid = @operatorid, district = @district,
-      accode = @accode, acname = @acname, PSNum = @psnum, location = @location,
+      PSNum = @psnum, location = @location,
       cameralocationtype = @cameralocationtype, IsOutsideBooth = @isoutsidebooth,
       updatedDate = CONVERT(datetime, @getist, 121), updatedBy = @updatedby,
       updatedFrom = @updatedfrom, UpdatedFromPage = @updatedfrompage,
