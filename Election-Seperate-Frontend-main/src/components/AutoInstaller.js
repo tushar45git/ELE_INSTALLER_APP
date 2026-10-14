@@ -99,7 +99,7 @@ import withAuth from "./withAuth";
 // import { ReactFlvPlayer } from 'react-flv-player';
 import videojs from "video.js";
 import "video.js/dist/video-js.css";
-import ReactPlayer from "react-player";
+import LiveFlvPlayer from "./LiveFlvPlayer";
 import QRCodeScanner from "./QrCodeScanner";
 import TawkToWidget from "./tawkto";
 import {
@@ -422,7 +422,7 @@ const AutoInstaller = () => {
       "Mobile Number": camera.personMobile,
       "Device ID": camera.deviceId,
       District: camera.district,
-      "Block Name": camera.assemblyName,
+      "Assembly Name": camera.assemblyName,
       "PS No.": camera.psNo,
       Location: camera.location,
       "Last Seen": `${camera.date || ""}  ${camera.time || ""}`.trim(),
@@ -1400,7 +1400,7 @@ const AutoInstaller = () => {
                           <Th>District</Th>
                           <Th>PS No.</Th>
                           <Th>Device ID</Th>
-                          <Th>Block Name</Th>
+                          <Th>Assembly Name</Th>
                           <Th>Location</Th>
                           <Th>Photo</Th>
                           <Th textAlign="right">Actions</Th>
@@ -1414,7 +1414,7 @@ const AutoInstaller = () => {
                               <b>{camera.psNo}</b>
                             </Td>
                             <Td data-label="Device ID">{camera.deviceId}</Td>
-                            <Td data-label="Block Name">
+                            <Td data-label="Assembly Name">
                               {camera.assemblyName}
                             </Td>
                             <Td data-label="Location">{camera.location}</Td>
@@ -1826,13 +1826,7 @@ const AutoInstaller = () => {
                         </Heading>
                         <div style={{ position: "relative" }}>
                           <div className="video-wrapper">
-                            <ReactPlayer
-                              url={flvUrl}
-                              playing={true}
-                              controls={true}
-                              width="100%"
-                              height="100%"
-                            />
+                            <LiveFlvPlayer url={flvUrl} />
                           </div>
                           {!boothFound && (
                             <Box
@@ -2289,7 +2283,7 @@ const AutoInstaller = () => {
                             className="form-group"
                             style={{ marginBottom: "0" }}
                           >
-                            <Text className="custom-label">Block Name</Text>
+                            <Text className="custom-label">Assembly Name</Text>
                             <InputGroup>
                               <InputLeftElement pointerEvents="none">
                                 <FiHome className="site-details-input-icon" />
@@ -2680,13 +2674,7 @@ const AutoInstaller = () => {
             <ModalBody p={0} bg="black">
               {selectedCamera && (
                 <div style={{ aspectRatio: "16/9", width: "100%" }}>
-                  <ReactPlayer
-                    url={selectedCamera.flvUrl}
-                    playing={true}
-                    controls={true}
-                    width="100%"
-                    height="100%"
-                  />
+                  <LiveFlvPlayer url={selectedCamera.flvUrl} />
                 </div>
               )}
             </ModalBody>

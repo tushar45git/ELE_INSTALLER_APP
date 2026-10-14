@@ -319,7 +319,7 @@ export default function CameraMappingFormModal({
     if (!form.streamId) e.streamId = "Select a valid camera";
     if (!form.district.trim()) e.district = "District is required";
     if (!form.accode.trim()) e.accode = "Assembly Code is required";
-    if (!form.acname.trim()) e.acname = "Block Name is required";
+    if (!form.acname.trim()) e.acname = "Assembly Name is required";
     if (!form.location.trim()) e.location = "Location is required";
     if (!form.cameraLocationType) e.cameraLocationType = "Camera type is required";
     if (form.longitude !== "" && isNaN(Number(form.longitude)))
@@ -490,7 +490,7 @@ export default function CameraMappingFormModal({
             </FormControl>
 
             <FormControl isInvalid={!!errors.acname} isRequired>
-              <FormLabel>Block Name</FormLabel>
+              <FormLabel>Assembly Name</FormLabel>
               <ComboField
                 value={form.acname}
                 onChange={onAssemblyNameChange}
@@ -498,7 +498,7 @@ export default function CameraMappingFormModal({
                   value: a.acname,
                   sub: `Code ${a.accode}`,
                 }))}
-                placeholder="Select or type a block name"
+                placeholder="Select or type a assembly name"
                 isInvalid={!!errors.acname}
               />
               <FormErrorMessage>{errors.acname}</FormErrorMessage>
