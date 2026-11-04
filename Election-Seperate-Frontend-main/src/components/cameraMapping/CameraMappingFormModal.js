@@ -272,12 +272,14 @@ export default function CameraMappingFormModal({
   }, [isOpen, form.acname, form.psNum]);
 
   // Clearing the PS number clears the auto-filled location too (no stale value).
+  // eslint-disable-next-line no-unused-vars
   const onPsNumChange = (value) => {
     setField("psNum", value);
     if (!value.trim()) setField("location", "");
   };
 
   // Assembly code <-> name are paired in the DB; selecting one fills the other.
+  // eslint-disable-next-line no-unused-vars
   const onAssemblyNameChange = (value) => {
     setField("acname", value);
     const match = suggest.assemblies.find((a) => a.acname === value);
@@ -489,7 +491,10 @@ export default function CameraMappingFormModal({
               <FormErrorMessage>{errors.accode}</FormErrorMessage> */}
             </FormControl>
 
-            <FormControl isInvalid={!!errors.acname} isRequired>
+            {/* Assembly Name & PS Number hidden from the form. Assembly Name
+                still defaults to DEFAULT_ADD_ACNAME when adding (and keeps the
+                record's value when editing); PS Number is sent as-is. */}
+            {/* <FormControl isInvalid={!!errors.acname} isRequired>
               <FormLabel>Assembly Name</FormLabel>
               <ComboField
                 value={form.acname}
@@ -512,7 +517,7 @@ export default function CameraMappingFormModal({
                 options={suggest.psNumbers.map((p) => ({ value: p }))}
                 placeholder="Select or type a PS number"
               />
-            </FormControl>
+            </FormControl> */}
 
             <FormControl isInvalid={!!errors.location} isRequired>
               <FormLabel>Location</FormLabel>

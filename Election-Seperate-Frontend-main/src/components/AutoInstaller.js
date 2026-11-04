@@ -7,8 +7,8 @@ import {
   FiList,
   FiPlus,
   FiMap,
-  FiHome,
-  FiHash,
+  // FiHome, // used by hidden Assembly field
+  // FiHash, // used by hidden PS No. field
   FiMapPin,
   FiGlobe,
   FiEdit,
@@ -2278,7 +2278,8 @@ const AutoInstaller = () => {
                             </InputGroup>
                           </div>
 
-                          {/* Assembly Field */}
+                          {/* Assembly Field (hidden) */}
+                          {/*
                           <div
                             className="form-group"
                             style={{ marginBottom: "0" }}
@@ -2300,7 +2301,7 @@ const AutoInstaller = () => {
                             </InputGroup>
                           </div>
 
-                          {/* PS No & Location Info - Using simple stack for mobile thumb comfort */}
+                          PS No. field (hidden)
                           <div
                             className="form-group"
                             style={{ marginBottom: "0" }}
@@ -2319,7 +2320,7 @@ const AutoInstaller = () => {
                                 size="md"
                               />
                             </InputGroup>
-                          </div>
+                          </div> */}
 
                           {/* Location Info Field */}
                           <div
