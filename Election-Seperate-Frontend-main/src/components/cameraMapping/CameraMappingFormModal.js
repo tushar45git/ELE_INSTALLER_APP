@@ -134,9 +134,9 @@ function ComboField({ value, onChange, options, placeholder, isInvalid }) {
 }
 
 // Defaults pre-filled when ADDING a new mapping (editing keeps the record's values).
-const DEFAULT_ADD_DISTRICT = "PURBA MEDINIPUR";
-const DEFAULT_ADD_ACCODE = "210";
-const DEFAULT_ADD_ACNAME = "Nandigram-I";
+const DEFAULT_ADD_DISTRICT = "Ahmedabad";
+const DEFAULT_ADD_ACCODE = "1";
+const DEFAULT_ADD_ACNAME = "Sabarmati";
 
 const EMPTY = {
   streamId: "",
