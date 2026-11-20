@@ -1,162 +1,216 @@
 /**
- * booth repository — the camera↔booth mapping table.
+ * Camera mappings: the `camera` collection in the polling database (this was
+ * the SQL `booth` table).
  *
- * Column types below are bound to the *live* schema:
- *   district varchar(100), acname varchar(100), accode nvarchar(max),
- *   PSNum nvarchar(50), location nvarchar(max), cameralocationtype nvarchar(100),
- *   addedBy varchar(255), updatedBy nvarchar(50), IsAro varchar(255).
+ * One document = one camera (deviceId) installed at one location:
+ *   { deviceId, districtAssemblyCode, name, locations[], psnum,
+ *     location_Type: "indoor" | "outdoor", operatorId, Date, ... }
  *
- * Per the parity decision, longitude/latitude are stored as 0 and IsPink/IsAro
- * as 0 on write, exactly as the SP did (values are accepted at the API for
- * forward-compatibility but not persisted).
+ * District / assembly names are not stored on the camera. They come from the
+ * `district` collection through `districtAssemblyCode`.
+ *
+ * Reads return rows in the same shape the SQL version returned (id, streamid,
+ * streamname, district, accode, acname, PSNum, location, cameralocationtype,
+ * operatorName, ...), so the controllers and the frontend are unchanged.
  */
 
-const sql = require("mssql");
+const mongoose = require("mongoose");
+const { getPollingModels } = require("../models/polling");
+const { escapeRegex } = require("./streamlistRepository");
 const {
   SORTABLE_COLUMNS,
   DEFAULT_SORT_COLUMN,
   DEFAULT_SORT_ORDER,
 } = require("../constants/cameraMapping");
 
-/** Bind the shared booth column set from a mapping payload onto a request. */
-function bindBoothColumns(req, d) {
-  return req
-    .input("streamid", sql.Int, d.streamId)
-    .input("operatorid", sql.Int, d.operatorId)
-    .input("district", sql.VarChar(100), d.district)
-    .input("accode", sql.NVarChar(sql.MAX), d.accode)
-    .input("acname", sql.VarChar(100), d.acname)
-    .input("psnum", sql.NVarChar(50), d.psNum)
-    .input("location", sql.NVarChar(sql.MAX), d.location)
-    .input("cameralocationtype", sql.NVarChar(100), d.cameraLocationType)
-    .input("isoutsidebooth", sql.Bit, d.isOutsideBooth);
+// App uses "Inside"/"Outside"; the polling DB stores "indoor"/"outdoor".
+const toDbLocationType = (t) =>
+  t === "Outside" ? "outdoor" : t === "Inside" ? "indoor" : String(t || "").toLowerCase();
+
+const toObjectId = (id) =>
+  mongoose.Types.ObjectId.isValid(String(id)) ? new mongoose.Types.ObjectId(String(id)) : null;
+
+/** Aggregation stages that turn a camera document into an API row. */
+const ROW_STAGES = [
+  {
+    $lookup: {
+      from: "district",
+      localField: "districtAssemblyCode",
+      foreignField: "districtAssemblyCode",
+      as: "d",
+    },
+  },
+  {
+    $lookup: {
+      from: "operator_infos",
+      localField: "operatorId",
+      foreignField: "operatorId",
+      as: "o",
+    },
+  },
+  {
+    $addFields: {
+      d: { $arrayElemAt: ["$d", 0] },
+      o: { $arrayElemAt: ["$o", 0] },
+    },
+  },
+  {
+    $project: {
+      _id: 0,
+      _sortId: "$_id",
+      id: { $toString: "$_id" },
+      streamid: "$deviceId",
+      streamname: "$deviceId",
+      operatorid: "$operatorId",
+      operatorName: "$o.name",
+      operatorNumber: "$o.mobile",
+      operatorDesignation: { $ifNull: ["$o.designation", ""] },
+      district: "$d.dist_name",
+      accode: "$d.accode",
+      acname: "$d.accName",
+      districtAssemblyCode: 1,
+      PSNum: "$psnum",
+      location: { $ifNull: ["$name", { $arrayElemAt: ["$locations", 0] }] },
+      cameralocationtype: {
+        $switch: {
+          branches: [
+            { case: { $eq: ["$location_Type", "outdoor"] }, then: "Outside" },
+            { case: { $eq: ["$location_Type", "indoor"] }, then: "Inside" },
+          ],
+          default: "$location_Type",
+        },
+      },
+      IsOutsideBooth: { $eq: ["$location_Type", "outdoor"] },
+      longitude: { $ifNull: ["$longitude", 0] },
+      latitude: { $ifNull: ["$latitude", 0] },
+      addedBy: 1,
+      AddDatetime: "$Date",
+      updatedBy: 1,
+      updatedDate: 1,
+      updatedFrom: 1,
+    },
+  },
+];
+
+const stripSort = (row) => {
+  if (row) delete row._sortId;
+  return row;
+};
+
+async function findOneRow(match, sort = { _id: -1 }) {
+  const { Camera } = getPollingModels();
+  const [row] = await Camera.aggregate([
+    { $match: match },
+    { $sort: sort },
+    { $limit: 1 },
+    ...ROW_STAGES,
+  ]);
+  return stripSort(row) ?? null;
+}
+
+// ── district / assembly lookups (district collection) ───────────────────────
+
+/** District row for a (district name, assembly name) pair, or null. */
+async function findDistrictRow({ district, acname }) {
+  const { District } = getPollingModels();
+  const filter = { accName: acname };
+  if (district) filter.dist_name = district;
+  return District.findOne(filter).lean();
+}
+
+/** All districtAssemblyCodes matching the optional district / assembly filters. */
+async function codesFor({ district = "", acname = "" } = {}) {
+  const { District } = getPollingModels();
+  const filter = {};
+  if (district) filter.dist_name = district;
+  if (acname) filter.accName = acname;
+  return District.distinct("districtAssemblyCode", filter);
+}
+
+async function distinctDistricts() {
+  const { District } = getPollingModels();
+  const list = await District.distinct("dist_name", { dist_name: { $nin: [null, ""] } });
+  return list.sort((a, b) => String(a).localeCompare(String(b)));
+}
+
+/** Assemblies (optionally for one district) as [{ acname, accode }]. */
+async function distinctAssemblies(district = "") {
+  const { District } = getPollingModels();
+  const filter = { accName: { $nin: [null, ""] } };
+  if (district) filter.dist_name = district;
+  const rows = await District.find(filter, { accName: 1, accode: 1 }).lean();
+  return rows
+    .map((r) => ({ acname: r.accName, accode: r.accode }))
+    .sort((a, b) => Number(a.accode) - Number(b.accode) || a.acname.localeCompare(b.acname));
+}
+
+/** PS numbers already used by cameras, optionally for a district / assembly. */
+async function distinctPsNumbers({ district = "", acname = "" } = {}) {
+  const { Camera } = getPollingModels();
+  const filter = { psnum: { $nin: [null, ""] } };
+  if (district || acname) filter.districtAssemblyCode = { $in: await codesFor({ district, acname }) };
+  return Camera.distinct("psnum", filter);
+}
+
+// ── camera mapping reads ────────────────────────────────────────────────────
+
+/** Another mapping already using this camera (excluding `excludeId`), or null. */
+async function findDuplicateByStream({ streamId, excludeId }) {
+  const match = { deviceId: streamId };
+  const ex = excludeId ? toObjectId(excludeId) : null;
+  if (ex) match._id = { $ne: ex };
+  return findOneRow(match, { _id: 1 });
+}
+
+async function findById(id) {
+  const oid = toObjectId(id);
+  if (!oid) return null;
+  return findOneRow({ _id: oid });
+}
+
+/** Latest mapping for a camera (deviceId), or null when it is not mapped. */
+async function findByStreamId(deviceId) {
+  return findOneRow({ deviceId });
 }
 
 /**
- * Find another *non-deleted* booth already using this camera (SP duplicate
- * probe). Excludes the booth being edited. Returns the conflicting row or null.
+ * Another mapping at the same location slot: assembly + PS number + camera
+ * location type, plus the location text when given. Excludes `excludeId`.
  */
-async function findDuplicateByStream(makeRequest, { streamId, excludeId }) {
-  const result = await makeRequest()
-    .input("streamid", sql.Int, streamId)
-    .input("excludeid", sql.Int, excludeId)
-    .query(`
-      SELECT TOP 1 id, streamid, district, acname, PSNum, location
-      FROM booth WITH (NOLOCK)
-      WHERE streamid = @streamid AND id <> @excludeid AND ISNULL(isdelete, 0) = 0
-      ORDER BY id`);
-  return result.recordset[0] ?? null;
+async function findByLocationSlot({ acname, psNum, cameraLocationType, location, excludeId }) {
+  const match = {
+    districtAssemblyCode: { $in: await codesFor({ acname }) },
+    psnum: psNum,
+    location_Type: toDbLocationType(cameraLocationType),
+  };
+  if (location !== undefined && location !== null) match.name = location;
+  const ex = excludeId ? toObjectId(excludeId) : null;
+  if (ex) match._id = { $ne: ex };
+  return findOneRow(match);
 }
 
-/** Single mapping joined with camera + operator, or null. */
-async function findById(makeRequest, id) {
-  const result = await makeRequest().input("id", sql.Int, id).query(`
-      SELECT b.id, b.streamid, s.streamname, b.operatorid,
-             o.operatorName, o.operatorNumber, o.Designation AS operatorDesignation,
-             b.district, b.accode, b.acname, b.PSNum, b.location,
-             b.cameralocationtype, b.IsOutsideBooth, b.longitude, b.latitude,
-             b.addedBy, b.AddDatetime, b.updatedBy, b.updatedDate, b.updatedFrom
-      FROM booth b WITH (NOLOCK)
-      LEFT JOIN streamlist s WITH (NOLOCK) ON s.id = b.streamid
-      LEFT JOIN operator_info o WITH (NOLOCK) ON o.id = b.operatorid
-      WHERE b.id = @id AND ISNULL(b.isdelete, 0) = 0`);
-  return result.recordset[0] ?? null;
-}
-
-/**
- * Old snapshot (booth ⋈ streamlist) needed by the edit path to detect camera
- * and location changes. Returns null if the booth is missing/deleted.
- */
-async function findOldSnapshot(makeRequest, id) {
-  const result = await makeRequest().input("id", sql.Int, id).query(`
-      SELECT s.streamname AS oldStreamName, b.streamid AS oldStreamId,
-             b.operatorid AS oldOperatorId, b.cameralocationtype AS oldCameraLocationType,
-             b.district AS oldDistrict, b.acname AS oldAcname,
-             b.location AS oldLocation, b.PSNum AS oldPsNum, b.accode AS oldAccode
-      FROM booth b WITH (NOLOCK)
-      LEFT JOIN streamlist s WITH (NOLOCK) ON s.id = b.streamid
-      WHERE b.id = @id`);
-  return result.recordset[0] ?? null;
-}
-
-/**
- * Latest non-deleted mapping for a given camera (streamid), joined with camera
- * + operator. Backs the AutoInstaller "is this camera mapped?" lookup.
- */
-async function findByStreamId(makeRequest, streamId) {
-  const result = await makeRequest().input("streamid", sql.Int, streamId).query(`
-      SELECT TOP 1 b.id, b.streamid, s.streamname, b.operatorid,
-             o.operatorName, o.operatorNumber, o.Designation AS operatorDesignation,
-             b.district, b.accode, b.acname, b.PSNum, b.location,
-             b.cameralocationtype, b.IsOutsideBooth, b.longitude, b.latitude,
-             b.addedBy, b.AddDatetime, b.updatedBy, b.updatedDate
-      FROM booth b WITH (NOLOCK)
-      LEFT JOIN streamlist s WITH (NOLOCK) ON s.id = b.streamid
-      LEFT JOIN operator_info o WITH (NOLOCK) ON o.id = b.operatorid
-      WHERE b.streamid = @streamid AND ISNULL(b.isdelete, 0) = 0
-      ORDER BY b.id DESC`);
-  return result.recordset[0] ?? null;
-}
-
-/**
- * Find another non-deleted booth occupying the same location slot, excluding a
- * given booth id. The slot is (assembly name + PS number + camera location
- * type); when `location` is provided it is also matched (used by the create
- * "update camera at occupied slot" flow). Backs the location-swap prompt (edit)
- * and the slot-upsert (add).
- */
-async function findByLocationSlot(
-  makeRequest,
-  { acname, psNum, cameraLocationType, location, excludeId = 0 },
-) {
-  const matchLocation = location !== undefined && location !== null;
-  const result = await makeRequest()
-    .input("acname", sql.VarChar(100), acname)
-    .input("psnum", sql.NVarChar(50), psNum)
-    .input("cameralocationtype", sql.NVarChar(100), cameraLocationType)
-    .input("location", sql.NVarChar(sql.MAX), matchLocation ? location : "")
-    .input("excludeid", sql.Int, excludeId)
-    .query(`
-      SELECT TOP 1 b.id, b.streamid, s.streamname, b.district, b.accode,
-             b.acname, b.PSNum, b.location, b.cameralocationtype, b.operatorid,
-             b.IsOutsideBooth
-      FROM booth b WITH (NOLOCK)
-      LEFT JOIN streamlist s WITH (NOLOCK) ON s.id = b.streamid
-      WHERE ISNULL(b.isdelete, 0) = 0 AND b.id <> @excludeid
-        AND b.acname = @acname AND b.PSNum = @psnum
-        AND b.cameralocationtype = @cameralocationtype
-        ${matchLocation ? "AND b.location = @location" : ""}
-      ORDER BY b.id DESC`);
-  return result.recordset[0] ?? null;
-}
-
-/**
- * Canonical location for an (assembly, PS number) pair — used to auto-fill the
- * Location field so it stays consistent across cameras at the same booth.
- * Matches the PS number ignoring the Outside "-O" suffix.
- */
-async function getLocationForSlot(makeRequest, { acname, psNum }) {
+/** Most-used location text for an (assembly, PS number) pair, or null. */
+async function getLocationForSlot({ acname, psNum }) {
+  const { Camera } = getPollingModels();
   const base = String(psNum ?? "").replace(/-O$/i, "");
-  const result = await makeRequest()
-    .input("acname", sql.VarChar(100), acname)
-    .input("psbase", sql.NVarChar(50), base)
-    .query(`
-      SELECT TOP 1 location, COUNT(*) AS cnt
-      FROM booth WITH (NOLOCK)
-      WHERE ISNULL(isdelete, 0) = 0 AND acname = @acname
-        AND REPLACE(PSNum, '-O', '') = @psbase
-        AND location IS NOT NULL AND location <> ''
-      GROUP BY location
-      ORDER BY cnt DESC`);
-  return result.recordset[0]?.location ?? null;
+  const [top] = await Camera.aggregate([
+    {
+      $match: {
+        districtAssemblyCode: { $in: await codesFor({ acname }) },
+        psnum: { $regex: `^${escapeRegex(base)}(-O)?$`, $options: "i" },
+        name: { $nin: [null, ""] },
+      },
+    },
+    { $group: { _id: "$name", cnt: { $sum: 1 } } },
+    { $sort: { cnt: -1 } },
+    { $limit: 1 },
+  ]);
+  return top ? top._id : null;
 }
 
-/**
- * Server-side paginated / filtered / sorted list.
- * Uses COUNT(*) OVER() so the total ships back in the same round trip.
- * `sortBy` is whitelisted; `sortOrder` is coerced — neither can inject SQL.
- */
-async function list(makeRequest, params) {
+/** Paginated / filtered / sorted list for the Camera Mapping page. */
+async function list(params) {
+  const { Camera } = getPollingModels();
   const {
     search = "",
     district = "",
@@ -168,166 +222,131 @@ async function list(makeRequest, params) {
     sortOrder,
   } = params;
 
-  const sortColumn = SORTABLE_COLUMNS[sortBy] || DEFAULT_SORT_COLUMN;
-  const direction =
-    String(sortOrder).toUpperCase() === "ASC" ? "ASC" : DEFAULT_SORT_ORDER;
+  const match = {};
+  if (district) match.district = district;
+  if (assembly) match.acname = assembly;
+  if (camera) match.streamname = { $regex: escapeRegex(camera), $options: "i" };
+  if (search) {
+    const rx = { $regex: escapeRegex(search), $options: "i" };
+    match.$or = ["streamname", "location", "district", "acname", "PSNum", "operatorName"].map(
+      (f) => ({ [f]: rx }),
+    );
+  }
 
-  const result = await makeRequest()
-    .input("search", sql.NVarChar(200), `%${search}%`)
-    .input("hasSearch", sql.Bit, search ? 1 : 0)
-    .input("district", sql.NVarChar(200), district)
-    .input("assembly", sql.NVarChar(200), assembly)
-    .input("camera", sql.NVarChar(200), `%${camera}%`)
-    .input("hasCamera", sql.Bit, camera ? 1 : 0)
-    .input("offset", sql.Int, offset)
-    .input("limit", sql.Int, limit).query(`
-      SELECT
-        b.id, b.streamid, s.streamname, b.district, b.accode, b.acname,
-        b.PSNum, b.location, b.cameralocationtype, b.IsOutsideBooth,
-        o.operatorName, o.operatorNumber, o.Designation AS operatorDesignation,
-        b.updatedBy, b.updatedDate, b.AddDatetime, b.addedBy,
-        COUNT(*) OVER() AS totalRecords
-      FROM booth b WITH (NOLOCK)
-      LEFT JOIN streamlist s WITH (NOLOCK) ON s.id = b.streamid
-      LEFT JOIN operator_info o WITH (NOLOCK) ON o.id = b.operatorid
-      WHERE ISNULL(b.isdelete, 0) = 0
-        AND (@district = '' OR b.district = @district)
-        AND (@assembly = '' OR b.acname = @assembly)
-        AND (@hasCamera = 0 OR s.streamname LIKE @camera)
-        AND (@hasSearch = 0 OR
-             s.streamname LIKE @search OR b.location LIKE @search OR
-             b.district LIKE @search OR b.acname LIKE @search OR
-             b.PSNum LIKE @search OR o.operatorName LIKE @search)
-      ORDER BY ${sortColumn} ${direction}
-      OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY`);
+  const sortField = SORTABLE_COLUMNS[sortBy] || DEFAULT_SORT_COLUMN;
+  const dir =
+    String(sortOrder || DEFAULT_SORT_ORDER).toUpperCase() === "ASC" ? 1 : -1;
+  const sort = sortField === "_sortId" ? { _sortId: dir } : { [sortField]: dir, _sortId: -1 };
 
-  const rows = result.recordset;
-  const total = rows.length > 0 ? rows[0].totalRecords : 0;
-  rows.forEach((r) => delete r.totalRecords);
-  return { rows, total };
+  const [res] = await Camera.aggregate([
+    ...ROW_STAGES,
+    { $match: match },
+    { $sort: sort },
+    {
+      $facet: {
+        rows: [{ $skip: offset }, { $limit: limit }],
+        total: [{ $count: "n" }],
+      },
+    },
+  ]);
+
+  return {
+    rows: (res?.rows || []).map(stripSort),
+    total: res?.total?.[0]?.n || 0,
+  };
 }
 
-/** Insert a new booth (SP add branch). Returns the new booth id. */
-async function insert(makeRequest, d, getist) {
-  const req = bindBoothColumns(makeRequest(), d)
-    .input("addedby", sql.VarChar(255), d.userName)
-    .input("updatedby", sql.NVarChar(50), d.userName)
-    .input("addfrom", sql.VarChar(100), d.addedFrom)
-    .input("addpage", sql.VarChar(100), d.addedFromPage)
-    .input("getist", sql.VarChar(30), getist);
-  const result = await req.query(`
-    INSERT INTO booth
-      (streamid, operatorid, district, accode, acname, PSNum, location,
-       boothstateid, isdisplay, longitude, latitude, cameralocationtype,
-       IsPink, IsOutsideBooth, AddDatetime, addedBy, IsAro, isdelete,
-       AddedFromPage, AddedFrom, updatedBy, updatedFrom)
-    VALUES
-      (@streamid, @operatorid, @district, @accode, @acname, @psnum, @location,
-       1, 1, 0, 0, @cameralocationtype,
-       0, @isoutsidebooth, CONVERT(datetime, @getist, 121), @addedby, '0', 0,
-       @addpage, @addfrom, @updatedby, @addfrom);
-    SELECT CAST(SCOPE_IDENTITY() AS INT) AS id;`);
-  return result.recordset[0].id;
+// ── camera mapping writes ───────────────────────────────────────────────────
+
+/** Fields written to the camera document for a mapping. */
+function mappingFields(d) {
+  return {
+    deviceId: d.streamId,
+    districtAssemblyCode: d.districtAssemblyCode,
+    name: d.location,
+    locations: [d.location],
+    psnum: d.psNum,
+    location_Type: toDbLocationType(d.cameraLocationType),
+    operatorId: d.operatorId,
+  };
 }
 
-/** Update an existing booth (SP edit branch). longitude/latitude untouched. */
-async function update(makeRequest, id, d, getist) {
-  const req = bindBoothColumns(makeRequest().input("id", sql.Int, id), d)
-    .input("updatedby", sql.NVarChar(50), d.userName)
-    .input("updatedfrom", sql.NVarChar(50), d.updatedFrom)
-    .input("updatedfrompage", sql.VarChar(100), d.updatedFromPage)
-    .input("getist", sql.VarChar(30), getist);
-  await req.query(`
-    UPDATE booth SET
-      streamid = @streamid, operatorid = @operatorid, district = @district,
-      accode = @accode, acname = @acname, PSNum = @psnum, location = @location,
-      cameralocationtype = @cameralocationtype, IsOutsideBooth = @isoutsidebooth,
-      updatedDate = CONVERT(datetime, @getist, 121), updatedBy = @updatedby,
-      updatedFrom = @updatedfrom, UpdatedFromPage = @updatedfrompage,
-      IsPink = 0, IsAro = 0, isupdated = 1
-    WHERE id = @id`);
+/** Insert a new mapping. Returns the new id (string). */
+async function insert(d, session) {
+  const { Camera } = getPollingModels();
+  const now = new Date();
+  const [doc] = await Camera.create(
+    [
+      {
+        ...mappingFields(d),
+        Date: now,
+        connectedOnceFlag: false,
+        isp2p: 1,
+        sharedWith: [],
+        addedBy: d.userName,
+        updatedBy: d.userName,
+        updatedDate: now,
+        updatedFrom: d.addedFrom,
+      },
+    ],
+    { session },
+  );
+  return String(doc._id);
 }
 
-/** Reassign only the camera of a booth (used by the swap flow). */
-async function updateStream(makeRequest, id, streamId, meta, getist) {
-  await makeRequest()
-    .input("id", sql.Int, id)
-    .input("streamid", sql.Int, streamId)
-    .input("updatedby", sql.NVarChar(50), meta.userName)
-    .input("updatedfrom", sql.NVarChar(50), meta.updatedFrom)
-    .input("updatedfrompage", sql.VarChar(100), meta.updatedFromPage)
-    .input("getist", sql.VarChar(30), getist).query(`
-      UPDATE booth SET
-        streamid = @streamid,
-        updatedDate = CONVERT(datetime, @getist, 121),
-        updatedBy = @updatedby, updatedFrom = @updatedfrom,
-        UpdatedFromPage = @updatedfrompage, isupdated = 1
-      WHERE id = @id`);
+/** Update an existing mapping. */
+async function update(id, d, session) {
+  const { Camera } = getPollingModels();
+  await Camera.updateOne(
+    { _id: toObjectId(id) },
+    {
+      $set: {
+        ...mappingFields(d),
+        updatedBy: d.userName,
+        updatedDate: new Date(),
+        updatedFrom: d.updatedFrom,
+      },
+    },
+    { session },
+  );
 }
 
-/** Soft-delete a booth (net-new; SP had no delete). */
-async function softDelete(makeRequest, id, meta, getist) {
-  await makeRequest()
-    .input("id", sql.Int, id)
-    .input("updatedby", sql.NVarChar(50), meta.userName)
-    .input("updatedfrom", sql.NVarChar(50), meta.updatedFrom)
-    .input("updatedfrompage", sql.VarChar(100), meta.updatedFromPage)
-    .input("getist", sql.VarChar(30), getist).query(`
-      UPDATE booth SET
-        isdelete = 1,
-        updatedDate = CONVERT(datetime, @getist, 121),
-        updatedBy = @updatedby, updatedFrom = @updatedfrom,
-        UpdatedFromPage = @updatedfrompage
-      WHERE id = @id`);
+/** Move a different camera (deviceId) onto an existing mapping (swap flows). */
+async function updateStream(id, deviceId, meta, session) {
+  const { Camera } = getPollingModels();
+  await Camera.updateOne(
+    { _id: toObjectId(id) },
+    {
+      $set: {
+        deviceId,
+        updatedBy: meta.userName,
+        updatedDate: new Date(),
+        updatedFrom: meta.updatedFrom,
+      },
+    },
+    { session },
+  );
 }
 
-/** Distinct districts for the filter dropdown. */
-async function distinctDistricts(makeRequest) {
-  const result = await makeRequest().query(`
-    SELECT DISTINCT district FROM booth WITH (NOLOCK)
-    WHERE ISNULL(isdelete, 0) = 0 AND district IS NOT NULL AND district <> ''
-    ORDER BY district`);
-  return result.recordset.map((r) => r.district);
-}
-
-/** Distinct assemblies (optionally scoped to a district). */
-async function distinctAssemblies(makeRequest, district = "") {
-  const result = await makeRequest()
-    .input("district", sql.NVarChar(200), district)
-    .query(`
-      SELECT DISTINCT acname, accode FROM booth WITH (NOLOCK)
-      WHERE ISNULL(isdelete, 0) = 0 AND acname IS NOT NULL AND acname <> ''
-        AND (@district = '' OR district = @district)
-      ORDER BY acname`);
-  return result.recordset;
-}
-
-/** Distinct PS numbers, optionally scoped to a district and/or assembly. */
-async function distinctPsNumbers(makeRequest, { district = "", acname = "" } = {}) {
-  const result = await makeRequest()
-    .input("district", sql.NVarChar(200), district)
-    .input("acname", sql.NVarChar(200), acname)
-    .query(`
-      SELECT DISTINCT PSNum FROM booth WITH (NOLOCK)
-      WHERE ISNULL(isdelete, 0) = 0 AND PSNum IS NOT NULL AND PSNum <> ''
-        AND (@district = '' OR district = @district)
-        AND (@acname = '' OR acname = @acname)`);
-  return result.recordset.map((r) => r.PSNum);
+/** Delete a mapping. The camera document is removed, as the portal does. */
+async function remove(id, session) {
+  const { Camera } = getPollingModels();
+  await Camera.deleteOne({ _id: toObjectId(id) }, { session });
 }
 
 module.exports = {
+  findDistrictRow,
+  distinctDistricts,
+  distinctAssemblies,
   distinctPsNumbers,
   findDuplicateByStream,
   findById,
   findByStreamId,
   findByLocationSlot,
   getLocationForSlot,
-  findOldSnapshot,
   list,
   insert,
   update,
   updateStream,
-  softDelete,
-  distinctDistricts,
-  distinctAssemblies,
+  remove,
 };

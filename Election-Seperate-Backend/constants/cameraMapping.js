@@ -1,10 +1,8 @@
 /**
  * Camera Mapping constants.
  *
- * These mirror the literal values the legacy stored procedure `SaveBoothByID`
- * wrote into the booth / boothhistory / ChangeCamera tables. Keeping them in
- * one place means the "magic strings" the business depends on (page names,
- * audit actions, operator defaults) are defined exactly once.
+ * Page names, history actions and operator defaults used when writing camera
+ * mappings to the polling MongoDB, defined in one place.
  */
 
 module.exports = {
@@ -15,19 +13,16 @@ module.exports = {
   FROM_DELETE: "Delete Booth",
   FROM_SWAP: "Swap Camera",
 
-  // ── boothhistory.Action values ─────────────────────────────────────────────
-  ACTION_INSERT: "INSERT",
-  ACTION_UPDATE: "UPDATE",
+  // ── History actions (vehiclelogs_v2 history[].action, same as the portal) ──
+  ACTION_INSERT: "ADD",
+  ACTION_UPDATE: "EDIT",
   ACTION_DELETE: "DELETE",
+  ACTION_SWAP: "SWAP",
+  ACTION_REMOVE: "REMOVE", // camera moved away from this location
 
   // ── Operator defaults (SP: blank name -> 'NA', blank number -> '1234567890')─
   DEFAULT_OPERATOR_NAME: "NA",
   DEFAULT_OPERATOR_NUMBER: "1234567890",
-
-  // ── Camera location type that flags a booth as "outside" ───────────────────
-  OUTSIDE_LOCATION_TYPE: "Outside",
-  // Suffix appended to PS Number for Outside cameras (e.g. "7" -> "7-O").
-  OUTSIDE_PS_SUFFIX: "-O",
 
   // ── Duplicate-camera business error codes (consumed by the frontend) ───────
   ERROR_ADD_EXIST: "AddExist", // new mapping, camera already used elsewhere
@@ -39,21 +34,21 @@ module.exports = {
   MAX_PAGE_SIZE: 200,
 
   /**
-   * Whitelist of sortable columns. The client sends the API-facing key; we map
-   * it to a fully-qualified column so `sortBy` can never inject SQL.
+   * Whitelist of sortable columns: API key -> field of the list row. Only these
+   * fields can be sorted on.
    */
   SORTABLE_COLUMNS: {
-    cameraName: "s.streamname",
-    district: "b.district",
-    assembly: "b.acname",
-    psNumber: "b.PSNum",
-    location: "b.location",
-    cameraType: "b.cameralocationtype",
-    operator: "o.operatorName",
-    updatedBy: "b.updatedBy",
-    updatedDate: "b.updatedDate",
-    id: "b.id",
+    cameraName: "streamname",
+    district: "district",
+    assembly: "acname",
+    psNumber: "PSNum",
+    location: "location",
+    cameraType: "cameralocationtype",
+    operator: "operatorName",
+    updatedBy: "updatedBy",
+    updatedDate: "updatedDate",
+    id: "_sortId",
   },
-  DEFAULT_SORT_COLUMN: "b.id",
+  DEFAULT_SORT_COLUMN: "_sortId",
   DEFAULT_SORT_ORDER: "DESC",
 };

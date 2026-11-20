@@ -22,7 +22,15 @@ import {
 } from "@chakra-ui/react";
 import { getCameraMappingHistory } from "../../actions/cameraMappingActions";
 
-const ACTION_COLORS = { INSERT: "green", UPDATE: "blue", DELETE: "red" };
+const ACTION_COLORS = {
+  ADD: "green",
+  INSERT: "green",
+  EDIT: "blue",
+  UPDATE: "blue",
+  SWAP: "purple",
+  REMOVE: "orange",
+  DELETE: "red",
+};
 
 /** Read-only audit trail for a single booth mapping. */
 export default function HistoryModal({ isOpen, onClose, booth }) {

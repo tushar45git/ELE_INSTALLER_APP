@@ -17,9 +17,9 @@ const REQUIRED_TEXT = [
 
 const isBlank = (v) => v === undefined || v === null || String(v).trim() === "";
 
+// streamId is the camera's deviceId (a string such as "ATPL-405510-ARCIS").
 function validateStreamId(body, errors) {
-  const n = Number(body.streamId);
-  if (isBlank(body.streamId) || !Number.isInteger(n) || n <= 0) {
+  if (isBlank(body.streamId)) {
     errors.push({ field: "streamId", message: "A valid camera (stream) is required" });
   }
 }
@@ -46,11 +46,10 @@ function validateMapping(body) {
 /** Validate the swap payload. */
 function validateSwap(body) {
   const errors = validateMapping(body);
-  const id = Number(body.id);
-  const id1 = Number(body.id1);
-  if (!Number.isInteger(id) || id <= 0)
+  // Mapping ids are MongoDB ObjectId strings.
+  if (isBlank(body.id))
     errors.push({ field: "id", message: "Current booth id is required" });
-  if (!Number.isInteger(id1) || id1 <= 0)
+  if (isBlank(body.id1))
     errors.push({ field: "id1", message: "Conflicting booth id is required" });
   return errors;
 }

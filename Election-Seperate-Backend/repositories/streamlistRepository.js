@@ -1,58 +1,99 @@
 /**
- * streamlist repository — read-only camera master.
- * The SP only ever read `streamname` from this table; we add existence and
- * search helpers to back the frontend camera picker and validation.
+ * Camera master: the `stream` collection in the polling database.
+ *
+ * A camera is identified by its `deviceId`. The rest of the app still uses the
+ * old SQL names `streamId` / `streamname`; for the Mongo data both are simply
+ * the deviceId.
  */
 
-const sql = require("mssql");
+const { getPollingModels } = require("../models/polling");
 
-/** Get a camera's stream name, or null if the id does not exist. */
-async function getStreamName(makeRequest, streamId) {
-  const result = await makeRequest()
-    .input("streamid", sql.Int, streamId)
-    .query(
-      "SELECT streamname FROM streamlist WITH (NOLOCK) WHERE id = @streamid",
-    );
-  return result.recordset[0]?.streamname ?? null;
-}
+const escapeRegex = (s) => String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-/** True if the camera id exists (used by the "invalid stream" validation). */
-async function existsById(makeRequest, streamId) {
-  const result = await makeRequest()
-    .input("streamid", sql.Int, streamId)
-    .query("SELECT TOP 1 id FROM streamlist WITH (NOLOCK) WHERE id = @streamid");
-  return result.recordset.length > 0;
-}
+const toCamera = (doc) =>
+  doc ? { id: doc.deviceId, streamname: doc.deviceId, deviceid: doc.deviceId } : null;
 
 /**
- * Resolve a single camera by its device id or exact stream name.
- * Returns { id, streamname, deviceid } or null. Used by the AutoInstaller
- * lookup to turn a scanned/entered device id into a streamlist id.
+ * Full deviceId for what the user typed: an exact match first; otherwise, if
+ * exactly ONE camera's deviceId contains the text (e.g. "405510" ->
+ * "ATPL-405510-ARCIS"), that one. Returns null when none or several match.
  */
-async function findByDeviceOrName(makeRequest, term) {
-  const result = await makeRequest()
-    .input("term", sql.NVarChar(100), term)
-    .query(`
-      SELECT TOP 1 id, streamname, deviceid
-      FROM streamlist WITH (NOLOCK)
-      WHERE ISNULL(isdeleted, 0) = 0
-        AND (deviceid = @term OR streamname = @term)
-      ORDER BY id DESC`);
-  return result.recordset[0] ?? null;
+async function resolveDeviceId(term) {
+  const t = String(term || "").trim();
+  if (!t) return null;
+  const { Stream } = getPollingModels();
+  if (await Stream.exists({ deviceId: t })) return t;
+  const ids = await Stream.distinct("deviceId", {
+    deviceId: { $regex: escapeRegex(t), $options: "i" },
+  });
+  return ids.length === 1 ? ids[0] : null;
 }
 
-/** Autocomplete search for the camera dropdown. */
-async function search(makeRequest, { term = "", limit = 25 } = {}) {
-  const result = await makeRequest()
-    .input("term", sql.NVarChar(100), `%${term}%`)
-    .input("limit", sql.Int, limit)
-    .query(`
-      SELECT TOP (@limit) id, streamname, deviceid
-      FROM streamlist WITH (NOLOCK)
-      WHERE ISNULL(isdeleted, 0) = 0
-        AND (@term = '%%' OR streamname LIKE @term OR deviceid LIKE @term)
-      ORDER BY streamname`);
-  return result.recordset;
+/** The camera's stream name (its deviceId), or null if it does not exist. */
+async function getStreamName(deviceId) {
+  const { Stream } = getPollingModels();
+  const doc = await Stream.findOne({ deviceId }, { deviceId: 1 }).lean();
+  return doc ? doc.deviceId : null;
 }
 
-module.exports = { getStreamName, existsById, findByDeviceOrName, search };
+/** True if the camera exists in the stream collection. */
+async function existsById(deviceId) {
+  if (!deviceId) return false;
+  const { Stream } = getPollingModels();
+  return Boolean(await Stream.exists({ deviceId }));
+}
+
+/** Resolve one camera (full or unique partial deviceId) -> { id, streamname, deviceid } or null. */
+async function findByDeviceOrName(term) {
+  const deviceId = await resolveDeviceId(term);
+  if (!deviceId) return null;
+  const { Stream } = getPollingModels();
+  const doc = await Stream.findOne({ deviceId }, { deviceId: 1 })
+    .sort({ _id: -1 })
+    .lean();
+  return toCamera(doc);
+}
+
+/** Autocomplete search for the camera picker (deviceId contains `term`). */
+async function search({ term = "", limit = 25 } = {}) {
+  const { Stream } = getPollingModels();
+  const filter = term
+    ? { deviceId: { $regex: escapeRegex(term), $options: "i" } }
+    : {};
+  const docs = await Stream.find(filter, { deviceId: 1 })
+    .sort({ deviceId: 1 })
+    .limit(limit)
+    .lean();
+  return docs.map(toCamera);
+}
+
+/** Full stream document for a device (full or unique partial deviceId), or null. */
+async function findStream(term) {
+  const deviceId = await resolveDeviceId(term);
+  if (!deviceId) return null;
+  const { Stream } = getPollingModels();
+  return Stream.findOne({ deviceId }).sort({ _id: -1 }).lean();
+}
+
+/** Device ids matching `term` (case-insensitive), for the device search box. */
+async function searchDeviceIds(term, { limit, sortDesc = false } = {}) {
+  const { Stream } = getPollingModels();
+  let q = Stream.find(
+    { deviceId: { $regex: escapeRegex(term), $options: "i" } },
+    { deviceId: 1 },
+  ).sort({ deviceId: sortDesc ? -1 : 1 });
+  if (limit) q = q.limit(limit);
+  const docs = await q.lean();
+  return [...new Set(docs.map((d) => d.deviceId))];
+}
+
+module.exports = {
+  resolveDeviceId,
+  getStreamName,
+  existsById,
+  findByDeviceOrName,
+  search,
+  findStream,
+  searchDeviceIds,
+  escapeRegex,
+};

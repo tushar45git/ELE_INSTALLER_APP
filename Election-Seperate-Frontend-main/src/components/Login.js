@@ -76,12 +76,12 @@ const Login = () => {
   const [locationEnabled, setLocationEnabled] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [phase, setPhase] = useState("");
-  const [selectedState, setSelectedState] = useState("Gujarat");
+  const [selectedState, setSelectedState] = useState("PUNJAB");
   const [selectedDistrict, setSelectedDistrict] = useState("");
 
   const stateData = {
-    "Gujarat": {
-      phase1: ["AHMEDABAD"],
+    "PUNJAB": {
+      phase1: ["MOHALI", "JALANDHAR", "LUDHIANA"],
     }
   };
 

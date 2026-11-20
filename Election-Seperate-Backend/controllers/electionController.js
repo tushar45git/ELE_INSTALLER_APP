@@ -26,7 +26,14 @@ const elePhaseOneData = require("../models/phaseonedata");
 const EleReboot = require("../models/election-reboot");
 const punjabElection = require("../models/election-users-punjab");
 const AiStatus = require("../models/AiStatus");
-const { getSqlConnection } = require("../config/sqlDatabase");
+const streamlistRepository = require("../repositories/streamlistRepository");
+const boothRepository = require("../repositories/boothRepository");
+
+// Camera / device data always comes from the polling MongoDB now. Before, it
+// was only used when the request carried a `phase`; without one the code fell
+// back to old collections in the main DB, which is why device search could
+// return nothing. Those old fallback branches are kept below, but are unused.
+const USE_POLLING_DB = true;
 const { BlobServiceClient } = require("@azure/storage-blob");
 const { v4: uuidv4 } = require("uuid");
 const path = require("path");
@@ -50,42 +57,44 @@ const ensureContainerExists = async () => {
 };
 ensureContainerExists();
 
+/**
+ * Camera + mapping details for a device from the polling MongoDB
+ * (stream + camera + district collections). Replaces the old SQL query.
+ *
+ * The FLV URL is built here, it is not stored in the DB:
+ *   https://<stream."server name">/live-record/<deviceId>.flv
+ * `prourl` (used for camera settings) is the stream's mediaUrl.
+ * The phase argument is kept for the existing callers but no longer used.
+ */
+// eslint-disable-next-line no-unused-vars
 const getSqlData = async (phase, deviceId) => {
-  const pool = await getSqlConnection(phase);
+  const stream = await streamlistRepository.findStream(deviceId);
+  if (!stream) return { stream: null, booth: null };
 
-  const query = `
-        SELECT top(1) s.streamname, s.prourl, s.servername, 'https://' + s.servername + '/live-record/' + s.streamname + '.flv' AS url2,b.district,b.acname AS assemblyName,
-b.PSNum AS psNo,b.location,b.cameralocationtype AS locationtype,s.deviceid AS deviceId, st.statename as state, b.id as boothId FROM streamlist s WITH (NOLOCK)
-LEFT JOIN booth b WITH (NOLOCK) ON s.id = b.streamid AND ISNULL(b.isdelete,'')=0
-LEFT JOIN state st WITH (NOLOCK) on st.id=b.boothstateid 
-WHERE s.deviceid = @deviceId
-    `;
-
-  const result = await pool.request().input("deviceId", deviceId).query(query);
-
-  const data = result.recordset[0] || null;
+  const serverName = stream["server name"] || stream.serverName || "";
+  // Use the full deviceId (the user may have typed only part of it).
+  const mapping = await boothRepository.findByStreamId(stream.deviceId);
 
   return {
-    stream: data
+    stream: {
+      streamname: stream.deviceId,
+      prourl: stream.mediaUrl || "",
+      servername: serverName,
+      url2: serverName
+        ? `https://${serverName}/live-record/${stream.deviceId}.flv`
+        : null,
+    },
+    booth: mapping
       ? {
-          streamname: data.streamname,
-          prourl: data.prourl,
-          servername: data.servername,
-          url2: data.url2,
+          district: mapping.district,
+          assemblyName: mapping.acname,
+          psNo: mapping.PSNum,
+          location: mapping.location,
+          locationtype: mapping.cameralocationtype,
+          deviceId: mapping.streamid,
+          state: null, // not stored in the polling DB; the app falls back to the logged-in state
         }
       : null,
-    booth:
-      data && data.boothId
-        ? {
-            district: data.district,
-            assemblyName: data.assemblyName,
-            psNo: data.psNo,
-            location: data.location,
-            locationtype: data.locationtype,
-            deviceId: data.deviceId,
-            state: data.state,
-          }
-        : null,
   };
 };
 
@@ -279,7 +288,7 @@ exports.createCamera = async (req, res, next) => {
 
     let flvUrl = "";
     let locationtype = "";
-    if (phase) {
+    if (USE_POLLING_DB) {
       const sqlData = await getSqlData(phase, deviceId);
       if (!sqlData.stream) {
         throw new Error(
@@ -538,13 +547,13 @@ exports.getCameraByDid = async (req, res, next) => {
   try {
     const { deviceId, phase } = req.query;
 
-    if (phase) {
+    if (USE_POLLING_DB) {
       const sqlData = await getSqlData(phase, deviceId);
 
       if (!sqlData.stream) {
         return res.status(200).json({
           success: false,
-          data: "Device Id not found in election (SQL)",
+          data: "Device Id not found in election",
           flvUrl: null,
         });
       }
@@ -593,13 +602,13 @@ exports.getCameraByDidInfo = async (req, res, next) => {
   try {
     const { deviceId, phase } = req.query;
 
-    if (phase) {
+    if (USE_POLLING_DB) {
       const sqlData = await getSqlData(phase, deviceId);
 
       if (!sqlData.stream) {
         return res.status(200).json({
           success: false,
-          data: "Device Id not found in election (SQL)",
+          data: "Device Id not found in election",
           flvUrl: null,
         });
       }
@@ -647,20 +656,12 @@ exports.searchDevices = async (req, res, next) => {
       return res.status(200).json({ success: true, streamnames: [] });
     }
 
-    if (phase) {
-      const pool = await getSqlConnection(phase);
-      const sqlQuery =
-        "SELECT top(5) streamname FROM streamlist s WITH (NOLOCK) LEFT JOIN booth b WITH (NOLOCK) ON s.id = b.streamid WHERE (streamname LIKE @query OR s.deviceid LIKE @query) AND (b.id IS NULL OR ISNULL(b.isdelete,'')=0)";
-      const result = await pool
-        .request()
-        .input("query", `%${query}%`)
-        .query(sqlQuery);
-      return res.status(200).json({
-        success: true,
-        streamnames: [
-          ...new Set(result.recordset.map((row) => row.streamname)),
-        ],
+    if (USE_POLLING_DB) {
+      // Device ids from the polling DB `stream` collection.
+      const streamnames = await streamlistRepository.searchDeviceIds(query, {
+        limit: 5,
       });
+      return res.status(200).json({ success: true, streamnames });
     } else {
       const regex = new RegExp(query, "i");
       const getFlv = await EleFlv.aggregate([
@@ -696,7 +697,7 @@ exports.addData = async (req, res, next) => {
 
       let flvUrl = "";
       let locationtype = "";
-      if (phase) {
+      if (USE_POLLING_DB) {
         const sqlData = await getSqlData(phase, data.deviceId);
         flvUrl = sqlData.stream ? sqlData.stream.url2 : "";
         locationtype = sqlData.booth ? sqlData.booth.locationtype : "";
@@ -2424,26 +2425,19 @@ exports.getFullDid = async (req, res, next) => {
   try {
     const { deviceId, phase } = req.query;
 
-    if (phase) {
-      const pool = await getSqlConnection(phase);
-      const sqlQuery =
-        "SELECT streamname FROM streamlist WHERE streamname LIKE @query ORDER BY streamname DESC";
-      const result = await pool
-        .request()
-        .input("query", `%${deviceId}%`)
-        .query(sqlQuery);
-
-      if (!result.recordset || result.recordset.length === 0) {
+    if (USE_POLLING_DB) {
+      // Device ids from the polling DB `stream` collection.
+      const streamnames = await streamlistRepository.searchDeviceIds(
+        deviceId || "",
+        { sortDesc: true },
+      );
+      if (streamnames.length === 0) {
         return res.status(200).json({
           success: false,
-          data: "Device Id not found in election (SQL)",
+          data: "Device Id not found in election",
         });
       }
-
-      return res.status(200).json({
-        success: true,
-        streamnames: result.recordset.map((row) => row.streamname),
-      });
+      return res.status(200).json({ success: true, streamnames });
     }
 
     const regex = new RegExp(req.query.deviceId, "i"); // Case-insensitive regex

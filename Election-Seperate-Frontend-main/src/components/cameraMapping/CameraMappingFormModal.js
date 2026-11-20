@@ -133,11 +133,6 @@ function ComboField({ value, onChange, options, placeholder, isInvalid }) {
   );
 }
 
-// Defaults pre-filled when ADDING a new mapping (editing keeps the record's values).
-const DEFAULT_ADD_DISTRICT = "Ahmedabad";
-const DEFAULT_ADD_ACCODE = "1";
-const DEFAULT_ADD_ACNAME = "Sabarmati";
-
 const EMPTY = {
   streamId: "",
   streamName: "",
@@ -214,15 +209,6 @@ export default function CameraMappingFormModal({
         }
       : { ...EMPTY };
 
-    // Adding a new mapping (no booth id) -> default District/Assembly.
-    if (!initialData?.id) {
-      if (!base.district) base.district = DEFAULT_ADD_DISTRICT;
-      if (!base.accode) {
-        base.accode = DEFAULT_ADD_ACCODE;
-        if (!base.acname) base.acname = DEFAULT_ADD_ACNAME;
-      }
-    }
-
     setForm(base);
     setCameraQuery(initialData?.streamname ?? "");
     setErrors({});
@@ -272,23 +258,38 @@ export default function CameraMappingFormModal({
   }, [isOpen, form.acname, form.psNum]);
 
   // Clearing the PS number clears the auto-filled location too (no stale value).
-  // eslint-disable-next-line no-unused-vars
   const onPsNumChange = (value) => {
     setField("psNum", value);
     if (!value.trim()) setField("location", "");
   };
 
   // Assembly code <-> name are paired in the DB; selecting one fills the other.
-  // eslint-disable-next-line no-unused-vars
+  // Districts and assemblies come from the backend's district list (the
+  // polling DB `district` collection). An existing record's value that is not
+  // in the list stays selectable so editing does not lose it.
+  const districtOptions =
+    form.district && !suggest.districts.includes(form.district)
+      ? [form.district, ...suggest.districts]
+      : suggest.districts;
+
+  const assemblyOptions = (() => {
+    const list = form.district ? suggest.assemblies : [];
+    if (form.acname && !list.some((a) => a.acname === form.acname)) {
+      return [{ accode: form.accode, acname: form.acname }, ...list];
+    }
+    return list;
+  })();
+
+  // Picking an assembly name also sets its (hidden) assembly code.
   const onAssemblyNameChange = (value) => {
-    setField("acname", value);
-    const match = suggest.assemblies.find((a) => a.acname === value);
-    if (match && match.accode) setField("accode", match.accode);
-  };
-  const onAssemblyCodeChange = (value) => {
-    setField("accode", value);
-    const match = suggest.assemblies.find((a) => String(a.accode) === value);
-    if (match && match.acname) setField("acname", match.acname);
+    const match = assemblyOptions.find((a) => a.acname === value);
+    setForm((prev) => ({
+      ...prev,
+      acname: value,
+      accode: match ? String(match.accode ?? "") : "",
+      psNum: "",
+      location: "",
+    }));
   };
 
   // Debounced camera search
@@ -320,8 +321,8 @@ export default function CameraMappingFormModal({
     const e = {};
     if (!form.streamId) e.streamId = "Select a valid camera";
     if (!form.district.trim()) e.district = "District is required";
-    if (!form.accode.trim()) e.accode = "Assembly Code is required";
     if (!form.acname.trim()) e.acname = "Assembly Name is required";
+    else if (!String(form.accode).trim()) e.acname = "Assembly code missing for this assembly";
     if (!form.location.trim()) e.location = "Location is required";
     if (!form.cameraLocationType) e.cameraLocationType = "Camera type is required";
     if (form.longitude !== "" && isNaN(Number(form.longitude)))
@@ -333,9 +334,9 @@ export default function CameraMappingFormModal({
   };
 
   const buildPayload = () => ({
-    streamId: Number(form.streamId),
+    streamId: String(form.streamId), // camera deviceId
     district: form.district.trim(),
-    accode: form.accode.trim(),
+    accode: String(form.accode).trim(),
     acname: form.acname.trim(),
     psNum: form.psNum.trim(),
     location: form.location.trim(),
@@ -466,46 +467,42 @@ export default function CameraMappingFormModal({
 
             <FormControl isInvalid={!!errors.district} isRequired>
               <FormLabel>District</FormLabel>
-              <ComboField
+              <Select
+                placeholder="Select district"
                 value={form.district}
-                onChange={(v) => setField("district", v)}
-                options={suggest.districts.map((d) => ({ value: d }))}
-                placeholder="Select or type a district"
-                isInvalid={!!errors.district}
-              />
+                onChange={(e) => {
+                  // A new district invalidates the assembly / PS picked under the old one.
+                  setForm((prev) => ({
+                    ...prev,
+                    district: e.target.value,
+                    accode: "",
+                    acname: "",
+                    psNum: "",
+                  }));
+                }}
+              >
+                {districtOptions.map((d) => (
+                  <option key={d} value={d}>{d}</option>
+                ))}
+              </Select>
               <FormErrorMessage>{errors.district}</FormErrorMessage>
             </FormControl>
 
-            <FormControl isInvalid={!!errors.accode} isRequired>
-              {/* <FormLabel>Assembly Code</FormLabel>
-              <ComboField
-                value={form.accode}
-                onChange={onAssemblyCodeChange}
-                options={suggest.assemblies.map((a) => ({
-                  value: String(a.accode),
-                  sub: a.acname,
-                }))}
-                placeholder="Select or type an assembly code"
-                isInvalid={!!errors.accode}
-              />
-              <FormErrorMessage>{errors.accode}</FormErrorMessage> */}
-            </FormControl>
+            {/* Assembly Code is hidden: it is filled in automatically from the
+                selected Assembly Name (from the district list). */}
 
-            {/* Assembly Name & PS Number hidden from the form. Assembly Name
-                still defaults to DEFAULT_ADD_ACNAME when adding (and keeps the
-                record's value when editing); PS Number is sent as-is. */}
-            {/* <FormControl isInvalid={!!errors.acname} isRequired>
+            <FormControl isInvalid={!!errors.acname} isRequired>
               <FormLabel>Assembly Name</FormLabel>
-              <ComboField
+              <Select
+                placeholder={form.district ? "Select assembly" : "Select a district first"}
                 value={form.acname}
-                onChange={onAssemblyNameChange}
-                options={suggest.assemblies.map((a) => ({
-                  value: a.acname,
-                  sub: `Code ${a.accode}`,
-                }))}
-                placeholder="Select or type a assembly name"
-                isInvalid={!!errors.acname}
-              />
+                onChange={(e) => onAssemblyNameChange(e.target.value)}
+                isDisabled={!form.district}
+              >
+                {assemblyOptions.map((a) => (
+                  <option key={a.acname} value={a.acname}>{a.acname}</option>
+                ))}
+              </Select>
               <FormErrorMessage>{errors.acname}</FormErrorMessage>
             </FormControl>
 
@@ -517,7 +514,7 @@ export default function CameraMappingFormModal({
                 options={suggest.psNumbers.map((p) => ({ value: p }))}
                 placeholder="Select or type a PS number"
               />
-            </FormControl> */}
+            </FormControl>
 
             <FormControl isInvalid={!!errors.location} isRequired>
               <FormLabel>Location</FormLabel>

@@ -360,6 +360,11 @@ const AutoInstaller = () => {
         return;
       }
 
+      // The backend accepts a partial id (e.g. "405510") and returns the full
+      // deviceId ("ATPL-405510-ARCIS"); use the full one from here on.
+      const fullDeviceId = response.flvUrl.streamname || deviceId;
+      if (fullDeviceId !== deviceId) setDeviceId(fullDeviceId);
+
       setFlvUrl(response.flvUrl.url2);
       setBoothFound(response.boothFound !== false);
 
@@ -394,7 +399,7 @@ const AutoInstaller = () => {
       // Resolve the SQL (booth) mapping for this camera to decide
       // whether the user gets "Edit Mapping" (mapped) or "Add Mapping".
       try {
-        const sqlRes = await getCameraMappingByStream(deviceId);
+        const sqlRes = await getCameraMappingByStream(fullDeviceId);
         if (sqlRes.success !== false) {
           setSqlCamera(sqlRes.camera || null);
           setSqlMapping(sqlRes.mapping || null);
@@ -408,7 +413,7 @@ const AutoInstaller = () => {
       }
 
       sendUrlToExternalApi(response.flvUrl.url2);
-      startCameraStatusPolling(deviceId);
+      startCameraStatusPolling(fullDeviceId);
     } catch (error) {
       console.error("Error in handleAddInputs:", error);
       // Handle errors appropriately (e.g., display an error message)
@@ -1017,19 +1022,11 @@ const AutoInstaller = () => {
     placeholder: "Enter Device ID",
     value: deviceId,
     onChange: handleInputChange,
+    // Colours, background and font come from the .custom-input class so the
+    // field follows light/dark mode (inline colours would override the theme).
     style: {
       width: "240px",
-      height: "35px",
       padding: "10px 14px",
-      borderRadius: "8px",
-      background: "#fff",
-      boxShadow: "inset 0 1px 2.4px rgba(0, 0, 0, 0.25)",
-      color: "black",
-      fontFamily: "'Wix Madefor Text'",
-      fontSize: "12px",
-      fontStyle: "normal",
-      fontWeight: 400,
-      lineHeight: "normal",
     },
   };
 
@@ -2527,7 +2524,7 @@ const AutoInstaller = () => {
               /* keep prior snapshot on refresh failure */
             }
             toast.success(
-              "Camera mapping saved to SQL. You can now Submit Installation.",
+              "Camera mapping saved. You can now Submit Installation.",
             );
           }}
         />

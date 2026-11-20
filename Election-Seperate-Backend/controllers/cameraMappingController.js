@@ -44,7 +44,7 @@ exports.list = wrap(async (req, res) => {
 });
 
 exports.getById = wrap(async (req, res) => {
-  const data = await service.getById(Number(req.params.id));
+  const data = await service.getById(req.params.id);
   res.status(200).json({ success: true, data });
 });
 
@@ -55,7 +55,7 @@ exports.getByStream = wrap(async (req, res) => {
 });
 
 exports.getHistory = wrap(async (req, res) => {
-  const data = await service.getHistory(Number(req.params.id));
+  const data = await service.getHistory(req.params.id);
   res.status(200).json({ success: true, data });
 });
 
@@ -92,7 +92,7 @@ exports.update = wrap(async (req, res) => {
   if (errors.length) return badRequest(res, errors);
 
   const result = await service.update(
-    Number(req.params.id),
+    req.params.id,
     req.body,
     contextFrom(req),
   );
@@ -100,7 +100,7 @@ exports.update = wrap(async (req, res) => {
 });
 
 exports.remove = wrap(async (req, res) => {
-  const result = await service.remove(Number(req.params.id), contextFrom(req));
+  const result = await service.remove(req.params.id, contextFrom(req));
   res.status(200).json({ success: true, ...result });
 });
 
