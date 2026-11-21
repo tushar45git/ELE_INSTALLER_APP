@@ -189,6 +189,62 @@ exports.setIsEdited = async (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 };
+/**
+ * POST /analyze-camera  { camera_id, rtmp }
+ * Sends the stream to the AI analysis service and saves its result in this
+ * app's `aistatus` collection (one document per camera, updated each time),
+ * so the result is always in our database whatever DB the AI service uses.
+ */
+exports.analyzeCamera = async (req, res) => {
+  const { camera_id, rtmp } = req.body || {};
+  if (!camera_id || !rtmp) {
+    return res
+      .status(400)
+      .json({ success: false, error: "camera_id and rtmp are required" });
+  }
+  const aiUrl =
+    process.env.AI_ANALYZE_URL ||
+    "https://installerapp.vmukti.com:8446/analyze-camera";
+
+  let result;
+  try {
+    const response = await axios.post(
+      aiUrl,
+      { rtmp },
+      { headers: { "Content-Type": "application/json" }, timeout: 180000 },
+    );
+    result = response.data || {};
+  } catch (error) {
+    console.error("AI analyze-camera call failed:", error.message);
+    return res
+      .status(502)
+      .json({ success: false, error: "AI service did not respond" });
+  }
+
+  if (result.error || result.overall_status === undefined) {
+    return res.status(502).json({
+      success: false,
+      error: result.error || "AI service returned no result",
+    });
+  }
+
+  try {
+    const { _id, __v, camera_id: _ignored, ...fields } = result;
+    const saved = await getAiStatusModel()
+      .findOneAndUpdate(
+        { camera_id },
+        { $set: { ...fields, camera_id, timestamp: new Date() } },
+        { upsert: true, new: true, runValidators: true },
+      )
+      .lean();
+    return res.status(200).json({ success: true, ...saved });
+  } catch (error) {
+    console.error("Saving AI status failed:", error);
+    // Still return the result so the installer screen can show it.
+    return res.status(200).json({ success: true, saved: false, ...result, camera_id });
+  }
+};
+
 exports.getCameraStatus = async (req, res) => {
   try {
     const { camera_id } = req.query; // e.g., /status?camera_id=VSPL-123297-JABFD

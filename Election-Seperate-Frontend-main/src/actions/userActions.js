@@ -26,6 +26,16 @@ export const setIsEdited = async (deviceId) => {
     return { success: false, message: error.message || 'An error occurred while setting isEdited' };
   }
 };
+// Ask the backend to run the AI analysis; it saves the result in aistatus
+// and returns it. Throws on failure (non-2xx).
+export const analyzeCamera = async (deviceId, rtmp) => {
+  const response = await instance.post('/analyze-camera', {
+    camera_id: deviceId,
+    rtmp,
+  }, { timeout: 200000 });
+  return response.data;
+};
+
 export const getCameraStatus = async (deviceId) => {
   try {
     // Use the axios instance and pass the camera_id as a query param

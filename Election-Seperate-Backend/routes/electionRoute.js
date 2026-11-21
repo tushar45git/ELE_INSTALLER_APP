@@ -7,7 +7,7 @@ const multer = require('multer');
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
-const { uploadCameraPhoto, searchDevices, setIsEdited,getCameraStatus,getCameraById, getLocation, updateCamera, signin, verifyOtp, createCamera, getCameraByDid, getCamerasbyAssignedBy, getCamerasbyNumber, assignCamera, addData, getAcdetails, updateAssemblyNames, updateDistrict, convertDistrictToUpperCase, getDistrictdetails, updateStr, getdetails, getsetting, setsetting, getStateData, getDashboardDetails, updateUser, getPsDetails, getPsLocation, getDistrictData, getAssemblyData, getCameraByLocation, attendance, getLatLongFsv, getFlvLatDid, getFullDid, getLatLongPolling, removeEleCamera, trackLiveLatLong, getElectionUser, getLatLongPhaseOne, getCameraByDidInfo, getElectionUserChart, getElectionCameraChart, rebootCamera, getRebootCamera, getAssemblyByNumber, getCamerasbyDid, getElectionUserPage, getBiharReport, getBiharReportUser, getSixDistrictDataBihar } = require('../controllers/electionController');
+const { uploadCameraPhoto, analyzeCamera, searchDevices, setIsEdited,getCameraStatus,getCameraById, getLocation, updateCamera, signin, verifyOtp, createCamera, getCameraByDid, getCamerasbyAssignedBy, getCamerasbyNumber, assignCamera, addData, getAcdetails, updateAssemblyNames, updateDistrict, convertDistrictToUpperCase, getDistrictdetails, updateStr, getdetails, getsetting, setsetting, getStateData, getDashboardDetails, updateUser, getPsDetails, getPsLocation, getDistrictData, getAssemblyData, getCameraByLocation, attendance, getLatLongFsv, getFlvLatDid, getFullDid, getLatLongPolling, removeEleCamera, trackLiveLatLong, getElectionUser, getLatLongPhaseOne, getCameraByDidInfo, getElectionUserChart, getElectionCameraChart, rebootCamera, getRebootCamera, getAssemblyByNumber, getCamerasbyDid, getElectionUserPage, getBiharReport, getBiharReportUser, getSixDistrictDataBihar } = require('../controllers/electionController');
 
 // Public: no account exists yet at this point in the flow.
 adiancerouter.route('/login').post( signin );
@@ -71,6 +71,7 @@ adiancerouter.route('/getSixDistrictDataBihar').get( getSixDistrictDataBihar );
 
 //AI Model Status
 adiancerouter.route('/status').get( getCameraStatus );
+adiancerouter.route('/analyze-camera').post( analyzeCamera );
 // adiancerouter.route('/getSingleUser').get( getSingleUser );
 // adiancerouter.route('/getUsers').get( getUsers );
 

@@ -73,6 +73,7 @@ import {
 import { ToastContainer, toast } from "react-toastify";
 import {
   searchDevices,
+  analyzeCamera,
   getAcdetails,
   getCamera,
   getCameraByDid,
@@ -412,7 +413,7 @@ const AutoInstaller = () => {
         setSqlMapping(null);
       }
 
-      sendUrlToExternalApi(response.flvUrl.url2, response.flvUrl.rtmpUrl);
+      sendUrlToExternalApi(fullDeviceId, response.flvUrl.url2, response.flvUrl.rtmpUrl);
       startCameraStatusPolling(fullDeviceId);
     } catch (error) {
       console.error("Error in handleAddInputs:", error);
@@ -480,6 +481,18 @@ const AutoInstaller = () => {
       XLSX.writeFile(wb, fileName);
     }
   };
+  // Show an AI analysis result (from the AI service reply or from /status).
+  const applyCameraStatus = (status) => {
+    setCameraStatus(status);
+    setBlurChecked(status.blur);
+    setBlackviewChecked(status.blackview);
+    setBrightnessChecked(status.brightness);
+    setBlackAndWhiteChecked(status.BlackAndWhite);
+    const cameraAngle = Math.abs(status.camera_angle);
+    setCameraAngleAcceptable(cameraAngle <= 15);
+    setIsFetchingCameraDetails(false);
+  };
+
   const startCameraStatusPolling = (deviceId) => {
     setCameraStatus(undefined); // Set to undefined when polling starts
     fetchCameraStatus(deviceId);
@@ -500,20 +513,14 @@ const AutoInstaller = () => {
       const status = await getCameraStatus(deviceId);
 
       if (status.success === false) {
+        // No saved result found. Keep whatever is shown: the reply from the
+        // AI service (sendUrlToExternalApi) fills in the status, so a 404
+        // here must not wipe it out.
         console.log("Api status false");
-        setCameraStatus(null);
-        setIsFetchingCameraDetails(false);
         return;
       } else {
         console.log("Api status true");
-        setCameraStatus(status);
-        setBlurChecked(status.blur);
-        setBlackviewChecked(status.blackview);
-        setBrightnessChecked(status.brightness);
-        setBlackAndWhiteChecked(status.BlackAndWhite);
-        const cameraAngle = Math.abs(status.camera_angle);
-        setCameraAngleAcceptable(cameraAngle <= 15);
-        setIsFetchingCameraDetails(false);
+        applyCameraStatus(status);
 
         //       if (cameraAngle > 15) {
         //         if (!toastInterval.current) {
@@ -584,7 +591,7 @@ const AutoInstaller = () => {
     }
   };
 
-  const sendUrlToExternalApi = async (url2, backendRtmpUrl) => {
+  const sendUrlToExternalApi = async (deviceId, url2, backendRtmpUrl) => {
     try {
       // The backend sends the right RTMP URL for the camera's stream server.
       // Fall back to deriving it from the FLV URL (old relay format).
@@ -599,19 +606,10 @@ const AutoInstaller = () => {
         rtmpUrl = rtmpUrl.replace(".flv", "");
       }
 
-      const postData = { rtmp: rtmpUrl };
-
-      const response = await axios.post(
-        "https://installerapp.vmukti.com:8446/analyze-camera",
-        postData,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        },
-      );
-
-      console.log("External API Response:", response.data);
+      // The backend calls the AI service and saves the result in aistatus.
+      const result = await analyzeCamera(deviceId, rtmpUrl);
+      console.log("AI analysis result:", result);
+      applyCameraStatus(result);
       toast.success("Successfully Fetched Camera Status", {
         position: "top-right",
         autoClose: 3500,
@@ -621,7 +619,10 @@ const AutoInstaller = () => {
         draggable: true,
       });
     } catch (error) {
-      console.error("Error sending URL to external API:", error);
+      console.error("AI analysis failed:", error);
+      setCameraStatus((prev) => prev || null);
+      setIsFetchingCameraDetails(false);
+      toast.error("AI status not available: could not analyse the stream");
     }
   };
 
