@@ -31,7 +31,10 @@ const LiveFlvPlayer = ({ url, controls = true, width = "100%", height = "100%" }
 
     setError("");
     const player = mpegts.createPlayer(
-      { type: "flv", isLive: true, url },
+      // hasAudio: false - the cameras send G.711 (pcm_alaw) audio, which
+      // browsers cannot decode; mpegts.js would stop with "Unsupported audio
+      // codec". The player is muted anyway, so play the H.264 video only.
+      { type: "flv", isLive: true, url, hasAudio: false },
       {
         enableWorker: false,
         enableStashBuffer: false,

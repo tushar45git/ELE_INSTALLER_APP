@@ -25,7 +25,7 @@ const EleUserhistory = require("../models/ele-user-latlong-history");
 const elePhaseOneData = require("../models/phaseonedata");
 const EleReboot = require("../models/election-reboot");
 const punjabElection = require("../models/election-users-punjab");
-const AiStatus = require("../models/AiStatus");
+const { getAiStatusModel } = require("../models/AiStatus");
 const streamlistRepository = require("../repositories/streamlistRepository");
 const boothRepository = require("../repositories/boothRepository");
 
@@ -61,11 +61,41 @@ ensureContainerExists();
  * Camera + mapping details for a device from the polling MongoDB
  * (stream + camera + district collections). Replaces the old SQL query.
  *
- * The FLV URL is built here, it is not stored in the DB:
- *   https://<stream."server name">/live-record/<deviceId>.flv
+ * The FLV URL is built here, it is not stored in the DB (see streamUrls).
  * `prourl` (used for camera settings) is the stream's mediaUrl.
  * The phase argument is kept for the existing callers but no longer used.
  */
+/**
+ * Live FLV (player) and RTMP (AI analysis) URLs for a device on its stream server.
+ *
+ * - Servers listed in HDL_STREAM_SERVERS (comma separated, e.g. the Monibuca
+ *   server mediastream.vmukti.com) publish cameras under the app
+ *   HDL_STREAM_APP (default "DVR"):
+ *     https://<server>/hdl/<app>/<deviceId>.flv
+ *     rtmp://<server>:1935/<app>/<deviceId>
+ * - Any other server uses the old relay format:
+ *     https://<server>/live-record/<deviceId>.flv
+ *     rtmp://<server>:80/live-record/<deviceId>
+ */
+const streamUrls = (serverName, deviceId) => {
+  if (!serverName) return { url2: null, rtmpUrl: null };
+  const hdlServers = (process.env.HDL_STREAM_SERVERS || "")
+    .split(",")
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean);
+  if (hdlServers.includes(serverName.toLowerCase())) {
+    const app = process.env.HDL_STREAM_APP || "DVR";
+    return {
+      url2: `https://${serverName}/hdl/${app}/${deviceId}.flv`,
+      rtmpUrl: `rtmp://${serverName}:1935/${app}/${deviceId}`,
+    };
+  }
+  return {
+    url2: `https://${serverName}/live-record/${deviceId}.flv`,
+    rtmpUrl: `rtmp://${serverName}:80/live-record/${deviceId}`,
+  };
+};
+
 // eslint-disable-next-line no-unused-vars
 const getSqlData = async (phase, deviceId) => {
   const stream = await streamlistRepository.findStream(deviceId);
@@ -80,9 +110,7 @@ const getSqlData = async (phase, deviceId) => {
       streamname: stream.deviceId,
       prourl: stream.mediaUrl || "",
       servername: serverName,
-      url2: serverName
-        ? `https://${serverName}/live-record/${stream.deviceId}.flv`
-        : null,
+      ...streamUrls(serverName, stream.deviceId),
     },
     booth: mapping
       ? {
@@ -169,7 +197,7 @@ exports.getCameraStatus = async (req, res) => {
       return res.status(400).json({ error: "camera_id is required" });
     }
 
-    const cameraData = await AiStatus.findOne({ camera_id });
+    const cameraData = await getAiStatusModel().findOne({ camera_id });
 
     if (!cameraData) {
       return res.status(404).json({ error: "Camera not found" });

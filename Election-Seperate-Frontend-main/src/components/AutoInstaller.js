@@ -412,7 +412,7 @@ const AutoInstaller = () => {
         setSqlMapping(null);
       }
 
-      sendUrlToExternalApi(response.flvUrl.url2);
+      sendUrlToExternalApi(response.flvUrl.url2, response.flvUrl.rtmpUrl);
       startCameraStatusPolling(fullDeviceId);
     } catch (error) {
       console.error("Error in handleAddInputs:", error);
@@ -584,23 +584,25 @@ const AutoInstaller = () => {
     }
   };
 
-  const sendUrlToExternalApi = async (url2) => {
+  const sendUrlToExternalApi = async (url2, backendRtmpUrl) => {
     try {
-      let rtmpUrl = url2.replace("https", "rtmp");
-
-      const url = new URL(rtmpUrl);
-      const hostname = url.hostname;
-
-      if (!hostname.includes(":")) {
-        rtmpUrl = rtmpUrl.replace(hostname, `${hostname}:80`);
+      // The backend sends the right RTMP URL for the camera's stream server.
+      // Fall back to deriving it from the FLV URL (old relay format).
+      let rtmpUrl = backendRtmpUrl;
+      if (!rtmpUrl) {
+        rtmpUrl = url2.replace("https", "rtmp");
+        const url = new URL(rtmpUrl);
+        const hostname = url.hostname;
+        if (!hostname.includes(":")) {
+          rtmpUrl = rtmpUrl.replace(hostname, `${hostname}:80`);
+        }
+        rtmpUrl = rtmpUrl.replace(".flv", "");
       }
-
-      rtmpUrl = rtmpUrl.replace(".flv", "");
 
       const postData = { rtmp: rtmpUrl };
 
       const response = await axios.post(
-        "https://installerapp.vmukti.com:8443/analyze-camera",
+        "https://installerapp.vmukti.com:8446/analyze-camera",
         postData,
         {
           headers: {

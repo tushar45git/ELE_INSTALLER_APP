@@ -55,4 +55,19 @@ const aiStatusSchema = new mongoose.Schema({
   },
 });
 
-module.exports = mongoose.model('AiStatus', aiStatusSchema, 'aistatus');
+// The AI analysis service (installerapp :8446 /analyze-camera) writes its
+// results to the `aistatus` collection of its own database, not the app's
+// DB_URI database. AI_STATUS_DB_NAME names that database (same cluster).
+// Without it, the app's own database is used, as before.
+let model = null;
+function getAiStatusModel() {
+  if (model) return model;
+  const dbName = process.env.AI_STATUS_DB_NAME;
+  const conn = dbName
+    ? mongoose.connection.useDb(dbName, { useCache: true })
+    : mongoose.connection;
+  model = conn.model('AiStatus', aiStatusSchema, 'aistatus');
+  return model;
+}
+
+module.exports = { getAiStatusModel };
